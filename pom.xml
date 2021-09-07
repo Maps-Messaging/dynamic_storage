@@ -12,6 +12,30 @@
   <properties>
     <maven.compiler.source>13</maven.compiler.source>
     <maven.compiler.target>13</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <runSuite>**/*Suite.class</runSuite>
+    <!-- Below property indicates the pattern of the test suite -->
+    <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
+    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco</sonar.coverage.jacoco.xmlReportPaths>
+
+    <!-- Sonar-JaCoCo properties -->
+    <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
+    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+
+    <sonar.language>java</sonar.language>
+    <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
+
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.organization>maps-messaging</sonar.organization>
+    <sonar.projectKey>dynamic_storage</sonar.projectKey>
+
+    <sonar.sources>src/main</sonar.sources>
+    <sonar.test.exclusions>
+      **/*Test.*,**/*IT.*, **.*JMH.*
+    </sonar.test.exclusions>
+
   </properties>
 
   <name>Maps Dynamic Storage</name>
