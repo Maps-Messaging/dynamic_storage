@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>io.mapsmessaging</groupId>
+  <artifactId>DynamicStorage</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.source>13</maven.compiler.source>
+    <maven.compiler.target>13</maven.compiler.target>
+  </properties>
+
+  <name>Maps Dynamic Storage</name>
+  <description>A generic data store keyed by a Long</description>
+  <url>http://www.mapsmessaging.io</url>
+
+  <licenses>
+    <license>
+      <name>Mozilla Public License Version 2.0</name>
+      <url>https://www.mozilla.org/en-US/MPL/2.0/</url>
+      <distribution>repo</distribution>
+    </license>
+    <license>
+      <name>CommonsClause</name>
+      <url>https://commonsclause.com/</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/Maps-Messaging/dynamicStorage</url>
+  </scm>
+
+
+  <repositories>
+    <!-- Repo for java stomp client used for testing Artifactory server -->
+    <repository>
+      <id>mapsmessaging.io</id>
+      <name>artifactory-releases</name>
+      <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-prod</url>
+    </repository>
+
+    <repository>
+      <id>snaphsot.mapsmessaging.io</id>
+      <name>artifactory-snapshot</name>
+      <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-snapshot</url>
+    </repository>
+  </repositories>
+
+
+  <dependencies>
+    <!-- Naturally order long collection -->
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>Naturally_Ordered_Long_Collections</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+
+    <!-- Non Blocking Task Queue module -->
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>Non_Block_Task_Scheduler</artifactId>
+      <version>1.0.5</version>
+    </dependency>
+  </dependencies>
+</project>
