@@ -18,5 +18,5 @@ Add the repository configuration into the pom.xml
 
 
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dynamic_storage&metric=alert_status)](https://sonarcloud.io/dashboard?id=dynamic_storage)
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Naturally_Ordered_Long_Collections&metric=alert_status)](https://sonarcloud.io/dashboard?id=Naturally_Ordered_Long_Collections)
