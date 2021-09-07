@@ -6,6 +6,11 @@ import org.jetbrains.annotations.NotNull;
 
 public interface Storable {
 
+  long creation();
+
+  long endOfLife();
+
+  long lastRead();
 
   void read(@NotNull InputStream inputStream);
 
