@@ -58,7 +58,89 @@
   <scm>
     <url>https://github.com/Maps-Messaging/dynamicStorage</url>
   </scm>
+  <build>
+    <plugins>
+      <!-- Allow JDKs greater than 1.8 to be used by maven -->
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-h</arg>
+            <arg>src/main/cpp/</arg>
+          </compilerArgs>
+          <encoding>UTF-8</encoding>
+          <source>13</source>
+          <target>13</target>
+        </configuration>
+        <groupId>org.apache.maven.plugins</groupId>
+        <version>3.8.1</version>
+      </plugin>
 
+      <!-- Setup code coverage by jacoco for our tests -->
+      <plugin>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <!-- test code, lets not track the testing -->
+            <exclude>**/*Test.*</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <!-- attached to Maven test phase -->
+          <execution>
+            <goals>
+              <goal>report</goal>
+            </goals>
+            <id>report</id>
+            <phase>test</phase>
+          </execution>
+        </executions>
+        <groupId>org.jacoco</groupId>
+        <version>0.8.7</version>
+      </plugin>
+
+      <!-- Setup the JUnit tests runner -->
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>@{argLine}</argLine>
+          <includes>
+            <include>**/*Test.java</include>
+            <include>**/*IT.java</include>
+          </includes>
+        </configuration>
+        <groupId>org.apache.maven.plugins</groupId>
+        <version>2.22.2</version>
+      </plugin>
+
+      <!-- JavaDoc -->
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <charset>UTF-8</charset>
+          <encoding>UTF-8</encoding>
+          <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
+          <reportOutputDirectory>${project.build.directory}/site/docs</reportOutputDirectory>
+          <show>public</show>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <id>attach-javadocs</id>
+          </execution>
+        </executions>
+        <groupId>org.apache.maven.plugins</groupId>
+        <version>3.3.0</version>
+      </plugin>
+    </plugins>
+  </build>
 
   <repositories>
     <!-- Repo for java stomp client used for testing Artifactory server -->
@@ -90,5 +172,62 @@
       <artifactId>Non_Block_Task_Scheduler</artifactId>
       <version>1.0.5</version>
     </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+    <dependency>
+      <artifactId>log4j-core</artifactId>
+      <groupId>org.apache.logging.log4j</groupId>
+      <version>2.14.1</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
+    <dependency>
+      <artifactId>log4j-api</artifactId>
+      <groupId>org.apache.logging.log4j</groupId>
+      <version>2.14.1</version>
+    </dependency>
+
+    <!-- Add annotations for not null -->
+    <dependency>
+      <artifactId>annotations</artifactId>
+      <groupId>org.jetbrains</groupId>
+      <version>22.0.0</version>
+    </dependency>
+
+    <dependency>
+      <artifactId>lombok</artifactId>
+      <groupId>org.projectlombok</groupId>
+      <version>1.18.20</version>
+    </dependency>
+    <dependency>
+      <artifactId>jsr305</artifactId>
+      <groupId>com.google.code.findbugs</groupId>
+      <version>3.0.2</version>
+    </dependency>
+
+    <!-- Junit5 -->
+    <dependency>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <scope>test</scope>
+      <version>5.7.2</version>
+    </dependency>
+
+    <!-- Java micro benchmarking -->
+    <dependency>
+      <artifactId>jmh-core</artifactId>
+      <groupId>org.openjdk.jmh</groupId>
+      <scope>test</scope>
+      <version>1.33</version>
+    </dependency>
+
+    <dependency>
+      <artifactId>jmh-generator-annprocess</artifactId>
+      <groupId>org.openjdk.jmh</groupId>
+      <scope>test</scope>
+      <version>1.33</version>
+    </dependency>
+
+
   </dependencies>
 </project>
