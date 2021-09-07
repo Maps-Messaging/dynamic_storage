@@ -16,7 +16,15 @@ Add the repository configuration into the pom.xml
     </repository>
 ```    
 
-
+Then include the dependency
+``` xml
+     <!-- Non Blocking Task Queue module -->
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>DynamicStorage</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+```   
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dynamic_storage&metric=alert_status)](https://sonarcloud.io/dashboard?id=dynamic_storage)
 
