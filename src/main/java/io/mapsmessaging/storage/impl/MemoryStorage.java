@@ -3,24 +3,44 @@ package io.mapsmessaging.storage.impl;
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
-import java.util.Collection;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public class MemoryStorage<T extends Storable> extends Storage<T> {
+public class MemoryStorage<T extends Storable> implements Storage<T> {
 
   private final Map<Long, T> memoryMap;
 
   public MemoryStorage(@NotNull Factory<T> factory) {
-    super(factory);
     memoryMap = new LinkedHashMap<>();
   }
 
   @Override
-  public int size() {
+  public void delete() throws IOException {
+    memoryMap.clear();
+  }
+
+  @Override
+  public void add(T object) throws IOException {
+    memoryMap.put(object.getKey(), object);
+  }
+
+  @Override
+  public void remove(long key) throws IOException {
+    memoryMap.remove(key);
+  }
+
+  @Override
+  public T get(long key) throws IOException {
+    return memoryMap.get(key);
+  }
+
+  @Override
+  public long size() throws IOException {
     return memoryMap.size();
   }
 
@@ -30,56 +50,25 @@ public class MemoryStorage<T extends Storable> extends Storage<T> {
   }
 
   @Override
-  public boolean containsKey(Object key) {
-    return memoryMap.containsKey(key);
+  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) {
+    Set<Long> itemsToRemove = memoryMap.keySet();
+    itemsToRemove.removeIf(listToKeep::contains);
+    if(!itemsToRemove.isEmpty()){
+      for(long key:itemsToRemove){
+        memoryMap.remove(key);
+      }
+    }
+
+    if(itemsToRemove.size() != listToKeep.size()){
+      Set<Long> actual = memoryMap.keySet();
+      listToKeep.removeIf(actual::contains);
+      return listToKeep;
+    }
+    return new ArrayList<>();
   }
 
   @Override
-  public boolean containsValue(Object value) {
-    return memoryMap.containsValue(value);
-  }
-
-  @Override
-  public T get(Object key) {
-    return memoryMap.get(key);
-  }
-
-  @Nullable
-  @Override
-  public T put(Long key, T value) {
-    return memoryMap.put(key, value);
-  }
-
-  @Override
-  public T remove(Object key) {
-    return memoryMap.remove(key);
-  }
-
-  @Override
-  public void putAll(@NotNull Map<? extends Long, ? extends T> m) {
-    memoryMap.putAll(m);
-  }
-
-  @Override
-  public void clear() {
+  public void close() throws IOException {
     memoryMap.clear();
-  }
-
-  @NotNull
-  @Override
-  public Set<Long> keySet() {
-    return memoryMap.keySet();
-  }
-
-  @NotNull
-  @Override
-  public Collection<T> values() {
-    return memoryMap.values();
-  }
-
-  @NotNull
-  @Override
-  public Set<Entry<Long, T>> entrySet() {
-    return memoryMap.entrySet();
   }
 }
