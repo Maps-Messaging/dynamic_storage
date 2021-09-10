@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
 
   private final Factory<T> objectFactory;
+  private final String fileName;
   private final Map<Long, Long> index;
   private final SeekableByteChannel readChannel;
   private final BufferObjectReader reader;
@@ -32,14 +33,15 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
   private final ByteBuffer writeBuffer;
   private final ByteBuffer readBuffer;
 
-  public SeekableChannelStorage(String name, Factory<T> factory) throws IOException {
+  public SeekableChannelStorage(String fileName, Factory<T> factory) throws IOException {
     objectFactory = factory;
-    File file = new File(name);
+    this.fileName = fileName;
+    File file = new File(fileName);
     long length = 0;
     if (file.exists()) {
       length = file.length();
     }
-    lengthBuffer = ByteBuffer.allocateDirect(1024 * 1024);
+    lengthBuffer = ByteBuffer.allocate(4);
     writeBuffer = ByteBuffer.allocateDirect(1024 * 1024);
     readBuffer = ByteBuffer.allocateDirect(1024 * 1024);
 
@@ -89,6 +91,8 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
   public void delete() throws IOException {
     readChannel.close();
     writeChannel.close();
+    File path = new File(fileName);
+    Files.delete(path.toPath());
   }
 
   @Override
