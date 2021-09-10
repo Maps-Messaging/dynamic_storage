@@ -13,5 +13,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-io.mapsmessaging.storage.impl.MemoryStorage
-io.mapsmessaging.storage.impl.SeekableChannelStorage
+io.mapsmessaging.storage.impl.mapDb.MapDBFactory
+io.mapsmessaging.storage.impl.memory.MemoryFactory
+io.mapsmessaging.storage.impl.seekableChannel.SeekableChannelFactory

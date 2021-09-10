@@ -1,4 +1,4 @@
-package io.mapsmessaging.storage.impl;
+package io.mapsmessaging.storage.impl.memory;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;

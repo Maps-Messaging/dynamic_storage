@@ -1,10 +1,10 @@
-package io.mapsmessaging.storage.impl;
+package io.mapsmessaging.storage.impl.seekableChannel;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.streams.BufferObjectReader;
-import io.mapsmessaging.storage.streams.BufferObjectWriter;
+import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
+import io.mapsmessaging.storage.impl.streams.BufferObjectWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;

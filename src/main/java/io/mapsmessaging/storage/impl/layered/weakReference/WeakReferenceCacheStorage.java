@@ -1,7 +1,8 @@
-package io.mapsmessaging.storage.impl;
+package io.mapsmessaging.storage.impl.layered.weakReference;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.impl.layered.BaseLayeredStorage;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.List;

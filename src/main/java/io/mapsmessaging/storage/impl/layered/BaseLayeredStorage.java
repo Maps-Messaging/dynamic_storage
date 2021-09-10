@@ -1,4 +1,4 @@
-package io.mapsmessaging.storage.impl;
+package io.mapsmessaging.storage.impl.layered;
 
 import io.mapsmessaging.storage.LayeredStorage;
 import io.mapsmessaging.storage.Storable;

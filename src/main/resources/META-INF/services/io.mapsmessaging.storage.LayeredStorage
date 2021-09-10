@@ -13,4 +13,4 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-io.mapsmessaging.storage.impl.WeakReferenceCacheStorage
+io.mapsmessaging.storage.impl.layered.weakReference.WeakReferenceCacheStorage
