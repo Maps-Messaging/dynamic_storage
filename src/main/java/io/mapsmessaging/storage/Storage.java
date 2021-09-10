@@ -21,6 +21,6 @@ public interface Storage<T extends Storable> extends Closeable {
   boolean isEmpty();
 
   // Returns a list of events NOT found but was in the to keep list
-  @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep);
+  @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException;
 
 }
