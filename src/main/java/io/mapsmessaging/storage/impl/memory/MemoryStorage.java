@@ -9,14 +9,25 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.jetbrains.annotations.NotNull;
 
 public class MemoryStorage<T extends Storable> implements Storage<T> {
 
+  private final static AtomicLong counter = new AtomicLong(0);
+
   private final Map<Long, T> memoryMap;
+  private final String name;
 
   public MemoryStorage(@NotNull Factory<T> factory) {
     memoryMap = new LinkedHashMap<>();
+    name = "memory"+counter.get();
+  }
+
+  @Override
+  public String getName() {
+    return name;
   }
 
   @Override
@@ -30,8 +41,8 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public void remove(long key) throws IOException {
-    memoryMap.remove(key);
+  public boolean remove(long key) throws IOException {
+    return memoryMap.remove(key) != null;
   }
 
   @Override

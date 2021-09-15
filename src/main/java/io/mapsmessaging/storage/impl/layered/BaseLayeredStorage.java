@@ -18,6 +18,11 @@ public abstract class BaseLayeredStorage<T extends Storable> implements LayeredS
   }
 
   @Override
+  public String getName(){
+    return baseStorage.getName();
+  }
+
+  @Override
   public void delete() throws IOException {
     baseStorage.delete();
   }
@@ -28,8 +33,8 @@ public abstract class BaseLayeredStorage<T extends Storable> implements LayeredS
   }
 
   @Override
-  public void remove(long key) throws IOException {
-    baseStorage.remove(key);
+  public boolean remove(long key) throws IOException {
+    return baseStorage.remove(key);
   }
 
   @Override

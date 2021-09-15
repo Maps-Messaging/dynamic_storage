@@ -19,6 +19,12 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
     super(actual);
     cache = new WeakHashMap<>();
   }
+
+  @Override
+  public String getName() {
+    return super.getName();
+  }
+
   @Override
   public void delete() throws IOException {
     super.delete();
@@ -32,9 +38,10 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
   }
 
   @Override
-  public void remove(long key) throws IOException {
+  public boolean remove(long key) throws IOException {
     super.remove(key);
     cache.remove(key);
+    return true;
   }
 
   @Override

@@ -8,11 +8,13 @@ import org.jetbrains.annotations.Nullable;
 
 public interface Storage<T extends Storable> extends Closeable {
 
+  String getName();
+
   void delete() throws IOException;
 
   void add(@NotNull T object) throws IOException;
 
-  void remove(long key) throws IOException;
+  boolean remove(long key) throws IOException;
 
   @Nullable T get(long key) throws IOException;
 

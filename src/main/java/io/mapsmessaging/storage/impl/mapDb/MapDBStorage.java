@@ -50,6 +50,11 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
+  public String getName() {
+    return fileName;
+  }
+
+  @Override
   public synchronized void delete() throws IOException {
     close();
     File tmp = new File(fileName);
@@ -80,8 +85,9 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public synchronized void remove(long key) throws IOException {
+  public synchronized boolean remove(long key) throws IOException {
     diskMap.remove(key);
+    return true;
   }
 
   @Override

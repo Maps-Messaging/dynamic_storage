@@ -53,6 +53,7 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
     reload(length);
   }
 
+
   @Override
   public boolean isEmpty() {
     return false;
@@ -88,6 +89,11 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
+  public String getName() {
+    return fileName;
+  }
+
+  @Override
   public void delete() throws IOException {
     readChannel.close();
     writeChannel.close();
@@ -108,7 +114,7 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public void remove(long key) throws IOException {
+  public boolean remove(long key) throws IOException {
     Long pos = index.remove(key);
     if (pos != null) {
       long eof = writeChannel.position();
@@ -123,7 +129,9 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
       writeChannel.write(lengthBuffer);
       writeChannel.position(eof);
       lengthBuffer.clear();
+      return true;
     }
+    return false;
   }
 
   @Override
