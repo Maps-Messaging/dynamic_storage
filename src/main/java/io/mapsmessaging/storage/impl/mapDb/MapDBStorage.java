@@ -6,7 +6,9 @@ import io.mapsmessaging.storage.Storage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.BTreeMap;
 import org.mapdb.DB;
@@ -46,8 +48,20 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
 
   @Override
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
-    return null;
-  }
+    Set<Long> itemsToRemove = diskMap.keySet();
+    itemsToRemove.removeIf(listToKeep::contains);
+    if(!itemsToRemove.isEmpty()){
+      for(long key:itemsToRemove){
+        diskMap.remove(key);
+      }
+    }
+
+    if(itemsToRemove.size() != listToKeep.size()){
+      Set<Long> actual = diskMap.keySet();
+      listToKeep.removeIf(actual::contains);
+      return listToKeep;
+    }
+    return new ArrayList<>();  }
 
   @Override
   public String getName() {

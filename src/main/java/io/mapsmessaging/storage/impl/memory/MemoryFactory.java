@@ -3,7 +3,6 @@ package io.mapsmessaging.storage.impl.memory;
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.StorageFactory;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,9 +10,10 @@ import java.util.Map;
 
 public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
 
-  public MemoryFactory(){}
+  public MemoryFactory() {
+  }
 
-  protected MemoryFactory (Map<String, String> properties, Factory<T> factory){
+  protected MemoryFactory(Map<String, String> properties, Factory<T> factory) {
     super(properties, factory);
   }
 
@@ -32,8 +32,4 @@ public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
     return new ArrayList<>();
   }
 
-  @Override
-  public StorageFactory<T> create(Map<String, String> properties, Factory<T> factory) {
-    return new MemoryFactory<>(properties, factory);
-  }
 }

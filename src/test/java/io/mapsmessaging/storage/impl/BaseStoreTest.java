@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -115,6 +116,7 @@ public abstract class BaseStoreTest {
   }
 
 
+  @ToString
   public static final class MappedData implements Storable {
     @Getter @Setter long key;
     @Getter @Setter Map<String, Object> map;

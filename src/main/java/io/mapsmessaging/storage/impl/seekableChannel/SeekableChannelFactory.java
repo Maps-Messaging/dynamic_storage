@@ -3,7 +3,6 @@ package io.mapsmessaging.storage.impl.seekableChannel;
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.StorageFactory;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,9 +32,5 @@ public class SeekableChannelFactory<T extends Storable> extends BaseStorageFacto
     return new ArrayList<>();
   }
 
-  @Override
-  public StorageFactory<T> create(Map<String, String> properties, Factory<T> factory) {
-    return new SeekableChannelFactory<>(properties, factory);
-  }
 }
 

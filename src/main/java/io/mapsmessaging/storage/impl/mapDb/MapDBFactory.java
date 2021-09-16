@@ -33,8 +33,4 @@ public class MapDBFactory<T extends Storable> extends BaseStorageFactory<T> {
     return new ArrayList<>();
   }
 
-  @Override
-  public StorageFactory<T> create(Map<String, String> properties, Factory<T> factory) {
-    return new MapDBFactory<>(properties, factory);
-  }
 }
