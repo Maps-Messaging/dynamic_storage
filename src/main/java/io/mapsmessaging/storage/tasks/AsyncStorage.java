@@ -26,7 +26,12 @@ public class AsyncStorage<T extends Storable> implements Closeable {
 
   @Override
   public void close() throws IOException {
-    close(null);
+    Future<Boolean> future = close(null);
+    try {
+      future.get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new IOException(e);
+    }
   }
 
   public final Future<Boolean> close(Completion<Boolean> completion) throws IOException {
