@@ -3,8 +3,8 @@ package io.mapsmessaging.storage.impl.seekableChannel;
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
-import io.mapsmessaging.storage.impl.streams.BufferObjectWriter;
+import io.mapsmessaging.storage.impl.BufferObjectReader;
+import io.mapsmessaging.storage.impl.BufferObjectWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -56,7 +56,7 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
 
   @Override
   public boolean isEmpty() {
-    return false;
+    return index.isEmpty();
   }
 
   @Override
@@ -124,7 +124,7 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
       int len = lengthBuffer.getInt(0);
       len = len * -1;
       lengthBuffer.putInt(0, len);
-      writeChannel.position(pos - 4);
+      writeChannel.position(pos);
       lengthBuffer.flip();
       writeChannel.write(lengthBuffer);
       writeChannel.position(eof);

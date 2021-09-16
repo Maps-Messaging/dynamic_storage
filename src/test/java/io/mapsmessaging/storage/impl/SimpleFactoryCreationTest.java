@@ -1,10 +1,9 @@
-package io.mapsmessaging.storage.impl.streams;
+package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorageFactory;
 import io.mapsmessaging.storage.StorageFactoryFactory;
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;

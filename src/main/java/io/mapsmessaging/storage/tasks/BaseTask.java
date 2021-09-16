@@ -20,9 +20,21 @@ public abstract class BaseTask<T extends Storable, V> implements Callable<V> {
 
   @Override
   public V call() throws Exception {
-    V result = execute();
+    V result = null;
+    Exception exception = null;
+    try {
+      result = execute();
+    } catch (Exception e) {
+      exception = e;
+    }
     if(completion != null){
-      completion.complete(result);
+      if(result != null) {
+        completion.onCompletion(result);
+      }
+      if(exception != null){
+        completion.onException(exception);
+        throw exception;
+      }
     }
     return result;
   }

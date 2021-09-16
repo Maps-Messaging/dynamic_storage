@@ -1,4 +1,4 @@
-package io.mapsmessaging.storage.impl.streams;
+package io.mapsmessaging.storage.impl;
 
 import java.io.DataInput;
 import java.io.IOException;
