@@ -25,7 +25,11 @@ public class MapDBFactory<T extends Storable> extends BaseStorageFactory<T> {
 
   @Override
   public Storage<T> create(String name) {
-    return new MapDBStorage<>(properties.get("basePath"), name, factory);
+    boolean sync = false;
+    if(properties.containsKey("Sync")){
+      sync = Boolean.parseBoolean(properties.get("Sync"));
+    }
+    return new MapDBStorage<>(properties.get("basePath"), name, factory, sync);
   }
 
   @Override

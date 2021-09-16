@@ -24,8 +24,9 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
   private final BTreeMap<Long, T> diskMap;
   private final DB dataStore;
   private final String fileName;
+  private final boolean sync;
 
-  public MapDBStorage(String fileName, String name, Factory<T> factory) {
+  public MapDBStorage(String fileName, String name, Factory<T> factory, boolean sync) {
     this.fileName = fileName;
     this.factory = factory;
     dataStore = DBMaker.fileDB(fileName)
@@ -38,7 +39,7 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
         .treeMap(name, Serializer.LONG, new MapDBSerializer<>(factory))
         .createOrOpen();
     isClosed = false;
-
+    this.sync = sync;
   }
 
   @Override
@@ -85,8 +86,11 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public synchronized void add(T obj) throws IOException {
+  public synchronized void add(@NotNull T obj) throws IOException {
     diskMap.put(obj.getKey(), obj);
+    if(sync){
+      dataStore.commit();
+    }
   }
 
   @Override
@@ -101,6 +105,9 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
   @Override
   public synchronized boolean remove(long key) throws IOException {
     diskMap.remove(key);
+    if(sync){
+      dataStore.commit();
+    }
     return true;
   }
 

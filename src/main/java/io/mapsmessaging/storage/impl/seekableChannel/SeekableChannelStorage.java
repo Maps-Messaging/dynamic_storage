@@ -33,7 +33,7 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
   private final ByteBuffer writeBuffer;
   private final ByteBuffer readBuffer;
 
-  public SeekableChannelStorage(String fileName, Factory<T> factory) throws IOException {
+  public SeekableChannelStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
     objectFactory = factory;
     this.fileName = fileName;
     File file = new File(fileName);
@@ -45,7 +45,12 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
     writeBuffer = ByteBuffer.allocateDirect(1024 * 1024);
     readBuffer = ByteBuffer.allocateDirect(1024 * 1024);
 
-    writeChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+    if(sync) {
+      writeChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.DSYNC);
+    }
+    else{
+      writeChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+    }
     readChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.READ);
     reader = new BufferObjectReader(readBuffer);
     writer = new BufferObjectWriter(writeBuffer);
@@ -102,7 +107,7 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public void add(T obj) throws IOException {
+  public void add(@NotNull T obj) throws IOException {
     index.put(obj.getKey(), writeChannel.position());
     writeBuffer.clear();
     writeBuffer.position(4); // Skip the first 4 bytes so we can set the full length of the buffer

@@ -36,7 +36,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public void add(T object) throws IOException {
+  public void add(@NotNull T object) throws IOException {
     memoryMap.put(object.getKey(), object);
   }
 

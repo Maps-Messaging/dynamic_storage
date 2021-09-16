@@ -24,8 +24,9 @@ public class FileStorage <T extends Storable> implements Storage<T> {
   private final RandomAccessFileObjectReader reader;
   private final String fileName;
   private final Factory<T> factory;
+  private final boolean sync;
 
-  public FileStorage(String fileName, Factory<T> factory) throws IOException {
+  public FileStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
     this.fileName = fileName;
     this.factory = factory;
     index = new LinkedHashMap<>();
@@ -37,6 +38,7 @@ public class FileStorage <T extends Storable> implements Storage<T> {
       reload();
       randomAccessWriteFile.seek(randomAccessReadFile.getFilePointer());
     }
+    this.sync = sync;
   }
 
   private void reload() throws IOException {
@@ -70,11 +72,14 @@ public class FileStorage <T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public void add(T entry) throws IOException {
+  public void add(@NotNull T entry) throws IOException {
     long pos = randomAccessWriteFile.getFilePointer();
     randomAccessWriteFile.seek(pos);
     entry.write(writer);
     index.put(entry.getKey(),  pos);
+    if(sync) {
+      randomAccessReadFile.getChannel().force(false);
+    }
   }
 
   @Override
@@ -102,6 +107,9 @@ public class FileStorage <T extends Storable> implements Storage<T> {
     if(pos != null) {
       randomAccessReadFile.seek(pos);
       randomAccessReadFile.writeLong(-1);
+      if(sync) {
+        randomAccessReadFile.getChannel().force(false);
+      }
     }
     return pos != null;
   }

@@ -24,7 +24,11 @@ public class SeekableChannelFactory<T extends Storable> extends BaseStorageFacto
 
   @Override
   public Storage<T> create(String name) throws IOException {
-    return new SeekableChannelStorage<>(name, factory);
+    boolean sync = false;
+    if(properties.containsKey("Sync")){
+      sync = Boolean.parseBoolean(properties.get("Sync"));
+    }
+    return new SeekableChannelStorage<>(name, factory, sync);
   }
 
   @Override
