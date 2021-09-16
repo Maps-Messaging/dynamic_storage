@@ -16,3 +16,4 @@
 io.mapsmessaging.storage.impl.mapDb.MapDBFactory
 io.mapsmessaging.storage.impl.memory.MemoryFactory
 io.mapsmessaging.storage.impl.seekableChannel.SeekableChannelFactory
+io.mapsmessaging.storage.impl.basic.FileFactory

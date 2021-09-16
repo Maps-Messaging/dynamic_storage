@@ -63,27 +63,33 @@ public abstract class BaseStoreTest {
 
   @Test
   void messageStream() throws IOException {
-    Storage<MappedData> storage = createStore();
-    ThreadStateContext context = new ThreadStateContext();
-    context.add("domain", "ResourceAccessKey");
-    ThreadLocalContext.set(context);
-    // Remove any before we start
+    Storage<MappedData> storage = null;
+    try {
+      storage = createStore();
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
 
-    for (int x = 0; x < 10; x++) {
-      MappedData message = createMessageBuilder(x);
-      validateMessage(message, x);
-      storage.add(message);
-    }
-    Assertions.assertEquals(10, storage.size());
+      for (int x = 0; x < 10; x++) {
+        MappedData message = createMessageBuilder(x);
+        validateMessage(message, x);
+        storage.add(message);
+      }
+      Assertions.assertEquals(10, storage.size());
 
-    for (int x = 0; x < 10; x++) {
-      MappedData message = storage.get(x);
-      validateMessage(message, x);
-      storage.remove(x);
-      System.err.println(message.toString());
+      for (int x = 0; x < 10; x++) {
+        MappedData message = storage.get(x);
+        validateMessage(message, x);
+        storage.remove(x);
+        System.err.println(message.toString());
+      }
+      Assertions.assertTrue(storage.isEmpty());
+    } finally {
+      if(storage != null) {
+        storage.delete();
+      }
     }
-    Assertions.assertTrue(storage.isEmpty());
-    storage.delete();
   }
 
   private MappedData createMessageBuilder(long id) {
