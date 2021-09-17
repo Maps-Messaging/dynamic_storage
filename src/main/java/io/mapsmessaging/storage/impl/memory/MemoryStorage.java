@@ -34,7 +34,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class MemoryStorage<T extends Storable> implements Storage<T> {
 
-  private final static AtomicLong counter = new AtomicLong(0);
+  private static final AtomicLong counter = new AtomicLong(0);
 
   private final Map<Long, T> memoryMap;
   private final String name;
