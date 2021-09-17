@@ -14,3 +14,4 @@
 #    limitations under the License.
 #
 io.mapsmessaging.storage.impl.layered.weakReference.WeakReferenceCacheStorage
+io.mapsmessaging.storage.impl.layered.jcs.JCSCachedStorage

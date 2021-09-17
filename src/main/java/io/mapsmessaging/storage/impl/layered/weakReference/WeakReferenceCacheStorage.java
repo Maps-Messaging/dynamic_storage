@@ -4,7 +4,6 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.layered.BaseLayeredStorage;
 import java.io.IOException;
-import java.lang.ref.SoftReference;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -13,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredStorage<T> {
 
-  private final Map<Long, Cache<T>> cache;
+  private final Map<Long, T> cache;
 
   public WeakReferenceCacheStorage(Storage<T> actual){
     super(actual);
@@ -33,7 +32,7 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
 
   @Override
   public void add(@NotNull T object) throws IOException {
-    cache.put(object.getKey(), new Cache<>(object));
+    cache.put(object.getKey(), object);
     super.add(object);
   }
 
@@ -46,17 +45,13 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
 
   @Override
   public @Nullable T get(long key) throws IOException {
-    T obj;
-    Cache<T> cached = cache.get(key);
-    if(cached != null){
-      obj = cached.objectSoftReference.get();
-      if(obj != null){
-        return obj;
-      }
+    T obj =  cache.get(key);
+    if(obj != null){
+      return obj;
     }
     obj = super.get(key);
-    if(obj != null && cached != null){
-      cached.update(obj);
+    if(obj != null){
+      cache.put(key, obj);
     }
     return obj;
   }
@@ -71,17 +66,5 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
   public void close() throws IOException {
     cache.clear();
     super.close();
-  }
-
-  private static final class Cache<T> {
-    private SoftReference<T> objectSoftReference;
-
-    Cache(T obj) {
-      update(obj);
-    }
-
-    public void update(T obj) {
-      objectSoftReference = new SoftReference<>(obj);
-    }
   }
 }

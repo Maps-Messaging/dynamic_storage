@@ -225,6 +225,12 @@
       <version>1.5.30</version>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-jcs -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-jcs3-core</artifactId>
+      <version>3.0</version>
+    </dependency>
 
     <!-- Junit5 -->
     <dependency>
