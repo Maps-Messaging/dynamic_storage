@@ -27,7 +27,9 @@ import io.mapsmessaging.storage.tasks.Completion;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -151,7 +153,7 @@ public class SimpleAsyncTest extends BaseTest {
       }
       Assertions.assertTrue(async.isEmpty().get());
     } finally {
-      async.delete(new Completion<Boolean>() {
+      async.delete(new Completion<>() {
         @Override
         public void onCompletion(Boolean result) {
           Assertions.assertTrue(result);
@@ -167,7 +169,51 @@ public class SimpleAsyncTest extends BaseTest {
         Thread.sleep(1);
       }
     }
+  }
 
+  @Test
+  void basicKeepOnlyTest() throws IOException, ExecutionException, InterruptedException {
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("Sync", "true");
+    properties.put("basePath", "./test.db");
+    Storage<MappedData> store = StorageFactoryFactory.getInstance().create("MapDB", properties, getFactory()).create("Test");
+    AsyncStorage<MappedData> async = new AsyncStorage<>(store);
+    try {
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      for (int x = 0; x < 1000; x++) {
+        MappedData message = createMessageBuilder(x);
+        validateMessage(message, x);
+        Assertions.assertNotNull(async.add(message, null).get());
+      }
+      Assertions.assertEquals(1000, async.size().get());
+
+      List<Long> keepList = new ArrayList<>();
+      for(long x=0;x<1000;x=x+2){
+        keepList.add(x);
+      }
+      List<Long> result = async.keepOnly(keepList, null).get();
+      Assertions.assertEquals(500, async.size().get());
+
+
+      for (int x = 0; x < 1000; x++) {
+        MappedData message = async.get(x, null).get();
+        if(x%2 == 0){
+          validateMessage(message, x);
+          async.remove(x, null).get();
+          Assertions.assertNotNull(message);
+        }
+        else{
+          Assertions.assertNull(message);
+        }
+      }
+      Assertions.assertTrue(async.isEmpty().get());
+    } finally {
+      async.delete(null).get();
+    }
   }
 
 }
