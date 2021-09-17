@@ -18,11 +18,11 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.seekableChannel;
+package io.mapsmessaging.storage.impl.seekable;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.impl.BaseIndexStorage;
 import io.mapsmessaging.storage.impl.BufferObjectReader;
 import io.mapsmessaging.storage.impl.BufferObjectWriter;
 import java.io.File;
@@ -32,17 +32,14 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
-public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
+public class SeekableChannelStorage<T extends Storable> extends BaseIndexStorage<T> {
 
   private final Factory<T> objectFactory;
   private final String fileName;
-  private final Map<Long, Long> index;
   private final SeekableByteChannel readChannel;
   private final BufferObjectReader reader;
 
@@ -73,7 +70,6 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
     readChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.READ);
     reader = new BufferObjectReader(readBuffer);
     writer = new BufferObjectWriter(writeBuffer);
-    index = new LinkedHashMap<>();
     reload(length);
   }
 

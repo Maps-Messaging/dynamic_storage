@@ -18,38 +18,38 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.mapDb;
+package io.mapsmessaging.storage.impl.seekable;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class MapDBFactory<T extends Storable> extends BaseStorageFactory<T> {
+public class SeekableChannelFactory<T extends Storable> extends BaseStorageFactory<T> {
 
-  public MapDBFactory() {
+  public SeekableChannelFactory() {
   }
 
-  protected MapDBFactory(Map<String, String> properties, Factory<T> factory) {
+  protected SeekableChannelFactory(Map<String, String> properties, Factory<T> factory) {
     super(properties, factory);
   }
 
-
   @Override
   public String getName() {
-    return "MapDB";
+    return "SeekableChannel";
   }
 
   @Override
-  public Storage<T> create(String name) {
+  public Storage<T> create(String name) throws IOException {
     boolean sync = false;
     if (properties.containsKey("Sync")) {
       sync = Boolean.parseBoolean(properties.get("Sync"));
     }
-    return new MapDBStorage<>(properties.get("basePath"), name, factory, sync);
+    return new SeekableChannelStorage<>(name, factory, sync);
   }
 
   @Override
@@ -58,3 +58,4 @@ public class MapDBFactory<T extends Storable> extends BaseStorageFactory<T> {
   }
 
 }
+

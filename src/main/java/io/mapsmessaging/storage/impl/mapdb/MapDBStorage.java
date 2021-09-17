@@ -18,7 +18,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.mapDb;
+package io.mapsmessaging.storage.impl.mapdb;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
@@ -37,8 +37,6 @@ import org.mapdb.Serializer;
 
 public class MapDBStorage<T extends Storable> implements Storage<T> {
 
-
-  private final Factory<T> factory;
   private final BTreeMap<Long, T> diskMap;
   private final DB dataStore;
   private final String fileName;
@@ -47,7 +45,6 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
 
   public MapDBStorage(String fileName, String name, Factory<T> factory, boolean sync) {
     this.fileName = fileName;
-    this.factory = factory;
     dataStore = DBMaker.fileDB(fileName)
         .fileMmapEnable()
         .closeOnJvmShutdown()

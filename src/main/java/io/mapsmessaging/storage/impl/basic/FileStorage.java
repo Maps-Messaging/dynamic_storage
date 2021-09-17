@@ -22,23 +22,17 @@ package io.mapsmessaging.storage.impl.basic;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.impl.BaseIndexStorage;
 import io.mapsmessaging.storage.impl.RandomAccessFileObjectReader;
 import io.mapsmessaging.storage.impl.RandomAccessFileObjectWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
-public class FileStorage<T extends Storable> implements Storage<T> {
+public class FileStorage<T extends Storable> extends BaseIndexStorage<T> {
 
-  private final Map<Long, Long> index;
   private final RandomAccessFile randomAccessWriteFile;
   private final RandomAccessFile randomAccessReadFile;
   private final RandomAccessFileObjectWriter writer;
@@ -48,9 +42,9 @@ public class FileStorage<T extends Storable> implements Storage<T> {
   private final boolean sync;
 
   public FileStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
+
     this.fileName = fileName;
     this.factory = factory;
-    index = new LinkedHashMap<>();
     randomAccessWriteFile = new RandomAccessFile(fileName, "rw");
     randomAccessReadFile = new RandomAccessFile(fileName, "rw");
     writer = new RandomAccessFileObjectWriter(randomAccessWriteFile);
@@ -118,11 +112,6 @@ public class FileStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public long size() throws IOException {
-    return index.size();
-  }
-
-  @Override
   public boolean remove(long key) throws IOException {
     Long pos = index.remove(key);
     if (pos != null) {
@@ -134,28 +123,4 @@ public class FileStorage<T extends Storable> implements Storage<T> {
     }
     return pos != null;
   }
-
-  @Override
-  public boolean isEmpty() {
-    return index.isEmpty();
-  }
-
-  @Override
-  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
-    Set<Long> itemsToRemove = index.keySet();
-    itemsToRemove.removeIf(listToKeep::contains);
-    if (!itemsToRemove.isEmpty()) {
-      for (long key : itemsToRemove) {
-        remove(key);
-      }
-    }
-
-    if (itemsToRemove.size() != listToKeep.size()) {
-      Set<Long> actual = index.keySet();
-      listToKeep.removeIf(actual::contains);
-      return listToKeep;
-    }
-    return new ArrayList<>();
-  }
-
 }

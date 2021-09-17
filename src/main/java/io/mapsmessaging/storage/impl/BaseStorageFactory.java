@@ -33,7 +33,7 @@ public abstract class BaseStorageFactory<T extends Storable> implements StorageF
   public BaseStorageFactory() {
   }
 
-  protected BaseStorageFactory(Map<String, String> properties, Factory<T> factory) {
+  public BaseStorageFactory(Map<String, String> properties, Factory<T> factory) {
     this.properties = properties;
     this.factory = factory;
   }
