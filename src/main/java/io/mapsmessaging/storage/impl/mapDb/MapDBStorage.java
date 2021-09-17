@@ -18,13 +18,12 @@ import org.mapdb.Serializer;
 public class MapDBStorage<T extends Storable> implements Storage<T> {
 
 
-  private volatile boolean isClosed;
-
   private final Factory<T> factory;
   private final BTreeMap<Long, T> diskMap;
   private final DB dataStore;
   private final String fileName;
   private final boolean sync;
+  private volatile boolean isClosed;
 
   public MapDBStorage(String fileName, String name, Factory<T> factory, boolean sync) {
     this.fileName = fileName;
@@ -51,18 +50,19 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
     Set<Long> itemsToRemove = diskMap.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
-    if(!itemsToRemove.isEmpty()){
-      for(long key:itemsToRemove){
+    if (!itemsToRemove.isEmpty()) {
+      for (long key : itemsToRemove) {
         diskMap.remove(key);
       }
     }
 
-    if(itemsToRemove.size() != listToKeep.size()){
+    if (itemsToRemove.size() != listToKeep.size()) {
       Set<Long> actual = diskMap.keySet();
       listToKeep.removeIf(actual::contains);
       return listToKeep;
     }
-    return new ArrayList<>();  }
+    return new ArrayList<>();
+  }
 
   @Override
   public String getName() {
@@ -88,7 +88,7 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
   @Override
   public synchronized void add(@NotNull T obj) throws IOException {
     diskMap.put(obj.getKey(), obj);
-    if(sync){
+    if (sync) {
       dataStore.commit();
     }
   }
@@ -105,7 +105,7 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
   @Override
   public synchronized boolean remove(long key) throws IOException {
     diskMap.remove(key);
-    if(sync){
+    if (sync) {
       dataStore.commit();
     }
     return true;

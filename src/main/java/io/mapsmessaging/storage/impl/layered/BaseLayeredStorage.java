@@ -13,12 +13,12 @@ public abstract class BaseLayeredStorage<T extends Storable> implements LayeredS
 
   protected final Storage<T> baseStorage;
 
-  protected BaseLayeredStorage(Storage<T> baseStorage){
+  protected BaseLayeredStorage(Storage<T> baseStorage) {
     this.baseStorage = baseStorage;
   }
 
   @Override
-  public String getName(){
+  public String getName() {
     return baseStorage.getName();
   }
 

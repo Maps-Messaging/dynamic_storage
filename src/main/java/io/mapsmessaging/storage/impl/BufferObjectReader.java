@@ -49,7 +49,7 @@ public class BufferObjectReader extends ObjectReader {
   }
 
   @Override
-  public byte[] readFromStream(int length){
+  public byte[] readFromStream(int length) {
     byte[] result = null;
     if (length > -1) {
       result = new byte[length];

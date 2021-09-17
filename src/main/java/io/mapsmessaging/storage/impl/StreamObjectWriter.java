@@ -19,8 +19,8 @@ public class StreamObjectWriter extends ObjectWriter {
 
   @Override
   public void write(char val) throws IOException {
-    outputStream.write((val>>8)&0xff);
-    outputStream.write(val&0xff);
+    outputStream.write((val >> 8) & 0xff);
+    outputStream.write(val & 0xff);
   }
   // </editor-fold>
 

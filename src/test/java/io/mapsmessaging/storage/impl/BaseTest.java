@@ -22,6 +22,15 @@ public class BaseTest {
   private static final byte DOUBLE = 7;
   private static final byte STRING = 8;
 
+  private static final byte CHAR_ARRAY=11;
+  private static final byte BYTE_ARRAY=12;
+  private static final byte SHORT_ARRAY=13;
+  private static final byte INT_ARRAY=14;
+  private static final byte LONG_ARRAY=15;
+  private static final byte FLOAT_ARRAY=16;
+  private static final byte DOUBLE_ARRAY=17;
+  private static final byte STRING_ARRAY=18;
+
   private static final Map<String, Object> dataMapValues;
   static {
     dataMapValues = new LinkedHashMap<>();
@@ -51,6 +60,15 @@ public class BaseTest {
     dataMapValues.put("char", 'c');
     dataMapValues.put("japanese", '大');
     dataMapValues.put("high_char", Character.MAX_VALUE);
+
+    dataMapValues.put("byte_array", new byte[]{0x4, 0x66, 0xe});
+    dataMapValues.put("char_array", new char[]{'f', 'f', '3','5','7'});
+    dataMapValues.put("short_array", new short[]{32,321,543,543});
+    dataMapValues.put("int_array", new int[]{423289048, 423782787, 342131212, 42343423});
+    dataMapValues.put("long_array", new long[]{4232890472382789L, 42378278907L, 3421312312L, 423423423L});
+    dataMapValues.put("float_array", new float[]{21.45f, 543.67f, 76.5f});
+    dataMapValues.put("double_array", new double[]{12.4, 12234.553443, 231.2332});
+    dataMapValues.put("string_array", new String[]{"String1", "string 2", "String 3"});
   }
 
   protected BaseStoreTest.MappedData createMessageBuilder(long id) {
@@ -65,8 +83,6 @@ public class BaseTest {
     // Do the simple equivalence tests
     Assertions.assertEquals(expectedId, message.getKey(), "Identifier validation");
     validateDataMap(message.getMap());
-
-
   }
 
   protected void validateDataMap(Map<String, Object> dataMap) {
@@ -79,7 +95,33 @@ public class BaseTest {
   protected void validateEntry(Map<String, Object> dataMap, String key, Object value) {
     Object entry = dataMap.get(key);
     Assertions.assertNotNull(entry, "Entry test for " + key + " should not be empty");
-    Assertions.assertEquals(value, entry);
+    if(value instanceof byte[]) {
+      Assertions.assertArrayEquals((byte[])entry, (byte[])value);
+    }
+    else if(value instanceof char[]) {
+      Assertions.assertArrayEquals((char[])entry, (char[])value);
+    }
+    else if(value instanceof short[]) {
+      Assertions.assertArrayEquals((short[])entry, (short[])value);
+    }
+    else if(value instanceof int[]) {
+      Assertions.assertArrayEquals((int[])entry, (int[])value);
+    }
+    else if(value instanceof long[]) {
+      Assertions.assertArrayEquals((long[])entry, (long[])value);
+    }
+    else if(value instanceof float[]) {
+      Assertions.assertArrayEquals((float[])entry, (float[])value);
+    }
+    else if(value instanceof double[]) {
+      Assertions.assertArrayEquals((double[])entry, (double[])value);
+    }
+    else if(value instanceof String[]) {
+      Assertions.assertArrayEquals((String[])entry, (String[])value);
+    }
+    else {
+      Assertions.assertEquals(value, entry);
+    }
   }
 
 
@@ -102,7 +144,6 @@ public class BaseTest {
           case CHAR:
             map.put(key, objectReader.readChar());
             break;
-
           case BYTE:
             map.put(key, objectReader.readByte());
             break;
@@ -112,21 +153,41 @@ public class BaseTest {
           case INT:
             map.put(key, objectReader.readInt());
             break;
-
           case LONG:
             map.put(key, objectReader.readLong());
             break;
-
           case FLOAT:
             map.put(key, objectReader.readFloat());
             break;
-
           case DOUBLE:
             map.put(key, objectReader.readDouble());
             break;
-
           case STRING:
             map.put(key, objectReader.readString());
+            break;
+          case CHAR_ARRAY:
+            map.put(key, objectReader.readCharArray());
+            break;
+          case BYTE_ARRAY:
+            map.put(key, objectReader.readByteArray());
+            break;
+          case SHORT_ARRAY:
+            map.put(key, objectReader.readShortArray());
+            break;
+          case INT_ARRAY:
+            map.put(key, objectReader.readIntArray());
+            break;
+          case LONG_ARRAY:
+            map.put(key, objectReader.readLongArray());
+            break;
+          case FLOAT_ARRAY:
+            map.put(key, objectReader.readFloatArray());
+            break;
+          case DOUBLE_ARRAY:
+            map.put(key, objectReader.readDoubleArray());
+            break;
+          case STRING_ARRAY:
+            map.put(key, objectReader.readStringArray());
             break;
         }
       }
@@ -170,6 +231,38 @@ public class BaseTest {
         else if(obj instanceof String){
           objectWriter.write(STRING);
           objectWriter.write((String)obj);
+        }
+        else if(obj instanceof char[]){
+          objectWriter.write(CHAR_ARRAY);
+          objectWriter.write((char[])obj);
+        }
+        else if(obj instanceof byte[]){
+          objectWriter.write(BYTE_ARRAY);
+          objectWriter.write((byte[])obj);
+        }
+        else if(obj instanceof short[]){
+          objectWriter.write(SHORT_ARRAY);
+          objectWriter.write((short[])obj);
+        }
+        else if(obj instanceof int[]){
+          objectWriter.write(INT_ARRAY);
+          objectWriter.write((int[])obj);
+        }
+        else if(obj instanceof long[]){
+          objectWriter.write(LONG_ARRAY);
+          objectWriter.write((long[])obj);
+        }
+        else if(obj instanceof float[]){
+          objectWriter.write(FLOAT_ARRAY);
+          objectWriter.write((float[])obj);
+        }
+        else if(obj instanceof double[]){
+          objectWriter.write(DOUBLE_ARRAY);
+          objectWriter.write((double[])obj);
+        }
+        else if(obj instanceof String[]){
+          objectWriter.write(STRING_ARRAY);
+          objectWriter.write((String[])obj);
         }
       }
     }

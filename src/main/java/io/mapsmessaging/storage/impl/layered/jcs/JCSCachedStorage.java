@@ -17,7 +17,7 @@ public class JCSCachedStorage<T extends Storable> extends BaseLayeredStorage<T> 
 
   public JCSCachedStorage(Storage<T> baseStorage) {
     super(baseStorage);
-    cache = JCS.getInstance( baseStorage.getName()+"_cache" );
+    cache = JCS.getInstance(baseStorage.getName() + "_cache");
   }
 
 
@@ -56,7 +56,7 @@ public class JCSCachedStorage<T extends Storable> extends BaseLayeredStorage<T> 
   @Override
   public @Nullable T get(long key) throws IOException {
     T obj = cache.get(key);
-    if(obj == null) {
+    if (obj == null) {
       obj = super.get(key);
       if (obj != null) {
         cache.put(key, obj);

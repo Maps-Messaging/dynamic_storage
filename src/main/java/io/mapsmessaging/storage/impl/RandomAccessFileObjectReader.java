@@ -3,7 +3,7 @@ package io.mapsmessaging.storage.impl;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class RandomAccessFileObjectReader  extends ObjectReader {
+public class RandomAccessFileObjectReader extends ObjectReader {
 
   private final RandomAccessFile randomAccessFile;
 

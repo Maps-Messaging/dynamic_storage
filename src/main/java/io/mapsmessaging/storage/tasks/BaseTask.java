@@ -2,16 +2,18 @@ package io.mapsmessaging.storage.tasks;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
+import java.util.concurrent.Callable;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.Callable;
-
 public abstract class BaseTask<T extends Storable, V> implements Callable<V> {
-  protected final @Getter Storage<T> storage;
-  protected final @Getter Completion<V> completion;
 
-  protected BaseTask(@NotNull Storage<T> storage, Completion<V> completion){
+  protected final @Getter
+  Storage<T> storage;
+  protected final @Getter
+  Completion<V> completion;
+
+  protected BaseTask(@NotNull Storage<T> storage, Completion<V> completion) {
     this.storage = storage;
     this.completion = completion;
   }
@@ -27,11 +29,11 @@ public abstract class BaseTask<T extends Storable, V> implements Callable<V> {
     } catch (Exception e) {
       exception = e;
     }
-    if(completion != null){
-      if(result != null) {
+    if (completion != null) {
+      if (result != null) {
         completion.onCompletion(result);
       }
-      if(exception != null){
+      if (exception != null) {
         completion.onException(exception);
         throw exception;
       }

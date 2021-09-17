@@ -69,7 +69,7 @@ public abstract class ObjectReader {
     if (length > -1) {
       result = new int[length];
       for (int x = 0; x < length; x++) {
-        result[x] = readShort();
+        result[x] = readInt();
       }
     }
     return result;
@@ -81,7 +81,7 @@ public abstract class ObjectReader {
     if (length > -1) {
       result = new long[length];
       for (int x = 0; x < length; x++) {
-        result[x] = readShort();
+        result[x] = readLong();
       }
     }
     return result;

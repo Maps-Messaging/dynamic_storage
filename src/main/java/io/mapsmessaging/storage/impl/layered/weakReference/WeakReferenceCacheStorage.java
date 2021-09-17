@@ -14,7 +14,7 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
 
   private final Map<Long, T> cache;
 
-  public WeakReferenceCacheStorage(Storage<T> actual){
+  public WeakReferenceCacheStorage(Storage<T> actual) {
     super(actual);
     cache = new WeakHashMap<>();
   }
@@ -40,8 +40,8 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
 
   @Override
   public @Nullable T get(long key) throws IOException {
-    T obj =  cache.get(key);
-    if(obj == null) {
+    T obj = cache.get(key);
+    if (obj == null) {
       obj = super.get(key);
       if (obj != null) {
         cache.put(key, obj);

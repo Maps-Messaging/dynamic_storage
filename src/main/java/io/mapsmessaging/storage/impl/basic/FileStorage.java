@@ -16,7 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
-public class FileStorage <T extends Storable> implements Storage<T> {
+public class FileStorage<T extends Storable> implements Storage<T> {
+
   private final Map<Long, Long> index;
   private final RandomAccessFile randomAccessWriteFile;
   private final RandomAccessFile randomAccessReadFile;
@@ -47,7 +48,7 @@ public class FileStorage <T extends Storable> implements Storage<T> {
     while (pos != eof) {
       T entry = factory.create();
       entry.read(reader);
-      index.put(entry.getKey(),pos);
+      index.put(entry.getKey(), pos);
       pos = randomAccessReadFile.getFilePointer();
     }
   }
@@ -76,8 +77,8 @@ public class FileStorage <T extends Storable> implements Storage<T> {
     long pos = randomAccessWriteFile.getFilePointer();
     randomAccessWriteFile.seek(pos);
     entry.write(writer);
-    index.put(entry.getKey(),  pos);
-    if(sync) {
+    index.put(entry.getKey(), pos);
+    if (sync) {
       randomAccessReadFile.getChannel().force(false);
     }
   }
@@ -104,10 +105,10 @@ public class FileStorage <T extends Storable> implements Storage<T> {
   @Override
   public boolean remove(long key) throws IOException {
     Long pos = index.remove(key);
-    if(pos != null) {
+    if (pos != null) {
       randomAccessReadFile.seek(pos);
       randomAccessReadFile.writeLong(-1);
-      if(sync) {
+      if (sync) {
         randomAccessReadFile.getChannel().force(false);
       }
     }
@@ -123,13 +124,13 @@ public class FileStorage <T extends Storable> implements Storage<T> {
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
     Set<Long> itemsToRemove = index.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
-    if(!itemsToRemove.isEmpty()){
-      for(long key:itemsToRemove){
+    if (!itemsToRemove.isEmpty()) {
+      for (long key : itemsToRemove) {
         remove(key);
       }
     }
 
-    if(itemsToRemove.size() != listToKeep.size()){
+    if (itemsToRemove.size() != listToKeep.size()) {
       Set<Long> actual = index.keySet();
       listToKeep.removeIf(actual::contains);
       return listToKeep;

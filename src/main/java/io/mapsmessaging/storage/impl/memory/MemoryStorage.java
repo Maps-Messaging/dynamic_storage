@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.jetbrains.annotations.NotNull;
 
 public class MemoryStorage<T extends Storable> implements Storage<T> {
@@ -22,7 +21,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
 
   public MemoryStorage(@NotNull Factory<T> factory) {
     memoryMap = new LinkedHashMap<>();
-    name = "memory"+counter.get();
+    name = "memory" + counter.get();
   }
 
   @Override
@@ -64,13 +63,13 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) {
     Set<Long> itemsToRemove = memoryMap.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
-    if(!itemsToRemove.isEmpty()){
-      for(long key:itemsToRemove){
+    if (!itemsToRemove.isEmpty()) {
+      for (long key : itemsToRemove) {
         memoryMap.remove(key);
       }
     }
 
-    if(itemsToRemove.size() != listToKeep.size()){
+    if (itemsToRemove.size() != listToKeep.size()) {
       Set<Long> actual = memoryMap.keySet();
       listToKeep.removeIf(actual::contains);
       return listToKeep;

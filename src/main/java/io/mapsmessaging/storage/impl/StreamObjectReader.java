@@ -29,7 +29,7 @@ public class StreamObjectReader extends ObjectReader {
 
   protected byte[] readFromStream(int length) throws IOException {
     byte[] result = null;
-    if(length > -1) {
+    if (length > -1) {
       result = new byte[length];
       int read = 0;
       while (read < length) {

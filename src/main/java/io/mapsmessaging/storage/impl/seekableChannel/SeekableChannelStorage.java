@@ -45,10 +45,9 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
     writeBuffer = ByteBuffer.allocateDirect(1024 * 1024);
     readBuffer = ByteBuffer.allocateDirect(1024 * 1024);
 
-    if(sync) {
+    if (sync) {
       writeChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.DSYNC);
-    }
-    else{
+    } else {
       writeChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
     }
     readChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.READ);
@@ -68,13 +67,13 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
     Set<Long> itemsToRemove = index.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
-    if(!itemsToRemove.isEmpty()){
-      for(long key:itemsToRemove){
+    if (!itemsToRemove.isEmpty()) {
+      for (long key : itemsToRemove) {
         remove(key);
       }
     }
 
-    if(itemsToRemove.size() != listToKeep.size()){
+    if (itemsToRemove.size() != listToKeep.size()) {
       Set<Long> actual = index.keySet();
       listToKeep.removeIf(actual::contains);
       return listToKeep;
@@ -88,7 +87,7 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
       T obj = reloadMessage(pos);
       pos = readChannel.position();
       if (obj != null) {
-        index.put(obj.getKey(),pos);
+        index.put(obj.getKey(), pos);
       }
     }
   }
@@ -144,7 +143,7 @@ public class SeekableChannelStorage<T extends Storable> implements Storage<T> {
     T obj = null;
     if (key >= 0) {
       Long pos = index.get(key);
-      if(pos != null) {
+      if (pos != null) {
         obj = reloadMessage(pos);
       }
     }

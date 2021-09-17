@@ -11,9 +11,10 @@ import java.util.Map;
 
 public class SeekableChannelFactory<T extends Storable> extends BaseStorageFactory<T> {
 
-  public SeekableChannelFactory(){}
+  public SeekableChannelFactory() {
+  }
 
-  protected SeekableChannelFactory (Map<String, String> properties, Factory<T> factory){
+  protected SeekableChannelFactory(Map<String, String> properties, Factory<T> factory) {
     super(properties, factory);
   }
 
@@ -25,7 +26,7 @@ public class SeekableChannelFactory<T extends Storable> extends BaseStorageFacto
   @Override
   public Storage<T> create(String name) throws IOException {
     boolean sync = false;
-    if(properties.containsKey("Sync")){
+    if (properties.containsKey("Sync")) {
       sync = Boolean.parseBoolean(properties.get("Sync"));
     }
     return new SeekableChannelStorage<>(name, factory, sync);

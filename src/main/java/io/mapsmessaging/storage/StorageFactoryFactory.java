@@ -14,22 +14,27 @@ import org.jetbrains.annotations.Nullable;
 public class StorageFactoryFactory {
 
   private static final StorageFactoryFactory instance = new StorageFactoryFactory();
-  public static StorageFactoryFactory getInstance(){
+  private final ServiceLoader<StorageFactory> storageFactories;
+
+  private StorageFactoryFactory() {
+    storageFactories = ServiceLoader.load(StorageFactory.class);
+  }
+
+  public static StorageFactoryFactory getInstance() {
     return instance;
   }
 
-  private final ServiceLoader<StorageFactory> storageFactories;
-
-  public List<String> getKnown(){
+  public List<String> getKnown() {
     List<String> known = new ArrayList<>();
     storageFactories.forEach(storageFactory -> known.add(storageFactory.getName()));
     return known;
   }
 
   @SneakyThrows
-  @Nullable public <T extends Storable>  StorageFactory<T> create(@NotNull String name,@NotNull Map<String, String> properties, @NotNull Factory<T> factory){
+  @Nullable
+  public <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull Factory<T> factory) {
     Optional<Provider<StorageFactory>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.get().getName().equals(name)).findFirst();
-    if(first.isPresent()){
+    if (first.isPresent()) {
       StorageFactory<?> found = first.get().get();
       Class<T> clazz = (Class<T>) found.getClass();
       Constructor<T>[] constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
@@ -46,10 +51,6 @@ public class StorageFactoryFactory {
       }
     }
     return null;
-  }
-
-  private StorageFactoryFactory(){
-    storageFactories = ServiceLoader.load(StorageFactory.class);
   }
 
 }
