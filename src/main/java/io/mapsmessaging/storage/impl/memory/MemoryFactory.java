@@ -33,7 +33,7 @@ public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
   public MemoryFactory() {
   }
 
-  protected MemoryFactory(Map<String, String> properties, Factory<T> factory) {
+  public MemoryFactory(Map<String, String> properties, Factory<T> factory) {
     super(properties, factory);
   }
 

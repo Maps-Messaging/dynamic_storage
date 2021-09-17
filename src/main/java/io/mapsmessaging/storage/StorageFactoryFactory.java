@@ -31,6 +31,7 @@ import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@SuppressWarnings("java:S3740") // This is not how ServiceLoaders work, we can not get a generic load
 public class StorageFactoryFactory {
 
   private static final StorageFactoryFactory instance = new StorageFactoryFactory();
@@ -66,7 +67,6 @@ public class StorageFactoryFactory {
         }
       }
       if (constructor != null) {
-        constructor.setAccessible(true);
         return (StorageFactory<T>) constructor.newInstance(properties, factory);
       }
     }

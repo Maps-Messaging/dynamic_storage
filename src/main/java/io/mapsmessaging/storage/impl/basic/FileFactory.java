@@ -34,7 +34,7 @@ public class FileFactory<T extends Storable> extends BaseStorageFactory<T> {
   public FileFactory() {
   }
 
-  protected FileFactory(Map<String, String> properties, Factory<T> factory) {
+  public FileFactory(Map<String, String> properties, Factory<T> factory) {
     super(properties, factory);
   }
 

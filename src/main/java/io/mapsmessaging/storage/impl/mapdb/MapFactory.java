@@ -33,7 +33,7 @@ public class MapFactory<T extends Storable> extends BaseStorageFactory<T> {
   public MapFactory() {
   }
 
-  protected MapFactory(Map<String, String> properties, Factory<T> factory) {
+  public MapFactory(Map<String, String> properties, Factory<T> factory) {
     super(properties, factory);
   }
 

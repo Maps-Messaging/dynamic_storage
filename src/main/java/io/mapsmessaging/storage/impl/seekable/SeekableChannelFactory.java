@@ -34,7 +34,7 @@ public class SeekableChannelFactory<T extends Storable> extends BaseStorageFacto
   public SeekableChannelFactory() {
   }
 
-  protected SeekableChannelFactory(Map<String, String> properties, Factory<T> factory) {
+  public SeekableChannelFactory(Map<String, String> properties, Factory<T> factory) {
     super(properties, factory);
   }
 
