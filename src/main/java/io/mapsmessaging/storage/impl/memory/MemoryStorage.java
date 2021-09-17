@@ -20,7 +20,6 @@
 
 package io.mapsmessaging.storage.impl.memory;
 
-import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import java.io.IOException;
