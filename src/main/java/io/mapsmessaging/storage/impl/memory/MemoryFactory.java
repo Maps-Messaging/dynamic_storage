@@ -44,7 +44,7 @@ public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
 
   @Override
   public Storage<T> create(String name) {
-    return new MemoryStorage<>(factory);
+    return new MemoryStorage<>();
   }
 
   @Override

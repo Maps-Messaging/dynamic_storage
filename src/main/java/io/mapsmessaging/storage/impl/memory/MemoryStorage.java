@@ -39,7 +39,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
   private final Map<Long, T> memoryMap;
   private final String name;
 
-  public MemoryStorage(@NotNull Factory<T> factory) {
+  public MemoryStorage() {
     memoryMap = new LinkedHashMap<>();
     name = "memory" + counter.get();
   }

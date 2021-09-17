@@ -38,6 +38,7 @@ public abstract class BaseTask<T extends Storable, V> implements Callable<V> {
     this.completion = completion;
   }
 
+  @SuppressWarnings("java:S112") // we are an abstracted function, we can expect any exception to be raised here
   protected abstract V execute() throws Exception;
 
   @Override
