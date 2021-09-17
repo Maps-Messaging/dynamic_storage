@@ -34,7 +34,7 @@ public abstract class BaseIndexStorage <T extends Storable> implements Storage<T
 
   protected final Map<Long, Long> index;
 
-  public BaseIndexStorage(){
+  protected BaseIndexStorage(){
     index = new LinkedHashMap<>();
   }
 
