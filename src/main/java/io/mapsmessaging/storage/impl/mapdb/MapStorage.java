@@ -65,7 +65,7 @@ public class MapStorage<T extends Storable> implements Storage<T> {
 
   @Override
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
-    Set<Long> itemsToRemove = diskMap.keySet();
+    List<Long> itemsToRemove = new ArrayList<>(diskMap.keySet());
     itemsToRemove.removeIf(listToKeep::contains);
     if (!itemsToRemove.isEmpty()) {
       for (long key : itemsToRemove) {

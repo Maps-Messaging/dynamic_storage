@@ -80,7 +80,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
 
   @Override
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) {
-    Set<Long> itemsToRemove = memoryMap.keySet();
+    List<Long> itemsToRemove = new ArrayList<>(memoryMap.keySet());
     itemsToRemove.removeIf(listToKeep::contains);
     if (!itemsToRemove.isEmpty()) {
       for (long key : itemsToRemove) {

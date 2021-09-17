@@ -24,7 +24,10 @@ import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -56,6 +59,50 @@ public abstract class BaseStoreTest extends BaseTest{
         validateMessage(message, x);
         storage.remove(x);
         Assertions.assertNotNull(message);
+      }
+      Assertions.assertTrue(storage.isEmpty());
+    } finally {
+      if(storage != null) {
+        storage.delete();
+      }
+    }
+  }
+
+  @Test
+  void basicKeepOnlyTest() throws IOException {
+    Storage<MappedData> storage = null;
+    try {
+      storage = createStore(false);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      for (int x = 0; x < 1000; x++) {
+        MappedData message = createMessageBuilder(x);
+        validateMessage(message, x);
+        storage.add(message);
+      }
+      Assertions.assertEquals(1000, storage.size());
+
+      List<Long> keepList = new ArrayList<>();
+      for(long x=0;x<1000;x=x+2){
+        keepList.add(x);
+      }
+      storage.keepOnly(keepList);
+      Assertions.assertEquals(500, storage.size());
+
+
+      for (int x = 0; x < 1000; x++) {
+        MappedData message = storage.get(x);
+        if(x%2 == 0){
+          validateMessage(message, x);
+          storage.remove(x);
+          Assertions.assertNotNull(message);
+        }
+        else{
+          Assertions.assertNull(message);
+        }
       }
       Assertions.assertTrue(storage.isEmpty());
     } finally {
