@@ -7,6 +7,7 @@ import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -24,12 +25,14 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     closed = new AtomicBoolean(false);
   }
 
+  @SneakyThrows
   @Override
   public void close() throws IOException {
     Future<Boolean> future = close(null);
     try {
       future.get();
-    } catch (InterruptedException | ExecutionException e) {
+    }
+    catch(ExecutionException e){
       throw new IOException(e);
     }
   }
