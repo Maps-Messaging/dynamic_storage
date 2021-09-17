@@ -20,11 +20,6 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
   }
 
   @Override
-  public String getName() {
-    return super.getName();
-  }
-
-  @Override
   public void delete() throws IOException {
     super.delete();
     cache.clear();
@@ -46,12 +41,11 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
   @Override
   public @Nullable T get(long key) throws IOException {
     T obj =  cache.get(key);
-    if(obj != null){
-      return obj;
-    }
-    obj = super.get(key);
-    if(obj != null){
-      cache.put(key, obj);
+    if(obj == null) {
+      obj = super.get(key);
+      if (obj != null) {
+        cache.put(key, obj);
+      }
     }
     return obj;
   }

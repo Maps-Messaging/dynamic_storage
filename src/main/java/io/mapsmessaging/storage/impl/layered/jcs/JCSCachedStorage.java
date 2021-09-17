@@ -4,6 +4,7 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.layered.BaseLayeredStorage;
 import java.io.IOException;
+import java.util.List;
 import org.apache.commons.jcs3.JCS;
 import org.apache.commons.jcs3.access.CacheAccess;
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +18,27 @@ public class JCSCachedStorage<T extends Storable> extends BaseLayeredStorage<T> 
   public JCSCachedStorage(Storage<T> baseStorage) {
     super(baseStorage);
     cache = JCS.getInstance( baseStorage.getName()+"_cache" );
+  }
+
+
+  @Override
+  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
+    cache.clear();
+    return super.keepOnly(listToKeep);
+  }
+
+  @Override
+  public void close() throws IOException {
+    cache.clear();
+    cache.dispose();
+    super.close();
+  }
+
+  @Override
+  public void delete() throws IOException {
+    cache.clear();
+    cache.dispose();
+    super.delete();
   }
 
   @Override
@@ -35,7 +57,7 @@ public class JCSCachedStorage<T extends Storable> extends BaseLayeredStorage<T> 
   public @Nullable T get(long key) throws IOException {
     T obj = cache.get(key);
     if(obj == null) {
-      obj = super.baseStorage.get(key);
+      obj = super.get(key);
       if (obj != null) {
         cache.put(key, obj);
       }
