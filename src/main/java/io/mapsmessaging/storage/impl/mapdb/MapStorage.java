@@ -35,7 +35,7 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
 
-public class MapDBStorage<T extends Storable> implements Storage<T> {
+public class MapStorage<T extends Storable> implements Storage<T> {
 
   private final BTreeMap<Long, T> diskMap;
   private final DB dataStore;
@@ -43,7 +43,7 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
   private final boolean sync;
   private volatile boolean isClosed;
 
-  public MapDBStorage(String fileName, String name, Factory<T> factory, boolean sync) {
+  public MapStorage(String fileName, String name, Factory<T> factory, boolean sync) {
     this.fileName = fileName;
     dataStore = DBMaker.fileDB(fileName)
         .fileMmapEnable()
@@ -52,7 +52,7 @@ public class MapDBStorage<T extends Storable> implements Storage<T> {
         .checksumHeaderBypass()
         .make();
     diskMap = dataStore
-        .treeMap(name, Serializer.LONG, new MapDBSerializer<>(factory))
+        .treeMap(name, Serializer.LONG, new MapSerializer<>(factory))
         .createOrOpen();
     isClosed = false;
     this.sync = sync;

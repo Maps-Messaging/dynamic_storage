@@ -32,11 +32,11 @@ import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
 import org.mapdb.serializer.GroupSerializerObjectArray;
 
-public class MapDBSerializer<T extends Storable> extends GroupSerializerObjectArray<T> {
+public class MapSerializer<T extends Storable> extends GroupSerializerObjectArray<T> {
 
   private final Factory<T> factory;
 
-  public MapDBSerializer(Factory<T> factory) {
+  public MapSerializer(Factory<T> factory) {
     this.factory = factory;
   }
 

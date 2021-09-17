@@ -28,12 +28,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class MapDBFactory<T extends Storable> extends BaseStorageFactory<T> {
+public class MapFactory<T extends Storable> extends BaseStorageFactory<T> {
 
-  public MapDBFactory() {
+  public MapFactory() {
   }
 
-  protected MapDBFactory(Map<String, String> properties, Factory<T> factory) {
+  protected MapFactory(Map<String, String> properties, Factory<T> factory) {
     super(properties, factory);
   }
 
@@ -49,7 +49,7 @@ public class MapDBFactory<T extends Storable> extends BaseStorageFactory<T> {
     if (properties.containsKey("Sync")) {
       sync = Boolean.parseBoolean(properties.get("Sync"));
     }
-    return new MapDBStorage<>(properties.get("basePath"), name, factory, sync);
+    return new MapStorage<>(properties.get("basePath"), name, factory, sync);
   }
 
   @Override
