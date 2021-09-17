@@ -26,9 +26,17 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class MemoryStoreTest extends BaseStoreTest{
 
+  @Test
+  @Disabled
+  @Override
+  void basicOpenCloseOpen() throws IOException {
+
+  }
 
   @Override
   public Storage<MappedData> createStore(boolean sync) throws IOException {

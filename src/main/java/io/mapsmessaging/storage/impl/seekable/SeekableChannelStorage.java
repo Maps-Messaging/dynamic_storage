@@ -75,10 +75,10 @@ public class SeekableChannelStorage<T extends Storable> extends BaseIndexStorage
     long pos = 0;
     while (pos != eof) {
       T obj = reloadMessage(pos);
-      pos = readChannel.position();
       if (obj != null) {
         index.put(obj.getKey(), pos);
       }
+      pos = readChannel.position();
     }
   }
 

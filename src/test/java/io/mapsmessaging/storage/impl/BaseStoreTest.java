@@ -112,4 +112,39 @@ public abstract class BaseStoreTest extends BaseTest{
     }
   }
 
+
+  @Test
+  void basicOpenCloseOpen() throws IOException {
+    Storage<MappedData> storage = null;
+    try {
+      storage = createStore(false);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      for (int x = 0; x < 1000; x++) {
+        MappedData message = createMessageBuilder(x);
+        validateMessage(message, x);
+        storage.add(message);
+      }
+      Assertions.assertEquals(1000, storage.size());
+
+      storage.close();
+      storage = createStore(false);
+
+
+      for (int x = 0; x < 1000; x++) {
+        MappedData message = storage.get(x);
+        validateMessage(message, x);
+        storage.remove(x);
+        Assertions.assertNotNull(message);
+      }
+      Assertions.assertTrue(storage.isEmpty());
+    } finally {
+      if(storage != null) {
+        storage.delete();
+      }
+    }
+  }
 }
