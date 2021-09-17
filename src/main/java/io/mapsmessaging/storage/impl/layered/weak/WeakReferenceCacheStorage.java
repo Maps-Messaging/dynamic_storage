@@ -18,7 +18,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.layered.weakReference;
+package io.mapsmessaging.storage.impl.layered.weak;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;

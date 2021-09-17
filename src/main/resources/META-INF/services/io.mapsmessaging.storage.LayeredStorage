@@ -20,5 +20,5 @@
 
 #
 #
-io.mapsmessaging.storage.impl.layered.weakReference.WeakReferenceCacheStorage
+io.mapsmessaging.storage.impl.layered.weak.WeakReferenceCacheStorage
 io.mapsmessaging.storage.impl.layered.jcs.JCSCachedStorage
