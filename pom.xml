@@ -234,6 +234,13 @@
       <version>5.8.0</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <version>5.8.0</version>
+      <scope>test</scope>
+    </dependency>
+
     <!-- Java micro benchmarking -->
     <dependency>
       <artifactId>jmh-core</artifactId>

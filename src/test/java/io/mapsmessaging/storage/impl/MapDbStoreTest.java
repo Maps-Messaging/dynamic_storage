@@ -5,13 +5,15 @@ import io.mapsmessaging.storage.StorageFactoryFactory;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class MapDbStoreTest extends BaseStoreTest{
 
   @Override
-  public Storage<MappedData> createStore() throws IOException {
+  public Storage<MappedData> createStore(boolean sync) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("Sync", ""+sync);
     properties.put("basePath", "./test.db");
-    return StorageFactoryFactory.getInstance().create("MapDB", properties, getFactory()).create("Test");
+    return Objects.requireNonNull(StorageFactoryFactory.getInstance().create("MapDB", properties, getFactory())).create("Test");
   }
 }

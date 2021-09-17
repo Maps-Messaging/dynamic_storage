@@ -14,7 +14,8 @@ import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public abstract class BaseStoreTest {
 
@@ -58,14 +59,15 @@ public abstract class BaseStoreTest {
     dataMapValues.put("high_char", Character.MAX_VALUE);
   }
 
-  public abstract Storage<MappedData> createStore() throws IOException;
+  public abstract Storage<MappedData> createStore(boolean sync) throws IOException;
 
 
-  @Test
-  void messageStream() throws IOException {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void basicIOTestWithAndWithoutSync(boolean sync) throws IOException {
     Storage<MappedData> storage = null;
     try {
-      storage = createStore();
+      storage = createStore(sync);
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");
       ThreadLocalContext.set(context);
