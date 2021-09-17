@@ -23,12 +23,14 @@ package io.mapsmessaging.storage.impl;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageFactoryFactory;
 import io.mapsmessaging.storage.tasks.AsyncStorage;
+import io.mapsmessaging.storage.tasks.Completion;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -69,4 +71,103 @@ public class SimpleAsyncTest extends BaseTest {
     }
 
   }
+
+
+  @Test
+  void runSimpleAsyncCompletionStore() throws IOException, ExecutionException, InterruptedException {
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("Sync", "true");
+    properties.put("basePath", "./test.db");
+    Storage<MappedData> store = StorageFactoryFactory.getInstance().create("MapDB", properties, getFactory()).create("Test");
+    AsyncStorage<MappedData> async = new AsyncStorage<>(store);
+    AtomicBoolean completed = new AtomicBoolean(false);
+
+
+    try {
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      for (int x = 0; x < 10; x++) {
+        MappedData message = createMessageBuilder(x);
+        validateMessage(message, x);
+        completed.set(false);
+        async.add(message, new Completion<>() {
+          @Override
+          public void onCompletion(MappedData result) {
+            Assertions.assertNotNull(result);
+            completed.set(true);
+          }
+
+          @Override
+          public void onException(Exception exception) {
+            Assertions.fail(exception);
+          }
+        });
+        while(!completed.get()){
+          Thread.sleep(1);
+        }
+      }
+
+      Assertions.assertEquals(10, async.size().get());
+
+      for (int x = 0; x < 10; x++) {
+        completed.set(false);
+        int finalX = x;
+        async.get(x, new Completion<>() {
+          @Override
+          public void onCompletion(MappedData result) {
+            Assertions.assertNotNull(result);
+            validateMessage(result, finalX);
+            completed.set(true);
+          }
+
+          @Override
+          public void onException(Exception exception) {
+            Assertions.fail(exception);
+          }
+        });
+        while(!completed.get()){
+          Thread.sleep(1);
+        }
+
+        completed.set(false);
+        async.remove(x, new Completion<>() {
+          @Override
+          public void onCompletion(Boolean result) {
+            Assertions.assertTrue(result);
+            completed.set(true);
+          }
+
+          @Override
+          public void onException(Exception exception) {
+            Assertions.fail(exception);
+          }
+        });
+        while(!completed.get()){
+          Thread.sleep(1);
+        }
+      }
+      Assertions.assertTrue(async.isEmpty().get());
+    } finally {
+      async.delete(new Completion<Boolean>() {
+        @Override
+        public void onCompletion(Boolean result) {
+          Assertions.assertTrue(result);
+          completed.set(true);
+        }
+
+        @Override
+        public void onException(Exception exception) {
+          Assertions.fail(exception);
+        }
+      });
+      while(!completed.get()){
+        Thread.sleep(1);
+      }
+    }
+
+  }
+
 }
