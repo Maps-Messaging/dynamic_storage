@@ -31,9 +31,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 public class SeekableChannelStorage<T extends Storable> extends BaseIndexStorage<T> {
@@ -73,29 +70,6 @@ public class SeekableChannelStorage<T extends Storable> extends BaseIndexStorage
     reload(length);
   }
 
-
-  @Override
-  public boolean isEmpty() {
-    return index.isEmpty();
-  }
-
-  @Override
-  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
-    Set<Long> itemsToRemove = index.keySet();
-    itemsToRemove.removeIf(listToKeep::contains);
-    if (!itemsToRemove.isEmpty()) {
-      for (long key : itemsToRemove) {
-        remove(key);
-      }
-    }
-
-    if (itemsToRemove.size() != listToKeep.size()) {
-      Set<Long> actual = index.keySet();
-      listToKeep.removeIf(actual::contains);
-      return listToKeep;
-    }
-    return new ArrayList<>();
-  }
 
   private void reload(long eof) throws IOException {
     long pos = 0;
@@ -165,12 +139,6 @@ public class SeekableChannelStorage<T extends Storable> extends BaseIndexStorage
     }
     return obj;
   }
-
-  @Override
-  public long size() throws IOException {
-    return index.size();
-  }
-
 
   private T reloadMessage(long filePosition) throws IOException {
     readChannel.position(filePosition);
