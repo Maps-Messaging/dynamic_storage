@@ -18,10 +18,17 @@
  *
  */
 
-package io.mapsmessaging.storage.tasks;
+package io.mapsmessaging.storage;
 
-import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.tasks.AddTask;
+import io.mapsmessaging.storage.tasks.CloseTask;
+import io.mapsmessaging.storage.tasks.Completion;
+import io.mapsmessaging.storage.tasks.DeleteTask;
+import io.mapsmessaging.storage.tasks.GetTask;
+import io.mapsmessaging.storage.tasks.IsEmptyTask;
+import io.mapsmessaging.storage.tasks.KeepOnlyTask;
+import io.mapsmessaging.storage.tasks.RemoveTask;
+import io.mapsmessaging.storage.tasks.SizeTask;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.Closeable;
@@ -39,7 +46,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   private final TaskScheduler taskScheduler;
   private final AtomicBoolean closed;
 
-  public AsyncStorage(@NotNull Storage<T> storage) {
+  AsyncStorage(@NotNull Storage<T> storage) {
     this.storage = storage;
     taskScheduler = new SingleConcurrentTaskScheduler(storage.getName());
     closed = new AtomicBoolean(false);

@@ -108,6 +108,20 @@ public class StorageBuilder<T extends Storable> {
     }
   }
 
+  public AsyncStorage<T> buildAsync() throws IOException {
+    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, factory);
+    if(storeFactory != null) {
+      Storage<T> baseStore = storeFactory.create(name);
+      if (baseStore.isCacheable() && cacheName != null) {
+        baseStore = StorageFactoryFactory.getInstance().createLayer(cacheName, baseStore);
+      }
+      return new AsyncStorage<>(baseStore);
+    }
+    else{
+      throw new IOException("Unable to construct new store");
+    }
+  }
+
   public static List<String> getKnownStorages(){
     return StorageFactoryFactory.getInstance().getKnownStorages();
   }

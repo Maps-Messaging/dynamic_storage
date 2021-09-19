@@ -22,7 +22,7 @@ package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
-import io.mapsmessaging.storage.tasks.AsyncStorage;
+import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.tasks.Completion;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
@@ -49,9 +49,7 @@ public class SimpleAsyncTest extends BaseTest {
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);
-
-    Storage<MappedData> store = storageBuilder.build();
-    AsyncStorage<MappedData> async = new AsyncStorage<>(store);
+    AsyncStorage<MappedData> async =storageBuilder.buildAsync();
 
 
     try {
@@ -91,9 +89,7 @@ public class SimpleAsyncTest extends BaseTest {
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);
-
-    Storage<MappedData> store = storageBuilder.build();
-    AsyncStorage<MappedData> async = new AsyncStorage<>(store);
+    AsyncStorage<MappedData> async =storageBuilder.buildAsync();
     AtomicBoolean completed = new AtomicBoolean(false);
 
 
@@ -193,9 +189,7 @@ public class SimpleAsyncTest extends BaseTest {
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);
-
-    Storage<MappedData> store = storageBuilder.build();
-    AsyncStorage<MappedData> async = new AsyncStorage<>(store);
+    AsyncStorage<MappedData> async =storageBuilder.buildAsync();
     try {
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");
