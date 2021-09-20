@@ -58,7 +58,7 @@ class StorageFactoryFactory {
 
   public List<String> getKnownLayers() {
     List<String> layered = new ArrayList<>();
-    layeredStorages.forEach(layeredStorages -> layered.add(layeredStorages.getName()));
+    layeredStorages.forEach(layer -> layered.add(layer.getName()));
     return layered;
   }
 
@@ -87,7 +87,7 @@ class StorageFactoryFactory {
   @SneakyThrows
   @NotNull
   public <T extends Storable> LayeredStorage<T> createLayer(@NotNull String name, @NotNull Storage<T> baseStore) {
-    Optional<Provider<LayeredStorage>> first = layeredStorages.stream().filter(layeredStorages -> layeredStorages.get().getName().equals(name)).findFirst();
+    Optional<Provider<LayeredStorage>> first = layeredStorages.stream().filter(layer -> layer.get().getName().equals(name)).findFirst();
     if (first.isPresent()) {
       LayeredStorage<?> found = first.get().get();
       Class<T> clazz = (Class<T>) found.getClass();
