@@ -21,7 +21,7 @@
 package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.StorageFactoryFactory;
+import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.storage.tasks.AsyncStorage;
 import io.mapsmessaging.storage.tasks.Completion;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
@@ -44,7 +44,13 @@ public class SimpleAsyncTest extends BaseTest {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "true");
     properties.put("basePath", "./test.db");
-    Storage<MappedData> store = StorageFactoryFactory.getInstance().create("MapDB", properties, getFactory()).create("Test");
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder.setStorageType("MapDB")
+        .setFactory(getFactory())
+        .setName("Test")
+        .setProperties(properties);
+
+    Storage<MappedData> store = storageBuilder.build();
     AsyncStorage<MappedData> async = new AsyncStorage<>(store);
 
 
@@ -80,7 +86,13 @@ public class SimpleAsyncTest extends BaseTest {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "true");
     properties.put("basePath", "./test.db");
-    Storage<MappedData> store = StorageFactoryFactory.getInstance().create("MapDB", properties, getFactory()).create("Test");
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder.setStorageType("MapDB")
+        .setFactory(getFactory())
+        .setName("Test")
+        .setProperties(properties);
+
+    Storage<MappedData> store = storageBuilder.build();
     AsyncStorage<MappedData> async = new AsyncStorage<>(store);
     AtomicBoolean completed = new AtomicBoolean(false);
 
@@ -176,7 +188,13 @@ public class SimpleAsyncTest extends BaseTest {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "true");
     properties.put("basePath", "./test.db");
-    Storage<MappedData> store = StorageFactoryFactory.getInstance().create("MapDB", properties, getFactory()).create("Test");
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder.setStorageType("MapDB")
+        .setFactory(getFactory())
+        .setName("Test")
+        .setProperties(properties);
+
+    Storage<MappedData> store = storageBuilder.build();
     AsyncStorage<MappedData> async = new AsyncStorage<>(store);
     try {
       ThreadStateContext context = new ThreadStateContext();

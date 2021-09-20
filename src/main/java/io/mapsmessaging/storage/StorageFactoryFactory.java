@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.storage;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,23 +33,33 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("java:S3740") // This is not how ServiceLoaders work, we can not get a generic load
-public class StorageFactoryFactory {
+class StorageFactoryFactory {
 
   private static final StorageFactoryFactory instance = new StorageFactoryFactory();
   private final ServiceLoader<StorageFactory> storageFactories;
 
+  private final ServiceLoader<LayeredStorage> layeredStorages;
+
+
   private StorageFactoryFactory() {
     storageFactories = ServiceLoader.load(StorageFactory.class);
+    layeredStorages = ServiceLoader.load(LayeredStorage.class);
   }
 
   public static StorageFactoryFactory getInstance() {
     return instance;
   }
 
-  public List<String> getKnown() {
+  public List<String> getKnownStorages() {
     List<String> known = new ArrayList<>();
     storageFactories.forEach(storageFactory -> known.add(storageFactory.getName()));
     return known;
+  }
+
+  public List<String> getKnownLayers() {
+    List<String> layered = new ArrayList<>();
+    layeredStorages.forEach(layeredStorages -> layered.add(layeredStorages.getName()));
+    return layered;
   }
 
   @SneakyThrows
@@ -72,5 +83,28 @@ public class StorageFactoryFactory {
     }
     return null;
   }
+
+  @SneakyThrows
+  @NotNull
+  public <T extends Storable> LayeredStorage<T> createLayer(@NotNull String name, @NotNull Storage<T> baseStore) {
+    Optional<Provider<LayeredStorage>> first = layeredStorages.stream().filter(layeredStorages -> layeredStorages.get().getName().equals(name)).findFirst();
+    if (first.isPresent()) {
+      LayeredStorage<?> found = first.get().get();
+      Class<T> clazz = (Class<T>) found.getClass();
+      Constructor<T>[] constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
+      Constructor<T> constructor = null;
+      for (Constructor<T> cstr : constructors) {
+        if (cstr.getParameters().length == 1) {
+          constructor = cstr;
+          break;
+        }
+      }
+      if (constructor != null) {
+        return (LayeredStorage<T>) constructor.newInstance(baseStore);
+      }
+    }
+    throw new IOException("Unknown layered storage declared");
+  }
+
 
 }

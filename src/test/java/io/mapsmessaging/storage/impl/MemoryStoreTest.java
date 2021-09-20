@@ -21,11 +21,10 @@
 package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.StorageFactoryFactory;
+import io.mapsmessaging.storage.StorageBuilder;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +41,11 @@ public class MemoryStoreTest extends BaseStoreTest{
   public Storage<MappedData> createStore(boolean sync) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", ""+sync);
-    return Objects.requireNonNull(StorageFactoryFactory.getInstance().create("Memory", properties, getFactory())).create("Test");
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder.setStorageType("Memory")
+        .setFactory(getFactory())
+        .setName("Test")
+        .setProperties(properties);
+    return storageBuilder.build();
   }
 }

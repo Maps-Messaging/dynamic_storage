@@ -21,7 +21,7 @@
 package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.impl.layered.jcs.JCSCachedStorage;
+import io.mapsmessaging.storage.impl.cache.jcs.JCSCachedStorage;
 import java.io.IOException;
 
 public class JCSCacheTest extends BaseLayeredTest{

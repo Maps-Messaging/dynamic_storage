@@ -18,71 +18,69 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.layered.jcs;
+package io.mapsmessaging.storage.impl.cache;
 
+import io.mapsmessaging.storage.LayeredStorage;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.impl.layered.BaseLayeredStorage;
 import java.io.IOException;
 import java.util.List;
-import org.apache.commons.jcs3.JCS;
-import org.apache.commons.jcs3.access.CacheAccess;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class JCSCachedStorage<T extends Storable> extends BaseLayeredStorage<T> {
-
-  private final CacheAccess<Long, T> cache;
+public abstract class BaseLayeredStorage<T extends Storable> implements LayeredStorage<T> {
 
 
-  public JCSCachedStorage(Storage<T> baseStorage) {
-    super(baseStorage);
-    cache = JCS.getInstance(baseStorage.getName() + "_cache");
-  }
+  protected final Storage<T> baseStorage;
 
-
-  @Override
-  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
-    cache.clear();
-    return super.keepOnly(listToKeep);
+  protected BaseLayeredStorage(Storage<T> baseStorage) {
+    this.baseStorage = baseStorage;
   }
 
   @Override
-  public void close() throws IOException {
-    cache.clear();
-    cache.dispose();
-    super.close();
+  public String getName() {
+    return baseStorage.getName();
   }
 
   @Override
   public void delete() throws IOException {
-    cache.clear();
-    cache.dispose();
-    super.delete();
+    baseStorage.delete();
   }
 
   @Override
   public void add(@NotNull T object) throws IOException {
-    super.add(object);
-    cache.put(object.getKey(), object);
+    baseStorage.add(object);
   }
 
   @Override
   public boolean remove(long key) throws IOException {
-    cache.remove(key);
-    return super.baseStorage.remove(key);
+    return baseStorage.remove(key);
   }
 
   @Override
   public @Nullable T get(long key) throws IOException {
-    T obj = cache.get(key);
-    if (obj == null) {
-      obj = super.get(key);
-      if (obj != null) {
-        cache.put(key, obj);
-      }
-    }
-    return obj;
+    return baseStorage.get(key);
   }
+
+  @Override
+  public long size() throws IOException {
+    return baseStorage.size();
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return baseStorage.isEmpty();
+  }
+
+  @Override
+  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
+    return baseStorage.keepOnly(listToKeep);
+  }
+
+  @Override
+  public void close() throws IOException {
+    baseStorage.close();
+  }
+
 
 }

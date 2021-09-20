@@ -21,11 +21,10 @@
 package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.StorageFactoryFactory;
+import io.mapsmessaging.storage.StorageBuilder;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public class MapDbStoreTest extends BaseStoreTest{
 
@@ -34,6 +33,11 @@ public class MapDbStoreTest extends BaseStoreTest{
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", ""+sync);
     properties.put("basePath", "./test.db");
-    return Objects.requireNonNull(StorageFactoryFactory.getInstance().create("MapDB", properties, getFactory())).create("Test");
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder.setStorageType("MapDB")
+        .setFactory(getFactory())
+        .setName("Test")
+        .setProperties(properties);
+    return storageBuilder.build();
   }
 }
