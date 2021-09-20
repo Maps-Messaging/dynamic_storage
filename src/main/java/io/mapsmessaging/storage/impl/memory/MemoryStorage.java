@@ -100,4 +100,10 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
   public void close() throws IOException {
     memoryMap.clear();
   }
+
+  @Override
+  public boolean isCacheable() {
+    return false;
+  }
+
 }

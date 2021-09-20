@@ -82,5 +82,9 @@ public abstract class BaseLayeredStorage<T extends Storable> implements LayeredS
     baseStorage.close();
   }
 
+  @Override
+  public boolean isCacheable() {
+    return false;
+  }
 
 }

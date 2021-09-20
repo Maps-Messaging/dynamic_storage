@@ -44,6 +44,7 @@ public class MemoryStoreTest extends BaseStoreTest{
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Memory")
         .setFactory(getFactory())
+        .setCache()
         .setName("Test")
         .setProperties(properties);
     return storageBuilder.build();

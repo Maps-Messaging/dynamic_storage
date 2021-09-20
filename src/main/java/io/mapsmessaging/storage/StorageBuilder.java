@@ -96,11 +96,16 @@ public class StorageBuilder<T extends Storable> {
 
   public Storage<T> build() throws IOException {
     StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, factory);
-    Storage<T> baseStore = storeFactory.create(name);
-    if(cacheName != null){
-      baseStore = StorageFactoryFactory.getInstance().createLayer(cacheName, baseStore);
+    if(storeFactory != null) {
+      Storage<T> baseStore = storeFactory.create(name);
+      if (baseStore.isCacheable() && cacheName != null) {
+        baseStore = StorageFactoryFactory.getInstance().createLayer(cacheName, baseStore);
+      }
+      return baseStore;
     }
-    return baseStore;
+    else{
+      throw new IOException("Unable to construct new store");
+    }
   }
 
   public static List<String> getKnownStorages(){
