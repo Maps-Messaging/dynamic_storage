@@ -28,6 +28,6 @@ public class WeakReferenceTest extends BaseLayeredTest{
 
   @Override
   public Storage<MappedData> createStore(Storage<MappedData> storage) throws IOException {
-    return new WeakReferenceCacheStorage<>(storage);
+    return new WeakReferenceCacheStorage<>(false, storage);
   }
 }

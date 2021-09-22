@@ -18,45 +18,43 @@
  *
  */
 
-package io.mapsmessaging.storage.impl;
+package io.mapsmessaging.storage.impl.streams;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
-public class StreamObjectWriter extends ObjectWriter {
+public class BufferObjectWriter extends ObjectWriter {
 
-  private final OutputStream outputStream;
+  private final ByteBuffer buffer;
 
-  public StreamObjectWriter(OutputStream outputStream) {
-    this.outputStream = outputStream;
+  public BufferObjectWriter(ByteBuffer buffer) {
+    this.buffer = buffer;
   }
 
-  // <editor-fold desc="Native Integer based value support">
   @Override
   public void write(byte val) throws IOException {
-    outputStream.write(val);
+    buffer.put(val);
   }
 
   @Override
   public void write(char val) throws IOException {
-    outputStream.write((val >> 8) & 0xff);
-    outputStream.write(val & 0xff);
+    buffer.putChar(val);
   }
-  // </editor-fold>
 
   @Override
   public void write(byte[] val) throws IOException {
     if (val == null) {
       write(-1);
-      return;
-    }
-    write(val.length);
-    if (val.length > 0) {
-      outputStream.write(val);
+    } else {
+      write(val.length);
+      if (val.length > 0) {
+        buffer.put(val);
+      }
     }
   }
 
-  protected void write(long val, int size) throws IOException {
-    outputStream.write(toByteArray(val, size));
+  protected void write(long val, int size) {
+    buffer.put(toByteArray(val, size));
   }
+
 }

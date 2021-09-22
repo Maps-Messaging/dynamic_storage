@@ -86,7 +86,7 @@ class StorageFactoryFactory {
 
   @SneakyThrows
   @NotNull
-  public <T extends Storable> LayeredStorage<T> createLayer(@NotNull String name, @NotNull Storage<T> baseStore) {
+  public <T extends Storable> LayeredStorage<T> createLayer(@NotNull String name, boolean enableWriteThrough, @NotNull Storage<T> baseStore) {
     Optional<Provider<LayeredStorage>> first = layeredStorages.stream().filter(layer -> layer.get().getName().equals(name)).findFirst();
     if (first.isPresent()) {
       LayeredStorage<?> found = first.get().get();
@@ -94,13 +94,13 @@ class StorageFactoryFactory {
       Constructor<T>[] constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
       Constructor<T> constructor = null;
       for (Constructor<T> cstr : constructors) {
-        if (cstr.getParameters().length == 1) {
+        if (cstr.getParameters().length == 2) {
           constructor = cstr;
           break;
         }
       }
       if (constructor != null) {
-        return (LayeredStorage<T>) constructor.newInstance(baseStore);
+        return (LayeredStorage<T>) constructor.newInstance(enableWriteThrough, baseStore);
       }
     }
     throw new IOException("Unknown layered storage declared");

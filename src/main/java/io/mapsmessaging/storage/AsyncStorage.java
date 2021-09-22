@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
@@ -77,6 +78,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
 
   public Future<T> add(@NotNull T toStore, Completion<T> completion) throws IOException {
     checkClose();
+    checkQueue();
     return taskScheduler.submit(new AddTask<>(storage, toStore, completion));
   }
 
@@ -109,6 +111,14 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   protected void checkClose() throws IOException {
     if (closed.get()) {
       throw new IOException("Store has been scheduled to close");
+    }
+  }
+
+  protected void checkQueue() {
+    if (taskScheduler.getOutstanding() > 1000){
+      while (taskScheduler.getOutstanding() > 100) {
+        LockSupport.parkNanos(1000000000);
+      }
     }
   }
 }

@@ -18,7 +18,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl;
+package io.mapsmessaging.storage.impl.streams;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

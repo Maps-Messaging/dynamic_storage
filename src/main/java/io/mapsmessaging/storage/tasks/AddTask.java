@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.storage.tasks;
 
+import io.mapsmessaging.storage.LayeredStorage;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +36,12 @@ public class AddTask<T extends Storable> extends BaseTask<T, T> {
 
   @Override
   public T execute() throws Exception {
-    storage.add(toStore);
+    if(storage instanceof LayeredStorage){
+      ((LayeredStorage<T>)storage).add(toStore, completion);
+    }
+    else {
+      storage.add(toStore);
+    }
     return toStore;
   }
 }

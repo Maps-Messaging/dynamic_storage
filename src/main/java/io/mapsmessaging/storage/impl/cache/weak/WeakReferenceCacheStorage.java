@@ -23,7 +23,9 @@ package io.mapsmessaging.storage.impl.cache.weak;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.cache.BaseLayeredStorage;
+import io.mapsmessaging.storage.tasks.Completion;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -35,13 +37,13 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
   private final Map<Long, T> cache;
 
   public WeakReferenceCacheStorage(){
-    super(null);
-    cache = null;
+    super(false, null);
+    cache = new LinkedHashMap<>();
   }
 
 
-  public WeakReferenceCacheStorage(Storage<T> actual) {
-    super(actual);
+  public WeakReferenceCacheStorage(boolean enableWriteThrough, Storage<T> actual) {
+    super(enableWriteThrough, actual);
     cache = new WeakHashMap<>();
   }
 
@@ -54,6 +56,12 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
   public void delete() throws IOException {
     super.delete();
     cache.clear();
+  }
+
+  @Override
+  public void add(@NotNull T object,  Completion<T> completion) throws IOException{
+    cache.put(object.getKey(), object);
+    super.add(object, completion);
   }
 
   @Override

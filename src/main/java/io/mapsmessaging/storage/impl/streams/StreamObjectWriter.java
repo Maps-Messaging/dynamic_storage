@@ -18,28 +18,29 @@
  *
  */
 
-package io.mapsmessaging.storage.impl;
+package io.mapsmessaging.storage.impl.streams;
 
-import java.io.DataOutput;
 import java.io.IOException;
+import java.io.OutputStream;
 
-public class DataObjectWriter extends ObjectWriter {
+public class StreamObjectWriter extends ObjectWriter {
 
-  private final DataOutput dataOutput;
+  private final OutputStream outputStream;
 
-  public DataObjectWriter(DataOutput dataOutput) {
-    this.dataOutput = dataOutput;
+  public StreamObjectWriter(OutputStream outputStream) {
+    this.outputStream = outputStream;
   }
 
   // <editor-fold desc="Native Integer based value support">
   @Override
   public void write(byte val) throws IOException {
-    dataOutput.write(val);
+    outputStream.write(val);
   }
 
   @Override
   public void write(char val) throws IOException {
-    dataOutput.writeChar(val);
+    outputStream.write((val >> 8) & 0xff);
+    outputStream.write(val & 0xff);
   }
   // </editor-fold>
 
@@ -51,11 +52,11 @@ public class DataObjectWriter extends ObjectWriter {
     }
     write(val.length);
     if (val.length > 0) {
-      dataOutput.write(val);
+      outputStream.write(val);
     }
   }
 
   protected void write(long val, int size) throws IOException {
-    dataOutput.write(toByteArray(val, size));
+    outputStream.write(toByteArray(val, size));
   }
 }

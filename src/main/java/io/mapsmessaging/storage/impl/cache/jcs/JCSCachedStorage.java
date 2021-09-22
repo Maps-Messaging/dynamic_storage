@@ -23,6 +23,7 @@ package io.mapsmessaging.storage.impl.cache.jcs;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.cache.BaseLayeredStorage;
+import io.mapsmessaging.storage.tasks.Completion;
 import java.io.IOException;
 import java.util.List;
 import org.apache.commons.jcs3.JCS;
@@ -35,12 +36,12 @@ public class JCSCachedStorage<T extends Storable> extends BaseLayeredStorage<T> 
   private final CacheAccess<Long, T> cache;
 
   public JCSCachedStorage(){
-    super(null);
+    super(false,null);
     cache = null;
   }
 
-  public JCSCachedStorage(Storage<T> baseStorage) {
-    super(baseStorage);
+  public JCSCachedStorage(boolean enableWriteThrough, Storage<T> baseStorage) {
+    super(enableWriteThrough, baseStorage);
     cache = JCS.getInstance(baseStorage.getName() + "_cache");
   }
 
@@ -67,6 +68,12 @@ public class JCSCachedStorage<T extends Storable> extends BaseLayeredStorage<T> 
     cache.clear();
     cache.dispose();
     super.delete();
+  }
+
+  @Override
+  public void add(@NotNull T object,  Completion<T> completion) throws IOException{
+    cache.put(object.getKey(), object);
+    super.add(object, completion);
   }
 
   @Override

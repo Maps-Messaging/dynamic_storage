@@ -32,6 +32,7 @@ public class StorageBuilder<T extends Storable> {
   private String cacheName;
   private String name;
   private Map<String, String> properties;
+  private boolean enableWriteThrough = false;
   private Factory<T> factory;
 
   public @NotNull StorageBuilder<T> setName(@NotNull String name) {
@@ -46,6 +47,11 @@ public class StorageBuilder<T extends Storable> {
 
   public @NotNull StorageBuilder<T> setFactory(@NotNull Factory<T> factory) {
     this.factory = factory;
+    return this;
+  }
+
+  public @NotNull StorageBuilder<T> enableCacheWriteThrough(boolean enableWriteThrough) {
+    this.enableWriteThrough = enableWriteThrough;
     return this;
   }
 
@@ -99,7 +105,7 @@ public class StorageBuilder<T extends Storable> {
     if(storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
       if (baseStore.isCacheable() && cacheName != null) {
-        baseStore = StorageFactoryFactory.getInstance().createLayer(cacheName, baseStore);
+        baseStore = StorageFactoryFactory.getInstance().createLayer(cacheName, enableWriteThrough, baseStore);
       }
       return baseStore;
     }
@@ -113,7 +119,7 @@ public class StorageBuilder<T extends Storable> {
     if(storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
       if (baseStore.isCacheable() && cacheName != null) {
-        baseStore = StorageFactoryFactory.getInstance().createLayer(cacheName, baseStore);
+        baseStore = StorageFactoryFactory.getInstance().createLayer(cacheName, enableWriteThrough, baseStore);
       }
       return new AsyncStorage<>(baseStore);
     }

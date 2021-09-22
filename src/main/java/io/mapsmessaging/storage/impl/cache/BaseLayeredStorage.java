@@ -23,6 +23,7 @@ package io.mapsmessaging.storage.impl.cache;
 import io.mapsmessaging.storage.LayeredStorage;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.tasks.Completion;
 import java.io.IOException;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -32,9 +33,11 @@ public abstract class BaseLayeredStorage<T extends Storable> implements LayeredS
 
 
   protected final Storage<T> baseStorage;
+  private final boolean enableWriteThrough;
 
-  protected BaseLayeredStorage(Storage<T> baseStorage) {
+  protected BaseLayeredStorage(boolean enableWriteThrough, Storage<T> baseStorage) {
     this.baseStorage = baseStorage;
+    this.enableWriteThrough = enableWriteThrough;
   }
 
   @Override
@@ -46,6 +49,14 @@ public abstract class BaseLayeredStorage<T extends Storable> implements LayeredS
   public void delete() throws IOException {
     baseStorage.delete();
   }
+
+  public void add(@NotNull T object,  Completion<T> completion) throws IOException{
+    if(enableWriteThrough && completion != null ){
+      completion.onCompletion(object);
+    }
+    baseStorage.add(object);
+  }
+
 
   @Override
   public void add(@NotNull T object) throws IOException {

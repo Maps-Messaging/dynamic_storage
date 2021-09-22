@@ -28,6 +28,6 @@ public class JCSCacheTest extends BaseLayeredTest{
 
   @Override
   public Storage<MappedData> createStore(Storage<MappedData> storage) throws IOException {
-    return new JCSCachedStorage<>(storage);
+    return new JCSCachedStorage<>(false, storage);
   }
 }

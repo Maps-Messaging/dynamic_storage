@@ -22,9 +22,12 @@ package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.impl.streams.ObjectReader;
+import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Random;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -32,6 +35,9 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 
 public class BaseTest {
+  static{
+    System.setProperty("PoolDepth", "64");
+  }
 
   private static final byte CHAR = 1;
   private static final byte BYTE = 2;
@@ -144,6 +150,16 @@ public class BaseTest {
     }
   }
 
+  static byte[] build(){
+    Random rdm = new Random(System.nanoTime());
+    byte[] result = new byte[1024];
+    for(int x=0;x<result.length;x++){
+      result[x] = (byte)(rdm.nextInt() % 0xff);
+    }
+    return result;
+  }
+
+  static byte[] prebuilt = build();
 
   @ToString
   public static final class MappedData implements Storable {
@@ -151,10 +167,17 @@ public class BaseTest {
     @Setter
     long key;
     @Getter @Setter Map<String, Object> map;
+    @Getter @Setter byte[] data = prebuilt;
 
-    @Override
-    public void read(@NotNull ObjectReader objectReader) throws IOException {
+    protected void readHeader(@NotNull ObjectReader objectReader) throws IOException {
       key = objectReader.readLong();
+    }
+
+    protected void readData(@NotNull ObjectReader objectReader) throws IOException {
+      data = objectReader.readByteArray();
+    }
+
+    protected void readMap(@NotNull ObjectReader objectReader) throws IOException {
       map = new LinkedHashMap<>();
       int size = objectReader.readInt();
       for(int x=0;x<size;x++){
@@ -214,8 +237,22 @@ public class BaseTest {
     }
 
     @Override
-    public void write(@NotNull ObjectWriter objectWriter) throws IOException {
+    public void read(@NotNull ObjectReader objectReader) throws IOException {
+      readHeader(objectReader);
+      readMap(objectReader);
+      readData(objectReader);
+    }
+
+
+    protected void writeHeader(@NotNull ObjectWriter objectWriter) throws IOException {
       objectWriter.write(key);
+    }
+
+    protected void writeData(@NotNull ObjectWriter objectWriter) throws IOException {
+      objectWriter.write(data);
+    }
+
+    protected void writeMap(@NotNull ObjectWriter objectWriter) throws IOException {
       objectWriter.write(map.size());
       for(String key:map.keySet()){
         objectWriter.write(key);
@@ -285,6 +322,13 @@ public class BaseTest {
           objectWriter.write((String[])obj);
         }
       }
+    }
+
+    @Override
+    public void write(@NotNull ObjectWriter objectWriter) throws IOException {
+      writeHeader(objectWriter);
+      writeMap(objectWriter);
+      writeData(objectWriter);
     }
   }
 
