@@ -32,8 +32,10 @@ public class StorageBuilder<T extends Storable> {
   private String cacheName;
   private String name;
   private Map<String, String> properties;
-  private boolean enableWriteThrough = false;
   private Factory<T> factory;
+
+  private boolean enableWriteThrough = false;
+  private boolean enableReadWriteQueues = false;
 
   public @NotNull StorageBuilder<T> setName(@NotNull String name) {
     this.name = name;
@@ -52,6 +54,11 @@ public class StorageBuilder<T extends Storable> {
 
   public @NotNull StorageBuilder<T> enableCacheWriteThrough(boolean enableWriteThrough) {
     this.enableWriteThrough = enableWriteThrough;
+    return this;
+  }
+
+  public @NotNull StorageBuilder<T> enableReadWriteQueues(boolean enableReadWriteQueues) {
+    this.enableReadWriteQueues = enableReadWriteQueues;
     return this;
   }
 
@@ -121,7 +128,7 @@ public class StorageBuilder<T extends Storable> {
       if (baseStore.isCacheable() && cacheName != null) {
         baseStore = StorageFactoryFactory.getInstance().createLayer(cacheName, enableWriteThrough, baseStore);
       }
-      return new AsyncStorage<>(baseStore);
+      return new AsyncStorage<>(baseStore, enableReadWriteQueues);
     }
     else{
       throw new IOException("Unable to construct new store");

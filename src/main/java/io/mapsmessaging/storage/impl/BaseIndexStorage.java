@@ -24,10 +24,10 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
 public abstract class BaseIndexStorage <T extends Storable> implements Storage<T> {
@@ -35,7 +35,7 @@ public abstract class BaseIndexStorage <T extends Storable> implements Storage<T
   protected final Map<Long, Long> index;
 
   protected BaseIndexStorage(){
-    index = new LinkedHashMap<>();
+    index = new ConcurrentHashMap<>();
   }
 
   @Override

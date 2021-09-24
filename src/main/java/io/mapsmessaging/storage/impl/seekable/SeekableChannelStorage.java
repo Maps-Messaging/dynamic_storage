@@ -20,15 +20,15 @@
 
 package io.mapsmessaging.storage.impl.seekable;
 
+import static java.nio.file.StandardOpenOption.*;
+
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.BaseIndexStorage;
-import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
-import io.mapsmessaging.storage.impl.streams.BufferObjectWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import org.jetbrains.annotations.NotNull;
@@ -37,15 +37,10 @@ public class SeekableChannelStorage<T extends Storable> extends BaseIndexStorage
 
   private final Factory<T> objectFactory;
   private final String fileName;
-  private final SeekableByteChannel readChannel;
-  private final BufferObjectReader reader;
-
-  private final SeekableByteChannel writeChannel;
-  private final BufferObjectWriter writer;
+  private final FileChannel readChannel;
+  private final FileChannel writeChannel;
 
   private final ByteBuffer lengthBuffer;
-  private final ByteBuffer writeBuffer;
-  private final ByteBuffer readBuffer;
 
   public SeekableChannelStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
     objectFactory = factory;
@@ -55,18 +50,21 @@ public class SeekableChannelStorage<T extends Storable> extends BaseIndexStorage
     if (file.exists()) {
       length = file.length();
     }
-    lengthBuffer = ByteBuffer.allocate(4);
-    writeBuffer = ByteBuffer.allocateDirect(1024 * 1024);
-    readBuffer = ByteBuffer.allocateDirect(1024 * 1024);
+    lengthBuffer = ByteBuffer.allocate(8);
 
+    StandardOpenOption[] writeOptions;
+    StandardOpenOption[] readOptions;
     if (sync) {
-      writeChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.DSYNC);
-    } else {
-      writeChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+      writeOptions = new StandardOpenOption[]{CREATE, WRITE, SPARSE, DSYNC};
+      readOptions = new StandardOpenOption[]{READ, WRITE, SPARSE, DSYNC};
     }
-    readChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.READ);
-    reader = new BufferObjectReader(readBuffer);
-    writer = new BufferObjectWriter(writeBuffer);
+    else{
+      writeOptions = new StandardOpenOption[]{CREATE, WRITE, SPARSE};
+      readOptions = new StandardOpenOption[]{READ, WRITE, SPARSE};
+    }
+
+    writeChannel = (FileChannel) Files.newByteChannel(file.toPath(), writeOptions);
+    readChannel = (FileChannel) Files.newByteChannel(file.toPath(), readOptions);
     reload(length);
   }
 
@@ -74,7 +72,7 @@ public class SeekableChannelStorage<T extends Storable> extends BaseIndexStorage
   private void reload(long eof) throws IOException {
     long pos = 0;
     while (pos != eof) {
-      T obj = reloadMessage(pos);
+      T obj = reloadMessage(pos, true);
       if (obj != null) {
         index.put(obj.getKey(), pos);
       }
@@ -98,31 +96,38 @@ public class SeekableChannelStorage<T extends Storable> extends BaseIndexStorage
   @Override
   public void add(@NotNull T obj) throws IOException {
     index.put(obj.getKey(), writeChannel.position());
-    writeBuffer.clear();
-    writeBuffer.position(4); // Skip the first 4 bytes so we can set the full length of the buffer
-    obj.write(writer);
-    int len = writeBuffer.position() - 4;
-    writeBuffer.putInt(0, len);
-    writeBuffer.flip();
-    writeChannel.write(writeBuffer);
+    ByteBuffer[] buffers = obj.write();
+    ByteBuffer meta = ByteBuffer.allocate((buffers.length+2)*4);
+    int len = 4; // Initial address
+    meta.position(4);
+    meta.putInt(buffers.length);
+    for(ByteBuffer buffer:buffers){
+      int bufLen = buffer.limit();
+      len +=bufLen;
+      meta.putInt(bufLen);
+    }
+    meta.putInt(0, len);
+    meta.flip();
+    ByteBuffer[] inclusive = new ByteBuffer[buffers.length+1];
+    System.arraycopy(buffers, 0, inclusive, 1, buffers.length);
+    inclusive[0] = meta;
+    writeChannel.write(inclusive);
   }
 
   @Override
   public boolean remove(long key) throws IOException {
     Long pos = index.remove(key);
     if (pos != null) {
-      long eof = writeChannel.position();
       lengthBuffer.clear();
       readChannel.position(pos);
       readChannel.read(lengthBuffer);
       int len = lengthBuffer.getInt(0);
       len = len * -1;
       lengthBuffer.putInt(0, len);
-      writeChannel.position(pos);
+      lengthBuffer.putInt(4, 0);
+      readChannel.position(pos);
       lengthBuffer.flip();
-      writeChannel.write(lengthBuffer);
-      writeChannel.position(eof);
-      lengthBuffer.clear();
+      readChannel.write(lengthBuffer);
       return true;
     }
     return false;
@@ -134,27 +139,37 @@ public class SeekableChannelStorage<T extends Storable> extends BaseIndexStorage
     if (key >= 0) {
       Long pos = index.get(key);
       if (pos != null) {
-        obj = reloadMessage(pos);
+        obj = reloadMessage(pos, false);
       }
     }
     return obj;
   }
 
-  private T reloadMessage(long filePosition) throws IOException {
+  private T reloadMessage(long filePosition, boolean skip) throws IOException {
     readChannel.position(filePosition);
     lengthBuffer.clear();
     readChannel.read(lengthBuffer);
     int len = lengthBuffer.getInt(0);
     if (len > 0) {
-      readBuffer.limit(len);
-      readChannel.read(readBuffer);
-      readBuffer.flip();
+      int bufferCount = lengthBuffer.getInt(4);
+      ByteBuffer bufferInfo = ByteBuffer.allocate((bufferCount)*4);
+      readChannel.read(bufferInfo);
+      bufferInfo.flip();
+      ByteBuffer[] data = new ByteBuffer[bufferCount];
+      for(int x=0;x<bufferCount;x++){
+        data[x] = ByteBuffer.allocate(bufferInfo.getInt());
+      }
+      readChannel.read(data);
+      for(ByteBuffer buffer:data){
+        buffer.flip();
+      }
       T obj = objectFactory.create();
-      obj.read(reader);
-      readBuffer.clear();
+      obj.read(data);
       return obj;
     } else {
-      readChannel.position(readChannel.position() + (len * -1)); // skip
+      if(skip) {
+        readChannel.position(readChannel.position() + (len * -1)); // skip
+      }
       return null;
     }
   }

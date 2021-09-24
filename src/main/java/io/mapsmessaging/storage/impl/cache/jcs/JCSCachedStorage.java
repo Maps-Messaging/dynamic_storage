@@ -22,7 +22,7 @@ package io.mapsmessaging.storage.impl.cache.jcs;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.impl.cache.BaseLayeredStorage;
+import io.mapsmessaging.storage.impl.cache.CacheLayer;
 import io.mapsmessaging.storage.tasks.Completion;
 import java.io.IOException;
 import java.util.List;
@@ -31,7 +31,7 @@ import org.apache.commons.jcs3.access.CacheAccess;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class JCSCachedStorage<T extends Storable> extends BaseLayeredStorage<T> {
+public class JCSCachedStorage<T extends Storable> extends CacheLayer<T> {
 
   private final CacheAccess<Long, T> cache;
 
@@ -97,6 +97,10 @@ public class JCSCachedStorage<T extends Storable> extends BaseLayeredStorage<T> 
         cache.put(key, obj);
       }
     }
+    else{
+      cacheHit++;
+    }
+
     return obj;
   }
 

@@ -26,18 +26,36 @@ import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.tasks.Completion;
 import java.io.IOException;
 import java.util.List;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class BaseLayeredStorage<T extends Storable> implements LayeredStorage<T> {
+public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T> {
 
 
   protected final Storage<T> baseStorage;
   private final boolean enableWriteThrough;
+  protected volatile long cacheMiss;
+  protected volatile long cacheHit;
 
-  protected BaseLayeredStorage(boolean enableWriteThrough, Storage<T> baseStorage) {
+  protected CacheLayer(){
+    baseStorage = null;
+    enableWriteThrough = false;
+  }
+
+  protected CacheLayer(boolean enableWriteThrough, Storage<T> baseStorage) {
     this.baseStorage = baseStorage;
     this.enableWriteThrough = enableWriteThrough;
+    cacheMiss = 0;
+    cacheHit = 0;
+  }
+
+  public long getCacheMiss() {
+    return cacheMiss;
+  }
+
+  public long getCacheHit() {
+    return cacheHit;
   }
 
   @Override
@@ -70,6 +88,7 @@ public abstract class BaseLayeredStorage<T extends Storable> implements LayeredS
 
   @Override
   public @Nullable T get(long key) throws IOException {
+    cacheMiss++;
     return baseStorage.get(key);
   }
 
@@ -92,10 +111,4 @@ public abstract class BaseLayeredStorage<T extends Storable> implements LayeredS
   public void close() throws IOException {
     baseStorage.close();
   }
-
-  @Override
-  public boolean isCacheable() {
-    return false;
-  }
-
 }

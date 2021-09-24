@@ -22,7 +22,7 @@ package io.mapsmessaging.storage.impl.cache.weak;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.impl.cache.BaseLayeredStorage;
+import io.mapsmessaging.storage.impl.cache.CacheLayer;
 import io.mapsmessaging.storage.tasks.Completion;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -32,7 +32,7 @@ import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredStorage<T> {
+public class WeakReferenceCacheStorage<T extends Storable> extends CacheLayer<T> {
 
   private final Map<Long, T> cache;
 
@@ -85,6 +85,9 @@ public class WeakReferenceCacheStorage<T extends Storable> extends BaseLayeredSt
       if (obj != null) {
         cache.put(key, obj);
       }
+    }
+    else{
+      cacheHit++;
     }
     return obj;
   }

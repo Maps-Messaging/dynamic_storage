@@ -20,17 +20,16 @@
 
 package io.mapsmessaging.storage;
 
-import io.mapsmessaging.storage.impl.streams.ObjectReader;
-import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import org.jetbrains.annotations.NotNull;
 
 public interface Storable {
 
   long getKey();
 
-  void read(@NotNull ObjectReader objectReader) throws IOException;
+  void read(@NotNull ByteBuffer[] buffers) throws IOException;
 
-  void write(@NotNull ObjectWriter objectWriter) throws IOException;
+  @NotNull ByteBuffer[] write() throws IOException;
 
 }

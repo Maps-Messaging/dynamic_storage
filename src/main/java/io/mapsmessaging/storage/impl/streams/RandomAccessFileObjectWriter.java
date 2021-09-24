@@ -22,6 +22,7 @@ package io.mapsmessaging.storage.impl.streams;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 
 public class RandomAccessFileObjectWriter extends ObjectWriter {
 
@@ -91,4 +92,12 @@ public class RandomAccessFileObjectWriter extends ObjectWriter {
   protected void write(long val, int size) throws IOException {
     randomAccessFile.write(toByteArray(val, size));
   }
+
+  @Override
+  public void write(ByteBuffer[] buffers) throws IOException {
+    for(ByteBuffer buffer:buffers){
+      randomAccessFile.write(toByteArray(buffer));
+    }
+  }
+
 }

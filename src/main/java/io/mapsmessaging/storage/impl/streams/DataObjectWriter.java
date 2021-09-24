@@ -22,6 +22,7 @@ package io.mapsmessaging.storage.impl.streams;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class DataObjectWriter extends ObjectWriter {
 
@@ -57,5 +58,12 @@ public class DataObjectWriter extends ObjectWriter {
 
   protected void write(long val, int size) throws IOException {
     dataOutput.write(toByteArray(val, size));
+  }
+
+  @Override
+  public void write(ByteBuffer[] buffers) throws IOException {
+    for(ByteBuffer buffer:buffers){
+      dataOutput.write(toByteArray(buffer));
+    }
   }
 }

@@ -21,6 +21,7 @@
 package io.mapsmessaging.storage.impl.streams;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public abstract class ObjectWriter {
 
@@ -155,6 +156,10 @@ public abstract class ObjectWriter {
     return tmp;
   }
 
+  protected byte[] toByteArray(ByteBuffer buffer){
+    return buffer.array();
+  }
+
   public abstract void write(byte val) throws IOException;
 
   public abstract void write(char val) throws IOException;
@@ -162,5 +167,7 @@ public abstract class ObjectWriter {
   public abstract void write(byte[] val) throws IOException;
 
   protected abstract void write(long val, int size) throws IOException;
+
+  public abstract void write(ByteBuffer[] buffers) throws IOException;
 
 }

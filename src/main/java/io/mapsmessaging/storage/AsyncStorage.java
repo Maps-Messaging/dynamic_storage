@@ -37,19 +37,25 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.LockSupport;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 public class AsyncStorage<T extends Storable> implements Closeable {
 
   private final Storage<T> storage;
-  private final TaskScheduler taskScheduler;
+  private final TaskScheduler addTaskScheduler;
+  private final TaskScheduler generalTaskScheduler;
   private final AtomicBoolean closed;
 
-  AsyncStorage(@NotNull Storage<T> storage) {
+  AsyncStorage(@NotNull Storage<T> storage, boolean enableReadWriteQueues) {
     this.storage = storage;
-    taskScheduler = new SingleConcurrentTaskScheduler(storage.getName());
+    addTaskScheduler = new SingleConcurrentTaskScheduler(storage.getName());
+    if(enableReadWriteQueues) {
+      generalTaskScheduler = new SingleConcurrentTaskScheduler(storage.getName());
+    }
+    else{
+      generalTaskScheduler = addTaskScheduler;
+    }
     closed = new AtomicBoolean(false);
   }
 
@@ -67,58 +73,49 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   public final Future<Boolean> close(Completion<Boolean> completion) throws IOException {
     checkClose();
     closed.set(true);
-    return taskScheduler.submit(new CloseTask<T>(storage, completion));
+    return generalTaskScheduler.submit(new CloseTask<T>(storage, completion));
   }
 
   public final Future<Boolean> delete(Completion<Boolean> completion) throws IOException {
     checkClose();
     closed.set(true);
-    return taskScheduler.submit(new DeleteTask<T>(storage, completion));
+    return generalTaskScheduler.submit(new DeleteTask<T>(storage, completion));
   }
 
   public Future<T> add(@NotNull T toStore, Completion<T> completion) throws IOException {
     checkClose();
-    checkQueue();
-    return taskScheduler.submit(new AddTask<>(storage, toStore, completion));
+    return addTaskScheduler.submit(new AddTask<>(storage, toStore, completion));
   }
 
   public Future<Boolean> remove(long key, Completion<Boolean> completion) throws IOException {
     checkClose();
-    return taskScheduler.submit(new RemoveTask<>(storage, key, completion));
+    return generalTaskScheduler.submit(new RemoveTask<>(storage, key, completion));
   }
 
   public Future<T> get(long key, Completion<T> completion) throws IOException {
     checkClose();
-    return taskScheduler.submit(new GetTask<>(storage, key, completion));
+    return generalTaskScheduler.submit(new GetTask<>(storage, key, completion));
   }
 
   public Future<Long> size() throws IOException {
     checkClose();
-    return taskScheduler.submit(new SizeTask<>(storage));
+    return generalTaskScheduler.submit(new SizeTask<>(storage));
   }
 
   public Future<Boolean> isEmpty() throws IOException {
     checkClose();
-    return taskScheduler.submit(new IsEmptyTask<>(storage));
+    return generalTaskScheduler.submit(new IsEmptyTask<>(storage));
   }
 
   // Returns a list of events NOT found but was in the to keep list
   public Future<List<Long>> keepOnly(@NotNull List<Long> listToKeep, Completion<List<Long>> completion) throws IOException {
     checkClose();
-    return taskScheduler.submit(new KeepOnlyTask<>(storage, listToKeep, completion));
+    return generalTaskScheduler.submit(new KeepOnlyTask<>(storage, listToKeep, completion));
   }
 
   protected void checkClose() throws IOException {
     if (closed.get()) {
       throw new IOException("Store has been scheduled to close");
-    }
-  }
-
-  protected void checkQueue() {
-    if (taskScheduler.getOutstanding() > 1000){
-      while (taskScheduler.getOutstanding() > 100) {
-        LockSupport.parkNanos(1000000000);
-      }
     }
   }
 }
