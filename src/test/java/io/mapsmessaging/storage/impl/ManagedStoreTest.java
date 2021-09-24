@@ -26,15 +26,15 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class MapDbStoreTest extends BaseStoreTest{
+public class ManagedStoreTest extends BaseStoreTest{
+
 
   @Override
   public Storage<MappedData> createStore(boolean sync) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", ""+sync);
-    properties.put("basePath", "./test.db");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("MapDB")
+    storageBuilder.setStorageType("Managed")
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);

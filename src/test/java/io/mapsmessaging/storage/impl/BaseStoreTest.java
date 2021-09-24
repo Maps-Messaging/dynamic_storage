@@ -35,7 +35,6 @@ public abstract class BaseStoreTest extends BaseTest{
 
   public abstract Storage<MappedData> createStore(boolean sync) throws IOException;
 
-
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void basicIOTestWithAndWithoutSync(boolean sync) throws IOException {

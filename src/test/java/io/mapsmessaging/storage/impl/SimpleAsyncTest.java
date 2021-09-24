@@ -45,7 +45,7 @@ public class SimpleAsyncTest extends BaseTest {
     properties.put("Sync", "true");
     properties.put("basePath", "./test.db");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("MapDB")
+    storageBuilder.setStorageType("Managed")
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);
@@ -85,7 +85,7 @@ public class SimpleAsyncTest extends BaseTest {
     properties.put("Sync", "true");
     properties.put("basePath", "./test.db");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("MapDB")
+    storageBuilder.setStorageType("Managed")
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);
@@ -185,7 +185,7 @@ public class SimpleAsyncTest extends BaseTest {
     properties.put("Sync", "true");
     properties.put("basePath", "./test.db");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("MapDB")
+    storageBuilder.setStorageType("Managed")
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);

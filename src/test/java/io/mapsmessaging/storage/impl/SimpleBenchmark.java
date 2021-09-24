@@ -24,28 +24,24 @@ import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorageBuilder;
-import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
-import io.mapsmessaging.storage.impl.streams.BufferObjectWriter;
-import io.mapsmessaging.storage.impl.streams.ObjectReader;
-import io.mapsmessaging.storage.impl.streams.ObjectWriter;
-import io.mapsmessaging.storage.impl.streams.StreamObjectReader;
-import io.mapsmessaging.storage.impl.streams.StreamObjectWriter;
 import io.mapsmessaging.storage.tasks.Completion;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -55,29 +51,43 @@ import org.openjdk.jmh.annotations.Threads;
 @State(Scope.Benchmark)
 public class SimpleBenchmark extends BaseTest {
 
+  public boolean readWriteQueues = true;
+
+  public boolean enableSync = false;
+
+  //@Param({"JCS", "WeakReference"})
+  public String enableCache = "JCS";
+
+  //@Param({"e:\\jmh\\", "m:\\jmh\\", "c:\\jmh\\", "d:\\jmh\\"})
+  public String drive = "m:\\jmh\\";
+
   private static final int STORE_SIZE = 100;
   static{
     System.setProperty("PoolDepth", ""+STORE_SIZE*2);
   }
-
+  Queue<Long>[] queue = new Queue[STORE_SIZE];
   AsyncStorage<BufferedData>[] storageArray = new AsyncStorage[STORE_SIZE];
   AtomicLong[] id = new AtomicLong[STORE_SIZE];
   AtomicLong indexer = new AtomicLong(0);
 
+
   @Setup
   public void createState() throws IOException {
+    System.err.println("Creating new stores :: ReadWriteQueues:"+readWriteQueues+" Sync:"+enableSync+" Cache:"+enableCache+" Drive:"+drive);
     for(int x=0;x<storageArray.length;x++) {
-      System.err.println("New Queue created");
-      File store = new File("FileTest2_"+x);
+      queue[x] = new ConcurrentLinkedDeque<>();
+      File store = new File(drive+"FileTest2_"+x);
       if (store.exists()) {
         Files.delete(store.toPath());
       }
       Map<String, String> properties = new LinkedHashMap<>();
-      properties.put("Sync", "false");
+      properties.put("Sync", ""+enableSync);
       StorageBuilder<BufferedData> storageBuilder = new StorageBuilder<>();
-      storageBuilder.setStorageType("File")
+      storageBuilder.setStorageType("SeekableChannel")
           .setFactory(new DataFactory())
-          .setName("FileTest2_"+x)
+          .enableReadWriteQueues(readWriteQueues)
+          .setName(drive+"FileTest2_"+x)
+          .setCache(enableCache)
           .setProperties(properties);
       storageArray[x] = storageBuilder.buildAsync();
       id[x] = new AtomicLong(0);
@@ -89,7 +99,7 @@ public class SimpleBenchmark extends BaseTest {
     for (AsyncStorage<BufferedData> storage : storageArray) {
       storage.delete(null).get();
     }
-    System.err.println("Deleted store");
+    System.err.println("Deleted stores");
   }
 
   @Benchmark
@@ -98,34 +108,19 @@ public class SimpleBenchmark extends BaseTest {
   @Threads(2000)
   public void performTasks() throws IOException, ExecutionException, InterruptedException {
     int idx = (int)(indexer.incrementAndGet() % STORE_SIZE);
+    Long test = queue[idx].poll();
+    while(test != null){
+      Future<BufferedData> future = storageArray[idx].get(test, new GetCompletion(storageArray[idx]));
+      future.get();
+      test = queue[idx].poll();
+    }
     long key = id[idx].incrementAndGet();
-    storageArray[idx].add(new BufferedData(createMessageBuilder(key)), new AddCompletion(storageArray[idx])).get();
+    Future<BufferedData> future = storageArray[idx].add(new BufferedData(createMessageBuilder(key)), null);
+    future.get();
+    queue[idx].offer(key);
   }
 
-  static final class AddCompletion implements Completion<BufferedData> {
-
-    private final AsyncStorage<BufferedData> storage;
-
-    AddCompletion(AsyncStorage<BufferedData> storage){
-      this.storage = storage;
-    }
-    @Override
-    public void onCompletion(BufferedData result) {
-      try {
-        storage.get(result.getKey(), new GetCompletion(storage));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-
-    @Override
-    public void onException(Exception exception) {
-      exception.printStackTrace();
-      System.exit(1);
-    }
-  }
-
-  static final class GetCompletion implements Completion<BufferedData> {
+   static final class GetCompletion implements Completion<BufferedData> {
 
     private final AsyncStorage<BufferedData> storage;
 
@@ -135,6 +130,10 @@ public class SimpleBenchmark extends BaseTest {
     @Override
     public void onCompletion(BufferedData result) {
       try {
+        if(result == null){
+          System.err.println("Data discrepancy");
+          System.exit(1);
+        }
         storage.remove(result.getKey(), new RemoveCompletion());
       } catch (IOException e) {
         e.printStackTrace();
@@ -179,29 +178,13 @@ public class SimpleBenchmark extends BaseTest {
     }
 
     @Override
-    public void read(@NotNull ObjectReader objectReader) throws IOException {
-      ByteBuffer bb = ByteBuffer.allocate(10240);
-      byte[] buffer = objectReader.readByteArray();
-      bb.put(buffer);
-      bb.flip();
-      BufferObjectReader bor = new BufferObjectReader(bb);
-      data.readHeader(bor);
-      data.readMap(bor);
-      data.readData(objectReader);
+    public void read(@NotNull ByteBuffer[] buffers) throws IOException {
+      data.read(buffers);
     }
 
     @Override
-    public void write(@NotNull ObjectWriter objectWriter) throws IOException {
-      ByteBuffer bb = ByteBuffer.allocate(10240);
-      BufferObjectWriter bow = new BufferObjectWriter(bb);
-      data.writeHeader(bow);
-      data.writeMap(bow);
-      int size = bb.position();
-      byte[] t =  new byte[size];
-      bb.flip();
-      bb.get(t);
-      objectWriter.write(t);
-      data.writeData(objectWriter);
+    public @NotNull ByteBuffer[] write() throws IOException {
+      return data.write();
     }
   }
 

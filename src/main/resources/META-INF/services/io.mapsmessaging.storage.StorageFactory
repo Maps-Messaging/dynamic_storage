@@ -20,7 +20,6 @@
 
 #
 #
-io.mapsmessaging.storage.impl.mapdb.MapFactory
 io.mapsmessaging.storage.impl.memory.MemoryFactory
 io.mapsmessaging.storage.impl.seekable.SeekableChannelFactory
-io.mapsmessaging.storage.impl.basic.FileFactory
+io.mapsmessaging.storage.impl.managed.ManagedFactory

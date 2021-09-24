@@ -22,9 +22,12 @@ package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
+import io.mapsmessaging.storage.impl.streams.BufferObjectWriter;
 import io.mapsmessaging.storage.impl.streams.ObjectReader;
 import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -35,6 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 
 public class BaseTest {
+  private static final int BUFFER_SIZE = 1024;
   static{
     System.setProperty("PoolDepth", "64");
   }
@@ -152,32 +156,34 @@ public class BaseTest {
 
   static byte[] build(){
     Random rdm = new Random(System.nanoTime());
-    byte[] result = new byte[1024];
-    for(int x=0;x<result.length;x++){
-      result[x] = (byte)(rdm.nextInt() % 0xff);
+    byte[] buf = new byte[BUFFER_SIZE];
+    for(int x=0;x<BUFFER_SIZE;x++){
+      buf[x] = (byte)(rdm.nextInt() % 0xff);
     }
-    return result;
+    return buf;
   }
 
   static byte[] prebuilt = build();
 
   @ToString
   public static final class MappedData implements Storable {
-    @Getter
-    @Setter
-    long key;
+    @Getter @Setter long key;
     @Getter @Setter Map<String, Object> map;
-    @Getter @Setter byte[] data = prebuilt;
+    @Getter @Setter ByteBuffer data;
 
-    protected void readHeader(@NotNull ObjectReader objectReader) throws IOException {
+    @Override
+    public void read(@NotNull ByteBuffer[] buffers) throws IOException {
+      BufferObjectReader bor = new BufferObjectReader(buffers[0]);
+      readHeader(bor);
+      readMap(bor);
+      data = buffers[1];
+    }
+
+    void readHeader(@NotNull ObjectReader objectReader) throws IOException {
       key = objectReader.readLong();
     }
 
-    protected void readData(@NotNull ObjectReader objectReader) throws IOException {
-      data = objectReader.readByteArray();
-    }
-
-    protected void readMap(@NotNull ObjectReader objectReader) throws IOException {
+    void readMap(@NotNull ObjectReader objectReader) throws IOException {
       map = new LinkedHashMap<>();
       int size = objectReader.readInt();
       for(int x=0;x<size;x++){
@@ -236,23 +242,11 @@ public class BaseTest {
       }
     }
 
-    @Override
-    public void read(@NotNull ObjectReader objectReader) throws IOException {
-      readHeader(objectReader);
-      readMap(objectReader);
-      readData(objectReader);
-    }
-
-
-    protected void writeHeader(@NotNull ObjectWriter objectWriter) throws IOException {
+    void writeHeader(@NotNull ObjectWriter objectWriter) throws IOException {
       objectWriter.write(key);
     }
 
-    protected void writeData(@NotNull ObjectWriter objectWriter) throws IOException {
-      objectWriter.write(data);
-    }
-
-    protected void writeMap(@NotNull ObjectWriter objectWriter) throws IOException {
+    void writeMap(@NotNull ObjectWriter objectWriter) throws IOException {
       objectWriter.write(map.size());
       for(String key:map.keySet()){
         objectWriter.write(key);
@@ -324,23 +318,33 @@ public class BaseTest {
       }
     }
 
+
     @Override
-    public void write(@NotNull ObjectWriter objectWriter) throws IOException {
-      writeHeader(objectWriter);
-      writeMap(objectWriter);
-      writeData(objectWriter);
+    public @NotNull ByteBuffer[] write() throws IOException {
+      ByteBuffer[] packed = new ByteBuffer[2];
+      ByteBuffer headers = ByteBuffer.allocate(10240);
+      BufferObjectWriter bow = new BufferObjectWriter(headers);
+      writeHeader(bow);
+      writeMap(bow);
+      headers.flip();
+      packed[0] = headers;
+      ByteBuffer buf = ByteBuffer.allocate(prebuilt.length);
+      buf.put(prebuilt);
+      buf.flip();
+      packed[1] = buf;
+      return packed;
     }
   }
 
-  public Factory<BaseStoreTest.MappedData> getFactory(){
-    return new BaseStoreTest.MappedDataFactory();
+  public Factory<MappedData> getFactory(){
+    return new MappedDataFactory();
   }
 
-  public static final class MappedDataFactory implements Factory<BaseStoreTest.MappedData>{
+  public static final class MappedDataFactory implements Factory<MappedData>{
 
     @Override
-    public BaseStoreTest.MappedData create() {
-      return new BaseStoreTest.MappedData();
+    public MappedData create() {
+      return new MappedData();
     }
   }
 
