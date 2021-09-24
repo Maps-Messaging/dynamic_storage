@@ -207,6 +207,19 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
 
   @Override
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
+    List<Long> itemsToRemove = headerManager.keySet();
+    itemsToRemove.removeIf(listToKeep::contains);
+    if (!itemsToRemove.isEmpty()) {
+      for (long key : itemsToRemove) {
+        remove(key);
+      }
+    }
+
+    if (itemsToRemove.size() != listToKeep.size()) {
+      List<Long> actual = headerManager.keySet();
+      listToKeep.removeIf(actual::contains);
+      return listToKeep;
+    }
 
     return new ArrayList<>();
   }
