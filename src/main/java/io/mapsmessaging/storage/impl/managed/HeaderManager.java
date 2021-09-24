@@ -26,6 +26,7 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
+import java.util.concurrent.atomic.LongAdder;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,6 +38,8 @@ public class HeaderManager implements Closeable {
   private final long localEnd;
   private long end;
 
+  private LongAdder sizeMonitor;
+
   private volatile HeaderManager prev;
   private volatile HeaderManager next;
 
@@ -46,18 +49,22 @@ public class HeaderManager implements Closeable {
   private MappedByteBuffer index;
 
   public HeaderManager(FileChannel channel) throws IOException {
-    ByteBuffer header = ByteBuffer.allocate(20);
+    ByteBuffer header = ByteBuffer.allocate(24);
+
     channel.read(header);
     header.flip();
     long nextPos = header.getLong();
     start = header.getLong();
-    itemSize = header.getInt();
+    itemSize = (int)header.getLong();
     end = start+itemSize;
     localEnd = end;
     position = channel.position();
     int totalSize = itemSize * HeaderItem.HEADER_SIZE;
     index = channel.map(MapMode.READ_WRITE, position, totalSize);
+    index.load(); // Ensure the file contents are loaded
     closed = false;
+    sizeMonitor = new LongAdder();
+    walkIndex();
     if(nextPos != 0){
       channel.position(nextPos);
       next = new HeaderManager(channel);
@@ -74,17 +81,19 @@ public class HeaderManager implements Closeable {
     this.itemSize = itemSize;
     end = start+itemSize;
     localEnd = end;
+    sizeMonitor = new LongAdder();
 
-    ByteBuffer header = ByteBuffer.allocate(HeaderItem.HEADER_SIZE);
+    ByteBuffer header = ByteBuffer.allocate(24);
     header.putLong(0L);
     header.putLong(start);
-    header.putInt(itemSize);
+    header.putLong(itemSize);
     header.flip();
     channel.write(header);
     header.flip();
     position = channel.position();
     int totalSize = itemSize * HeaderItem.HEADER_SIZE;
     index = channel.map(MapMode.READ_WRITE, position, totalSize);
+    index.load(); // Ensure the file contents are loaded
     HeaderItem empty = new HeaderItem(0,0,0);
     for(int x=0;x<itemSize;x++){
       empty.update(index); // fill with 0's
@@ -99,6 +108,7 @@ public class HeaderManager implements Closeable {
   public void close() throws IOException {
     if(!closed) {
       closed = true;
+      index.force();
       MappedBufferHelper.closeDirectBuffer(index);
       index = null; // ensure NPE rather than a full-blown JVM crash!!!
     }
@@ -107,20 +117,12 @@ public class HeaderManager implements Closeable {
     }
   }
 
-  void expandHeader(long start, FileChannel channel) throws IOException {
-    if(next == null) {
-      long pos = channel.position();
-      next = new HeaderManager(start, itemSize, channel);
-      next.prev = this;
-      channel.position(pos);
-      ByteBuffer header = ByteBuffer.allocate(8);
-      header.putLong(pos);
-      channel.write(header); // Map in the new pointer
+  public int size(){
+    int size = (int) sizeMonitor.sum();
+    if(next != null){
+      size += next.size();
     }
-    else{
-      next.expandHeader(start, channel); // keep moving forward until you get to the end
-    }
-    end = start + itemSize;
+    return size;
   }
 
   public boolean add(long key, @NotNull HeaderItem item){
@@ -128,6 +130,8 @@ public class HeaderManager implements Closeable {
       if(key<=end){
         setMapPosition(key);
         item.update(index);
+        sizeMonitor.increment();
+        return true;
       }
       else{
         return next.add(key, item);
@@ -150,11 +154,27 @@ public class HeaderManager implements Closeable {
     return item;
   }
 
+  public boolean contains(long key){
+    if(key>= start && key <= localEnd){
+      if(key<=end){
+        setMapPosition(key);
+        HeaderItem item = new HeaderItem(index);
+        return item.getPosition() != 0;
+      }
+      else{
+        return next.contains(key);
+      }
+    }
+    return false;
+  }
+
   public boolean delete(long key){
     if(key>= start && key <= localEnd){
       if(key<=end){
         setMapPosition(key);
+        sizeMonitor.decrement();
         HeaderItem.clear(index);
+        return true;
       }
       else{
         return next.delete(key);
@@ -165,7 +185,36 @@ public class HeaderManager implements Closeable {
 
   void setMapPosition(long key){
     int adjusted = (int)(key - start);
-    long pos = position + (long)adjusted * HeaderItem.HEADER_SIZE;
-    index.position((int)pos);
+    int pos = adjusted * HeaderItem.HEADER_SIZE;
+    index.position(pos);
   }
+
+  void walkIndex(){
+    HeaderItem headerItem;
+    index.position(0);
+    for(int x=0;x<itemSize;x++){
+      headerItem = new HeaderItem(index);
+      if(headerItem.getPosition() != 0){
+        sizeMonitor.increment();
+      }
+    }
+  }
+
+  void expandHeader(long start, FileChannel channel) throws IOException {
+    if(next == null) {
+      long pos = channel.position();
+      next = new HeaderManager(start, itemSize, channel);
+      next.prev = this;
+      channel.position(pos);
+      ByteBuffer header = ByteBuffer.allocate(8);
+      header.putLong(pos);
+      channel.write(header); // Map in the new pointer
+    }
+    else{
+      next.expandHeader(start, channel); // keep moving forward until you get to the end
+    }
+    end = start + itemSize;
+  }
+
+
 }

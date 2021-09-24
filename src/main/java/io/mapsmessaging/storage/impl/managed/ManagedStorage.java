@@ -37,8 +37,6 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.LongAccumulator;
-import java.util.concurrent.atomic.LongAdder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,8 +55,6 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
   private final FileChannel readChannel;
   private final FileChannel writeChannel;
   private final ByteBuffer lengthBuffer;
-
-  private final LongAdder accumulator;
 
   private volatile boolean closed;
 
@@ -91,7 +87,6 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
       initialise();
     }
     closed = false;
-    accumulator = new LongAdder();
   }
 
   @Override
@@ -138,8 +133,10 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
       throw new IOException("Unexpected item count");
     }
     headerManager = new HeaderManager(readChannel);
+
     headerValidation.flip();
     headerValidation.putLong(0,OPEN_STATE);
+    readChannel.position(0);
     readChannel.write(headerValidation);
     readChannel.force(false);
   }
@@ -178,12 +175,10 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
     inclusive[0] = meta;
     writeChannel.write(inclusive);
     headerManager.add(object.getKey(), item);
-    accumulator.increment();
   }
 
   @Override
   public boolean remove(long key) throws IOException {
-    accumulator.decrement();
     return headerManager.delete(key);
   }
 
@@ -202,16 +197,17 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
 
   @Override
   public long size() throws IOException {
-    return accumulator.sum();
+    return headerManager.size();
   }
 
   @Override
   public boolean isEmpty() {
-    return accumulator.sum() == 0;
+    return headerManager.size() == 0;
   }
 
   @Override
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
+
     return new ArrayList<>();
   }
 
