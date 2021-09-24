@@ -23,6 +23,7 @@ package io.mapsmessaging.storage.impl.managed;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import lombok.Getter;
+import lombok.Setter;
 
 public class HeaderItem {
 
@@ -36,6 +37,7 @@ public class HeaderItem {
   @Getter private final long locationId; // If 0 then located within the index file, else is the unique ID of the log file
   @Getter private final long position;   // Position within the log file or the index file
   @Getter private final long expiry;     // Expiry of this entry
+  @Getter @Setter private long key;
 
   public HeaderItem(long locationId, long position, long expiry){
     this.locationId = locationId;

@@ -20,13 +20,18 @@
 
 package io.mapsmessaging.storage.impl.managed;
 
+import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.bitset.ByteBufferBitSetFactoryImpl;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Consumer;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -146,6 +151,7 @@ public class HeaderManager implements Closeable {
       if(key<=end){
         setMapPosition(key);
         item = new HeaderItem(index);
+        item.setKey(key);
       }
       else{
         return next.get(key);
@@ -200,6 +206,22 @@ public class HeaderManager implements Closeable {
     }
   }
 
+  public List<Long> keySet(){
+    Iterator<HeaderItem> itemIterator = getIterator();
+    NaturalOrderedLongList keys = new NaturalOrderedLongList(0, new ByteBufferBitSetFactoryImpl(4096));
+    while(itemIterator.hasNext()){
+      HeaderItem item = itemIterator.next();
+      if(item != null) {
+        keys.add(item.getKey());
+      }
+    }
+    return keys;
+  }
+
+  public Iterator<HeaderItem> getIterator(){
+    return new HeaderIterator();
+  }
+
   void expandHeader(long start, FileChannel channel) throws IOException {
     if(next == null) {
       long pos = channel.position();
@@ -216,5 +238,43 @@ public class HeaderManager implements Closeable {
     end = start + itemSize;
   }
 
+  public class HeaderIterator implements Iterator<HeaderItem>{
+
+    private long key;
+
+    public HeaderIterator(){
+      key = start -1;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return key != end;
+    }
+
+    @Override
+    public HeaderItem next() {
+      key++;
+      while(hasNext()){
+        HeaderItem item = get(key);
+        if(item != null) {
+          if (item.getPosition() != 0) {
+            return item;
+          }
+        }
+        key++;
+      }
+      return null;
+    }
+
+    @Override
+    public void remove() {
+      delete(key);
+    }
+
+    @Override
+    public void forEachRemaining(Consumer<? super HeaderItem> action) {
+      Iterator.super.forEachRemaining(action);
+    }
+  }
 
 }
