@@ -157,7 +157,6 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
   public void add(@NotNull T object) throws IOException {
     long eof = writeChannel.size();
     writeChannel.position(eof);
-    HeaderItem item = new HeaderItem(0, eof, 0);
     ByteBuffer[] buffers = object.write();
     ByteBuffer meta = ByteBuffer.allocate((buffers.length+2)*4);
     int len = 4; // Initial address
@@ -174,6 +173,8 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
     System.arraycopy(buffers, 0, inclusive, 1, buffers.length);
     inclusive[0] = meta;
     writeChannel.write(inclusive);
+    long length = writeChannel.size() - eof;
+    HeaderItem item = new HeaderItem(0, eof, 0, length);
     headerManager.add(object.getKey(), item);
   }
 

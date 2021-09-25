@@ -27,7 +27,7 @@ import lombok.Setter;
 
 public class HeaderItem {
 
-  public static final int HEADER_SIZE = 24;
+  public static final int HEADER_SIZE = 32;
   private static final byte[] RESET_HEADER;
   static{
     RESET_HEADER = new byte[HEADER_SIZE];
@@ -37,24 +37,35 @@ public class HeaderItem {
   @Getter private final long locationId; // If 0 then located within the index file, else is the unique ID of the log file
   @Getter private final long position;   // Position within the log file or the index file
   @Getter private final long expiry;     // Expiry of this entry
+  @Getter private final long length;     // Expiry of this entry
   @Getter @Setter private long key;
 
-  public HeaderItem(long locationId, long position, long expiry){
+  HeaderItem(){
+    locationId = 0;
+    position = 0;
+    expiry =0;
+    length = 0;
+  }
+
+  public HeaderItem(long locationId, long position, long expiry, long length){
     this.locationId = locationId;
     this.position = position;
     this.expiry = expiry;
+    this.length = length;
   }
 
   public HeaderItem(ByteBuffer buffer){
     locationId = buffer.getLong();
     position = buffer.getLong();
     expiry = buffer.getLong();
+    length = buffer.getLong();
   }
 
   public void update(ByteBuffer buffer){
     buffer.putLong(locationId);
     buffer.putLong(position);
     buffer.putLong(expiry);
+    buffer.putLong(length);
   }
 
   public static void clear(ByteBuffer buffer){

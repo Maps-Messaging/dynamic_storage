@@ -100,7 +100,7 @@ public class HeaderManager implements Closeable {
     int totalSize = itemSize * HeaderItem.HEADER_SIZE;
     index = channel.map(MapMode.READ_WRITE, position, totalSize);
     index.load(); // Ensure the file contents are loaded
-    HeaderItem empty = new HeaderItem(0,0,0);
+    HeaderItem empty = new HeaderItem();
     for(int x=0;x<itemSize;x++){
       empty.update(index); // fill with 0's
     }
@@ -129,6 +129,15 @@ public class HeaderManager implements Closeable {
     }
     return size;
   }
+
+  public int emptySpace(){
+    int empty = (int) emptySpace.sum();
+    if(next != null){
+      empty += next.emptySpace();
+    }
+    return empty;
+  }
+
 
   public boolean add(long key, @NotNull HeaderItem item){
     if(key>= start && key <= localEnd){
@@ -178,9 +187,14 @@ public class HeaderManager implements Closeable {
     if(key>= start && key <= localEnd){
       if(key<=end){
         setMapPosition(key);
-        counter.decrement();
-        HeaderItem.clear(index);
-        return true;
+        HeaderItem item = new HeaderItem(index);
+        if(item.getPosition() != 0) {
+          counter.decrement();
+          emptySpace.add(item.getLength());
+          setMapPosition(key);
+          HeaderItem.clear(index);
+          return true;
+        }
       }
       else{
         return next.delete(key);
@@ -202,6 +216,9 @@ public class HeaderManager implements Closeable {
       headerItem = new HeaderItem(index);
       if(headerItem.getPosition() != 0){
         counter.increment();
+      }
+      else if(headerItem.getLength() > 0){
+        emptySpace.add(headerItem.getLength());
       }
     }
   }
