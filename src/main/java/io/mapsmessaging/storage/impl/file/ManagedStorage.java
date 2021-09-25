@@ -50,42 +50,35 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
   private static final int ITEM_COUNT = 8192;
 
   private HeaderManager headerManager;
-  private final Factory<T> objectFactory;
   private final String fileName;
-  private final FileChannel readChannel;
-  private final FileChannel writeChannel;
-  private final ByteBuffer lengthBuffer;
+  private final FileChannel mapChannel;
+  private final DataStorage<T> dataStorage;
 
   private volatile boolean closed;
 
   public ManagedStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
-    objectFactory = factory;
-    this.fileName = fileName;
-    lengthBuffer = ByteBuffer.allocate(8);
-    File file = new File(fileName);
+    this.fileName = fileName+"_index";
+    File file = new File(this.fileName);
     long length = 0;
     if (file.exists()) {
       length = file.length();
     }
     StandardOpenOption[] writeOptions;
-    StandardOpenOption[] readOptions;
     if (sync) {
-      writeOptions = new StandardOpenOption[]{CREATE, WRITE, SPARSE, DSYNC};
-      readOptions = new StandardOpenOption[]{READ, WRITE, SPARSE, DSYNC};
+      writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE, DSYNC};
     }
     else{
-      writeOptions = new StandardOpenOption[]{CREATE, WRITE, SPARSE};
-      readOptions = new StandardOpenOption[]{READ, WRITE, SPARSE};
+      writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE};
     }
 
-    writeChannel = (FileChannel) Files.newByteChannel(file.toPath(), writeOptions);
-    readChannel = (FileChannel) Files.newByteChannel(file.toPath(), readOptions);
+    mapChannel = (FileChannel) Files.newByteChannel(file.toPath(), writeOptions);
     if(length != 0){
-      reload(length);
+      reload();
     }
     else{
       initialise();
     }
+    dataStorage = new DataStorage<T>(fileName+"_data", factory, sync);
     closed = false;
   }
 
@@ -95,14 +88,11 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
       closed = true;
       ByteBuffer header = ByteBuffer.allocate(8);
       header.putLong(CLOSE_STATE);
-      writeChannel.write(header);
-
+      mapChannel.write(header);
       headerManager.close();
-
-      writeChannel.force(true);
-      readChannel.force(true);
-      writeChannel.close();
-      readChannel.close();
+      mapChannel.force(true);
+      mapChannel.close();
+      dataStorage.close();
     }
   }
 
@@ -113,14 +103,14 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
     headerValidation.putLong(Double.doubleToLongBits(VERSION));
     headerValidation.putLong(ITEM_COUNT);
     headerValidation.flip();
-    readChannel.write(headerValidation);
-    headerManager= new HeaderManager(0L, ITEM_COUNT, readChannel);
-    readChannel.force(false);
+    mapChannel.write(headerValidation);
+    headerManager= new HeaderManager(0L, ITEM_COUNT, mapChannel);
+    mapChannel.force(false);
   }
 
-  private void reload(long length)throws IOException{
+  private void reload()throws IOException{
     ByteBuffer headerValidation = ByteBuffer.allocate(32);
-    readChannel.read(headerValidation);
+    mapChannel.read(headerValidation);
     headerValidation.flip();
     boolean wasClosed = headerValidation.getLong() != CLOSE_STATE;
     if(headerValidation.getLong() != UNIQUE_ID){
@@ -132,13 +122,13 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
     if(headerValidation.getLong() != ITEM_COUNT){
       throw new IOException("Unexpected item count");
     }
-    headerManager = new HeaderManager(readChannel);
+    headerManager = new HeaderManager(mapChannel);
 
     headerValidation.flip();
     headerValidation.putLong(0,OPEN_STATE);
-    readChannel.position(0);
-    readChannel.write(headerValidation);
-    readChannel.force(false);
+    mapChannel.position(0);
+    mapChannel.write(headerValidation);
+    mapChannel.force(false);
   }
 
   @Override
@@ -151,30 +141,12 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
     close();
     File path = new File(fileName);
     Files.delete(path.toPath());
+    dataStorage.delete();
   }
 
   @Override
   public void add(@NotNull T object) throws IOException {
-    long eof = writeChannel.size();
-    writeChannel.position(eof);
-    ByteBuffer[] buffers = object.write();
-    ByteBuffer meta = ByteBuffer.allocate((buffers.length+2)*4);
-    int len = 4; // Initial address
-    meta.position(4);
-    meta.putInt(buffers.length);
-    for(ByteBuffer buffer:buffers){
-      int bufLen = buffer.limit();
-      len +=bufLen;
-      meta.putInt(bufLen);
-    }
-    meta.putInt(0, len);
-    meta.flip();
-    ByteBuffer[] inclusive = new ByteBuffer[buffers.length+1];
-    System.arraycopy(buffers, 0, inclusive, 1, buffers.length);
-    inclusive[0] = meta;
-    writeChannel.write(inclusive);
-    long length = writeChannel.size() - eof;
-    HeaderItem item = new HeaderItem(0, eof, 0, length);
+    HeaderItem item = dataStorage.add(object);
     headerManager.add(object.getKey(), item);
   }
 
@@ -189,8 +161,7 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
     if (key >= 0) {
       HeaderItem item = headerManager.get(key);
       if(item != null){
-        long pos = item.getPosition();
-        obj = reloadMessage(pos);
+        obj = dataStorage.get(item);
       }
     }
     return obj;
@@ -221,33 +192,7 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
       listToKeep.removeIf(actual::contains);
       return listToKeep;
     }
-
     return new ArrayList<>();
-  }
-
-  private T reloadMessage(long filePosition) throws IOException {
-    readChannel.position(filePosition);
-    lengthBuffer.clear();
-    readChannel.read(lengthBuffer);
-    int len = lengthBuffer.getInt(0);
-    T obj = null;
-    if (len > 0) {
-      int bufferCount = lengthBuffer.getInt(4);
-      ByteBuffer bufferInfo = ByteBuffer.allocate((bufferCount)*4);
-      readChannel.read(bufferInfo);
-      bufferInfo.flip();
-      ByteBuffer[] data = new ByteBuffer[bufferCount];
-      for(int x=0;x<bufferCount;x++){
-        data[x] = ByteBuffer.allocate(bufferInfo.getInt());
-      }
-      readChannel.read(data);
-      for(ByteBuffer buffer:data){
-        buffer.flip();
-      }
-      obj = objectFactory.create();
-      obj.read(data);
-    }
-    return obj;
   }
 
 }
