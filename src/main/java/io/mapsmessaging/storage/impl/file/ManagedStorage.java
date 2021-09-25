@@ -18,7 +18,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.managed;
+package io.mapsmessaging.storage.impl.file;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.DSYNC;

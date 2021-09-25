@@ -18,7 +18,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.managed;
+package io.mapsmessaging.storage.impl.file;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
