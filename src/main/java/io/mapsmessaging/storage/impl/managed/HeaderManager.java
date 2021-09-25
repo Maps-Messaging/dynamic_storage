@@ -225,7 +225,7 @@ public class HeaderManager implements Closeable {
 
   public List<Long> keySet(){
     Iterator<HeaderItem> itemIterator = getIterator();
-    NaturalOrderedLongList keys = new NaturalOrderedLongList(0, new ByteBufferBitSetFactoryImpl(4096));
+    NaturalOrderedLongList keys = new NaturalOrderedLongList(0, new ByteBufferBitSetFactoryImpl(8192));
     while(itemIterator.hasNext()){
       HeaderItem item = itemIterator.next();
       if(item != null) {

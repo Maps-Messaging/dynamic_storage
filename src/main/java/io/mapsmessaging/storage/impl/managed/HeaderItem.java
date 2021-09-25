@@ -38,7 +38,8 @@ public class HeaderItem {
   @Getter private final long position;   // Position within the log file or the index file
   @Getter private final long expiry;     // Expiry of this entry
   @Getter private final long length;     // Expiry of this entry
-  @Getter @Setter private long key;
+
+  @Getter @Setter private transient long key;
 
   HeaderItem(){
     locationId = 0;
