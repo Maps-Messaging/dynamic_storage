@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.storage.impl.managed;
 
+import io.mapsmessaging.utilities.collections.MappedBufferHelper;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.ByteBufferBitSetFactoryImpl;
 import java.io.Closeable;
@@ -43,9 +44,9 @@ public class HeaderManager implements Closeable {
   private final long localEnd;
   private long end;
 
-  private LongAdder sizeMonitor;
+  private final LongAdder counter;
+  private final LongAdder emptySpace;
 
-  private volatile HeaderManager prev;
   private volatile HeaderManager next;
 
   private @Getter final long start;
@@ -68,16 +69,15 @@ public class HeaderManager implements Closeable {
     index = channel.map(MapMode.READ_WRITE, position, totalSize);
     index.load(); // Ensure the file contents are loaded
     closed = false;
-    sizeMonitor = new LongAdder();
+    counter = new LongAdder();
+    emptySpace = new LongAdder();
     walkIndex();
     if(nextPos != 0){
       channel.position(nextPos);
       next = new HeaderManager(channel);
-      next.prev = this;
     }
     else {
       next = null;
-      prev = null;
     }
   }
 
@@ -86,7 +86,8 @@ public class HeaderManager implements Closeable {
     this.itemSize = itemSize;
     end = start+itemSize;
     localEnd = end;
-    sizeMonitor = new LongAdder();
+    counter = new LongAdder();
+    emptySpace = new LongAdder();
 
     ByteBuffer header = ByteBuffer.allocate(24);
     header.putLong(0L);
@@ -106,7 +107,6 @@ public class HeaderManager implements Closeable {
     index.force(); // ensure the disk / memory are in sync
     closed = false;
     next = null;
-    prev = null;
   }
 
   @Override
@@ -123,7 +123,7 @@ public class HeaderManager implements Closeable {
   }
 
   public int size(){
-    int size = (int) sizeMonitor.sum();
+    int size = (int) counter.sum();
     if(next != null){
       size += next.size();
     }
@@ -135,7 +135,7 @@ public class HeaderManager implements Closeable {
       if(key<=end){
         setMapPosition(key);
         item.update(index);
-        sizeMonitor.increment();
+        counter.increment();
         return true;
       }
       else{
@@ -178,7 +178,7 @@ public class HeaderManager implements Closeable {
     if(key>= start && key <= localEnd){
       if(key<=end){
         setMapPosition(key);
-        sizeMonitor.decrement();
+        counter.decrement();
         HeaderItem.clear(index);
         return true;
       }
@@ -201,7 +201,7 @@ public class HeaderManager implements Closeable {
     for(int x=0;x<itemSize;x++){
       headerItem = new HeaderItem(index);
       if(headerItem.getPosition() != 0){
-        sizeMonitor.increment();
+        counter.increment();
       }
     }
   }
@@ -226,7 +226,6 @@ public class HeaderManager implements Closeable {
     if(next == null) {
       long pos = channel.position();
       next = new HeaderManager(start, itemSize, channel);
-      next.prev = this;
       channel.position(pos);
       ByteBuffer header = ByteBuffer.allocate(8);
       header.putLong(pos);

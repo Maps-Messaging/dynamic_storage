@@ -29,6 +29,7 @@ import io.mapsmessaging.storage.tasks.IsEmptyTask;
 import io.mapsmessaging.storage.tasks.KeepOnlyTask;
 import io.mapsmessaging.storage.tasks.RemoveTask;
 import io.mapsmessaging.storage.tasks.SizeTask;
+import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.Closeable;
@@ -42,20 +43,16 @@ import org.jetbrains.annotations.NotNull;
 
 public class AsyncStorage<T extends Storable> implements Closeable {
 
+  private final static int BACKGROUND_PRIORITY = 0;
+  private final static int FOREGROUND_PRIORITY = 1;
+
   private final Storage<T> storage;
-  private final TaskScheduler addTaskScheduler;
-  private final TaskScheduler generalTaskScheduler;
+  private final PriorityConcurrentTaskScheduler scheduler;
   private final AtomicBoolean closed;
 
   AsyncStorage(@NotNull Storage<T> storage, boolean enableReadWriteQueues) {
     this.storage = storage;
-    addTaskScheduler = new SingleConcurrentTaskScheduler(storage.getName());
-    if(enableReadWriteQueues) {
-      generalTaskScheduler = new SingleConcurrentTaskScheduler(storage.getName());
-    }
-    else{
-      generalTaskScheduler = addTaskScheduler;
-    }
+    scheduler = new PriorityConcurrentTaskScheduler(storage.getName(), 2);
     closed = new AtomicBoolean(false);
   }
 
@@ -73,44 +70,44 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   public final Future<Boolean> close(Completion<Boolean> completion) throws IOException {
     checkClose();
     closed.set(true);
-    return generalTaskScheduler.submit(new CloseTask<T>(storage, completion));
+    return scheduler.submit(new CloseTask<T>(storage, completion), FOREGROUND_PRIORITY);
   }
 
   public final Future<Boolean> delete(Completion<Boolean> completion) throws IOException {
     checkClose();
     closed.set(true);
-    return generalTaskScheduler.submit(new DeleteTask<T>(storage, completion));
+    return scheduler.submit(new DeleteTask<T>(storage, completion), FOREGROUND_PRIORITY);
   }
 
   public Future<T> add(@NotNull T toStore, Completion<T> completion) throws IOException {
     checkClose();
-    return addTaskScheduler.submit(new AddTask<>(storage, toStore, completion));
+    return scheduler.submit(new AddTask<>(storage, toStore, completion), FOREGROUND_PRIORITY);
   }
 
   public Future<Boolean> remove(long key, Completion<Boolean> completion) throws IOException {
     checkClose();
-    return generalTaskScheduler.submit(new RemoveTask<>(storage, key, completion));
+    return scheduler.submit(new RemoveTask<>(storage, key, completion), FOREGROUND_PRIORITY);
   }
 
   public Future<T> get(long key, Completion<T> completion) throws IOException {
     checkClose();
-    return generalTaskScheduler.submit(new GetTask<>(storage, key, completion));
+    return scheduler.submit(new GetTask<>(storage, key, completion), FOREGROUND_PRIORITY);
   }
 
   public Future<Long> size() throws IOException {
     checkClose();
-    return generalTaskScheduler.submit(new SizeTask<>(storage));
+    return scheduler.submit(new SizeTask<>(storage), FOREGROUND_PRIORITY);
   }
 
   public Future<Boolean> isEmpty() throws IOException {
     checkClose();
-    return generalTaskScheduler.submit(new IsEmptyTask<>(storage));
+    return scheduler.submit(new IsEmptyTask<>(storage), FOREGROUND_PRIORITY);
   }
 
   // Returns a list of events NOT found but was in the to keep list
   public Future<List<Long>> keepOnly(@NotNull List<Long> listToKeep, Completion<List<Long>> completion) throws IOException {
     checkClose();
-    return generalTaskScheduler.submit(new KeepOnlyTask<>(storage, listToKeep, completion));
+    return scheduler.submit(new KeepOnlyTask<>(storage, listToKeep, completion), FOREGROUND_PRIORITY);
   }
 
   protected void checkClose() throws IOException {
