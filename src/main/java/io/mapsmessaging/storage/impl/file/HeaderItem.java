@@ -27,7 +27,7 @@ import lombok.Setter;
 
 public class HeaderItem {
 
-  public static final int HEADER_SIZE = 32;
+  public static final int HEADER_SIZE = 16;
   private static final byte[] RESET_HEADER;
   static{
     RESET_HEADER = new byte[HEADER_SIZE];
@@ -39,7 +39,7 @@ public class HeaderItem {
   @Getter private final long expiry;     // Expiry of this entry
   @Getter private final long length;     // Expiry of this entry
 
-  @Getter @Setter private transient long key;
+  @Getter @Setter private long key;
 
   HeaderItem(){
     locationId = 0;
@@ -56,17 +56,25 @@ public class HeaderItem {
   }
 
   public HeaderItem(ByteBuffer buffer){
-    locationId = buffer.getLong();
-    position = buffer.getLong();
-    expiry = buffer.getLong();
-    length = buffer.getLong();
+    long tmp1 = buffer.getLong();
+    long tmp2 = buffer.getLong();
+
+    locationId = tmp1 >> 32;
+    position = tmp1 & 0xFFFFFFFFL;
+
+    expiry = tmp2 >> 32;
+    length = tmp2 & 0xFFFFFFFFL;
   }
 
   public void update(ByteBuffer buffer){
-    buffer.putLong(locationId);
-    buffer.putLong(position);
-    buffer.putLong(expiry);
-    buffer.putLong(length);
+    long tmp1 = locationId & 0xEFFFFFFFL << 32;
+    tmp1 = tmp1 | (position & 0xFFFFFFFFL);
+
+    long tmp2 = expiry & 0xEFFFFFFFL << 32;
+    tmp2 = tmp2 | (length & 0xFFFFFFFFL);
+
+    buffer.putLong(tmp1);
+    buffer.putLong(tmp2);
   }
 
   public static void clear(ByteBuffer buffer){
