@@ -67,6 +67,5 @@ public class JCSCachedStorage<T extends Storable> implements Cache<T> {
   public void cacheDelete(){
     cacheClear();
     cache.dispose();
-  };
-
+  }
 }
