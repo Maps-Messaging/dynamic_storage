@@ -79,21 +79,6 @@ public class WeakReferenceCacheStorage<T extends Storable> extends CacheLayer<T>
   }
 
   @Override
-  public @Nullable T get(long key) throws IOException {
-    T obj = cache.get(key);
-    if (obj == null) {
-      obj = super.get(key);
-      if (obj != null) {
-        cache.put(key, obj);
-      }
-    }
-    else{
-      cacheHit++;
-    }
-    return obj;
-  }
-
-  @Override
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
     cache.clear();
     return super.keepOnly(listToKeep);
@@ -108,5 +93,15 @@ public class WeakReferenceCacheStorage<T extends Storable> extends CacheLayer<T>
   public void close() throws IOException {
     cache.clear();
     super.close();
+  }
+
+  @Override
+  protected T cacheGet(long key) {
+    return cache.get(key);
+  }
+
+  @Override
+  protected void cachePut(T obj) {
+    cache.put(obj.getKey(), obj);
   }
 }

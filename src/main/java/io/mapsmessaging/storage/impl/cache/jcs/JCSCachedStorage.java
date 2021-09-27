@@ -95,19 +95,13 @@ public class JCSCachedStorage<T extends Storable> extends CacheLayer<T> {
   }
 
   @Override
-  public @Nullable T get(long key) throws IOException {
-    T obj = cache.get(key);
-    if (obj == null) {
-      obj = super.get(key);
-      if (obj != null) {
-        cache.put(key, obj);
-      }
-    }
-    else{
-      cacheHit++;
-    }
+  protected T cacheGet(long key) {
+    return cache.get(key);
+  }
 
-    return obj;
+  @Override
+  protected void cachePut(T obj) {
+    cache.put(obj.getKey(), obj);
   }
 
 }

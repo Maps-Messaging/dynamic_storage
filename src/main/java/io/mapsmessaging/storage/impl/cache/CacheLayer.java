@@ -25,7 +25,10 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.tasks.Completion;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,8 +38,8 @@ public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T
 
   protected final Storage<T> baseStorage;
   private final boolean enableWriteThrough;
-  protected volatile long cacheMiss;
-  protected volatile long cacheHit;
+  protected final LongAdder cacheMiss = new LongAdder();
+  protected final LongAdder cacheHit =new LongAdder();
 
   protected CacheLayer(){
     baseStorage = null;
@@ -46,69 +49,93 @@ public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T
   protected CacheLayer(boolean enableWriteThrough, Storage<T> baseStorage) {
     this.baseStorage = baseStorage;
     this.enableWriteThrough = enableWriteThrough;
-    cacheMiss = 0;
-    cacheHit = 0;
   }
 
   public long getCacheMiss() {
-    return cacheMiss;
+    return cacheMiss.sum();
   }
 
   public long getCacheHit() {
-    return cacheHit;
+    return cacheHit.sum();
   }
 
   @Override
   public String getName() {
-    return baseStorage.getName();
+    if(baseStorage != null)
+      return baseStorage.getName();
+    return "";
   }
 
   @Override
   public void delete() throws IOException {
-    baseStorage.delete();
+    if(baseStorage != null) baseStorage.delete();
   }
 
   public void add(@NotNull T object,  Completion<T> completion) throws IOException{
     if(enableWriteThrough && completion != null ){
       completion.onCompletion(object);
     }
-    baseStorage.add(object);
+    if(baseStorage != null) baseStorage.add(object);
   }
 
 
   @Override
   public void add(@NotNull T object) throws IOException {
-    baseStorage.add(object);
+    if(baseStorage != null) baseStorage.add(object);
   }
 
   @Override
   public boolean remove(long key) throws IOException {
-    return baseStorage.remove(key);
-  }
-
-  @Override
-  public @Nullable T get(long key) throws IOException {
-    cacheMiss++;
-    return baseStorage.get(key);
+    if(baseStorage != null)
+      return baseStorage.remove(key);
+    return false;
   }
 
   @Override
   public long size() throws IOException {
-    return baseStorage.size();
+    if(baseStorage != null) return baseStorage.size();
+    return 0;
   }
 
   @Override
   public boolean isEmpty() {
-    return baseStorage.isEmpty();
+    if(baseStorage != null) return baseStorage.isEmpty();
+    return false;
   }
 
   @Override
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
-    return baseStorage.keepOnly(listToKeep);
+    if(baseStorage != null)
+      return baseStorage.keepOnly(listToKeep);
+    return new ArrayList<>();
   }
 
   @Override
   public void close() throws IOException {
-    baseStorage.close();
+    if(baseStorage != null) baseStorage.close();
   }
+
+  @Override
+  public @Nullable T get(long key) throws IOException {
+    T obj = cacheGet(key);
+    if (obj == null) {
+      cacheMiss.increment();
+      if(baseStorage != null) {
+        obj = baseStorage.get(key);
+      }
+      if (obj != null) {
+        cachePut(obj);
+      }
+    }
+    else{
+      cacheHit.increment();
+    }
+    return obj;
+  }
+
+
+  protected abstract T cacheGet(long key);
+
+  protected abstract void cachePut(T obj);
+
 }
