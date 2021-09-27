@@ -29,6 +29,9 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.impl.file.tasks.ValidateIndexAndDataTask;
+import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
+import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -54,7 +57,9 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
   private final FileChannel mapChannel;
   private final DataStorage<T> dataStorage;
 
+  private TaskScheduler scheduler;
   private volatile boolean closed;
+  private boolean requiresValidation;
 
   public ManagedStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
     this.fileName = fileName+"_index";
@@ -80,6 +85,7 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
     }
     dataStorage = new DataStorage<T>(fileName+"_data", factory, sync);
     closed = false;
+    scheduler = null;
   }
 
   @Override
@@ -106,13 +112,14 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
     mapChannel.write(headerValidation);
     headerManager= new HeaderManager(0L, ITEM_COUNT, mapChannel);
     mapChannel.force(false);
+    requiresValidation = false;
   }
 
   private void reload()throws IOException{
     ByteBuffer headerValidation = ByteBuffer.allocate(32);
     mapChannel.read(headerValidation);
     headerValidation.flip();
-    boolean wasClosed = headerValidation.getLong() != CLOSE_STATE;
+    requiresValidation = headerValidation.getLong() != CLOSE_STATE;
     if(headerValidation.getLong() != UNIQUE_ID){
       throw new IOException("Unexpected file identifier located");
     }
@@ -193,6 +200,14 @@ public class ManagedStorage <T extends Storable> implements Storage<T> {
       return listToKeep;
     }
     return new ArrayList<>();
+  }
+
+  @Override
+  public void setTaskQueue(TaskScheduler scheduler) {
+    this.scheduler = scheduler;
+    if(requiresValidation){
+      scheduler.submit(new ValidateIndexAndDataTask<Void, T>(this)); // Will be submitted at low priority
+    }
   }
 
 }

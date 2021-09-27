@@ -24,6 +24,7 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.cache.CacheLayer;
 import io.mapsmessaging.storage.tasks.Completion;
+import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.IOException;
 import java.util.List;
 import org.apache.commons.jcs3.JCS;
@@ -54,6 +55,11 @@ public class JCSCachedStorage<T extends Storable> extends CacheLayer<T> {
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
     cache.clear();
     return super.keepOnly(listToKeep);
+  }
+
+  @Override
+  public void setTaskQueue(TaskScheduler scheduler) {
+
   }
 
   @Override

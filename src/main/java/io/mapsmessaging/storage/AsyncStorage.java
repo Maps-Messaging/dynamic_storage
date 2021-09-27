@@ -54,6 +54,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     this.storage = storage;
     scheduler = new PriorityConcurrentTaskScheduler(storage.getName(), 2);
     closed = new AtomicBoolean(false);
+    storage.setTaskQueue(scheduler);
   }
 
   @SneakyThrows

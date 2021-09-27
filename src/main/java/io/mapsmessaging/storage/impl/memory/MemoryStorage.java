@@ -22,6 +22,7 @@ package io.mapsmessaging.storage.impl.memory;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -94,6 +95,11 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
       return listToKeep;
     }
     return new ArrayList<>();
+  }
+
+  @Override
+  public void setTaskQueue(TaskScheduler scheduler) {
+
   }
 
   @Override

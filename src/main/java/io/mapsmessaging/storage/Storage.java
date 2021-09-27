@@ -20,6 +20,8 @@
 
 package io.mapsmessaging.storage;
 
+import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
+import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
@@ -49,4 +51,5 @@ public interface Storage<T extends Storable> extends Closeable {
   // Returns a list of events NOT found but was in the to keep list
   @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException;
 
+  void setTaskQueue(TaskScheduler scheduler);
 }
