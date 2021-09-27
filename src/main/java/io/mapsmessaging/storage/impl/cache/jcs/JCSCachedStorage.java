@@ -51,34 +51,31 @@ public class JCSCachedStorage<T extends Storable> extends CacheLayer<T> {
     return "JCS";
   }
 
-  @Override
-  public void close() throws IOException {
-    super.close();
-    cache.dispose();
-  }
 
   @Override
-  public void delete() throws IOException {
-    super.delete();
-    cache.dispose();
-  }
-
-  @Override
-  protected T cacheGet(long key) {
+  public T cacheGet(long key) {
     return cache.get(key);
   }
 
   @Override
-  protected void cachePut(T obj) {
+  public void cachePut(T obj) {
     cache.put(obj.getKey(), obj);
   }
 
   @Override
-  protected void cacheRemove(long key) {
+  public void cacheRemove(long key) {
     cache.remove(key);
   }
 
-  protected void cacheClear(){
+  @Override
+  public void cacheClear(){
     cache.clear();
   }
+
+  @Override
+  public void cacheDelete(){
+    cacheClear();
+    cache.dispose();
+  };
+
 }

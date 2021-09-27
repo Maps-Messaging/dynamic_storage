@@ -34,7 +34,7 @@ import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T> {
+public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T>, Cache<T> {
 
 
   protected final Storage<T> baseStorage;
@@ -69,7 +69,7 @@ public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T
 
   @Override
   public void delete() throws IOException {
-    cacheClear();
+    cacheDelete();
     if(baseStorage != null) baseStorage.delete();
   }
 
@@ -119,7 +119,7 @@ public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T
 
   @Override
   public void close() throws IOException {
-    cacheClear();
+    cacheDelete();
     if(baseStorage != null) baseStorage.close();
   }
 
@@ -140,14 +140,6 @@ public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T
     }
     return obj;
   }
-
-  protected abstract void cacheClear();
-
-  protected abstract T cacheGet(long key);
-
-  protected abstract void cachePut(T obj);
-
-  protected abstract void cacheRemove(long key);
 
   @Override
   public void setTaskQueue(TaskScheduler scheduler) {}

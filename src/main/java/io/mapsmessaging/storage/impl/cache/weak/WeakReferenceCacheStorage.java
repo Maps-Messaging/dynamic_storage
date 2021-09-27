@@ -54,21 +54,27 @@ public class WeakReferenceCacheStorage<T extends Storable> extends CacheLayer<T>
   }
 
   @Override
-  protected T cacheGet(long key) {
+  public T cacheGet(long key) {
     return cache.get(key);
   }
 
   @Override
-  protected void cachePut(T obj) {
+  public void cachePut(T obj) {
     cache.put(obj.getKey(), obj);
   }
 
   @Override
-  protected void cacheRemove(long key) {
+  public void cacheRemove(long key) {
     cache.remove(key);
   }
 
-  protected void cacheClear(){
+  @Override
+  public void cacheClear(){
     cache.clear();
   }
+
+  @Override
+  public void cacheDelete(){
+    cacheClear();
+  };
 }
