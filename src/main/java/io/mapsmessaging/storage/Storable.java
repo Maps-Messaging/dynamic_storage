@@ -20,9 +20,10 @@
 
 package io.mapsmessaging.storage;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import org.jetbrains.annotations.NotNull;
 
 public interface Storable {
 

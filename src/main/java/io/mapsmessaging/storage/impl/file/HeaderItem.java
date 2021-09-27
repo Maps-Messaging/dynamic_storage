@@ -20,10 +20,11 @@
 
 package io.mapsmessaging.storage.impl.file;
 
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class HeaderItem {
 

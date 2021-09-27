@@ -20,14 +20,11 @@
 
 package io.mapsmessaging.storage.impl.file;
 
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.DSYNC;
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.SPARSE;
-import static java.nio.file.StandardOpenOption.WRITE;
-
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -35,8 +32,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import static java.nio.file.StandardOpenOption.*;
 
 public class DataStorage<T extends Storable> implements Closeable {
 

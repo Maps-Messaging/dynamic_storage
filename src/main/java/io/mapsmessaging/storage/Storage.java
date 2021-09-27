@@ -21,11 +21,12 @@
 package io.mapsmessaging.storage;
 
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public interface Storage<T extends Storable> extends Closeable {
 

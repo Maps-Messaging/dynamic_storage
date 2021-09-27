@@ -21,8 +21,9 @@
 package io.mapsmessaging.storage;
 
 import io.mapsmessaging.storage.tasks.Completion;
-import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 
 public interface LayeredStorage<T extends Storable> extends Storage<T> {
 

@@ -22,9 +22,10 @@ package io.mapsmessaging.storage.tasks;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
-import java.util.concurrent.Callable;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.concurrent.Callable;
 
 public abstract class BaseTask<T extends Storable, V> implements Callable<V> {
 
