@@ -52,46 +52,15 @@ public class JCSCachedStorage<T extends Storable> extends CacheLayer<T> {
   }
 
   @Override
-  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
-    cache.clear();
-    return super.keepOnly(listToKeep);
-  }
-
-  @Override
-  public void setTaskQueue(TaskScheduler scheduler) {
-
-  }
-
-  @Override
   public void close() throws IOException {
-    cache.clear();
-    cache.dispose();
     super.close();
+    cache.dispose();
   }
 
   @Override
   public void delete() throws IOException {
-    cache.clear();
-    cache.dispose();
     super.delete();
-  }
-
-  @Override
-  public void add(@NotNull T object,  Completion<T> completion) throws IOException{
-    cache.put(object.getKey(), object);
-    super.add(object, completion);
-  }
-
-  @Override
-  public void add(@NotNull T object) throws IOException {
-    super.add(object);
-    cache.put(object.getKey(), object);
-  }
-
-  @Override
-  public boolean remove(long key) throws IOException {
-    cache.remove(key);
-    return super.baseStorage.remove(key);
+    cache.dispose();
   }
 
   @Override
@@ -104,4 +73,12 @@ public class JCSCachedStorage<T extends Storable> extends CacheLayer<T> {
     cache.put(obj.getKey(), obj);
   }
 
+  @Override
+  protected void cacheRemove(long key) {
+    cache.remove(key);
+  }
+
+  protected void cacheClear(){
+    cache.clear();
+  }
 }
