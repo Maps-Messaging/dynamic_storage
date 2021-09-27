@@ -38,14 +38,14 @@ import java.nio.file.StandardOpenOption;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class DataStorage<N extends Storable> implements Closeable {
+public class DataStorage<T extends Storable> implements Closeable {
 
   private static final double VERSION = 1.0;
   private static final long UNIQUE_ID = 0xf00d0000d00f0000L;
   private static final long OPEN_STATE = 0xEFFFFFFFFFFFFFFFL;
   private static final long CLOSE_STATE = 0x0000000000000000L;
 
-  private final Factory<N> objectFactory;
+  private final Factory<T> objectFactory;
   private final String fileName;
   private final FileChannel readChannel;
   private final FileChannel writeChannel;
@@ -53,7 +53,7 @@ public class DataStorage<N extends Storable> implements Closeable {
 
   private volatile boolean closed;
 
-  public DataStorage(String fileName, Factory<N> factory, boolean sync) throws IOException {
+  public DataStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
     objectFactory = factory;
     this.fileName = fileName;
     lengthBuffer = ByteBuffer.allocate(8);
@@ -136,7 +136,7 @@ public class DataStorage<N extends Storable> implements Closeable {
     Files.delete(path.toPath());
   }
 
-  public HeaderItem add(@NotNull N object) throws IOException {
+  public HeaderItem add(@NotNull T object) throws IOException {
     long eof = writeChannel.size();
     writeChannel.position(eof);
     ByteBuffer[] buffers = object.write();
@@ -161,8 +161,8 @@ public class DataStorage<N extends Storable> implements Closeable {
     return item;
   }
 
-  public @Nullable N get(HeaderItem item) throws IOException {
-    N obj = null;
+  public @Nullable T get(HeaderItem item) throws IOException {
+    T obj = null;
     if (item != null) {
       long pos = item.getPosition();
       obj = reloadMessage(pos);
@@ -170,12 +170,12 @@ public class DataStorage<N extends Storable> implements Closeable {
     return obj;
   }
 
-  private N reloadMessage(long filePosition) throws IOException {
+  private T reloadMessage(long filePosition) throws IOException {
     readChannel.position(filePosition);
     lengthBuffer.clear();
     readChannel.read(lengthBuffer);
     int len = lengthBuffer.getInt(0);
-    N obj = null;
+    T obj = null;
     if (len > 0) {
       int bufferCount = lengthBuffer.getInt(4);
       ByteBuffer bufferInfo = ByteBuffer.allocate((bufferCount) * 4);

@@ -34,12 +34,12 @@ public class HeaderItem {
     Arrays.fill(RESET_HEADER, (byte)0);
   }
 
-  @Getter private final long locationId; // If 0 then located within the index file, else is the unique ID of the log file
+  @Getter private final long locationId; // If 0 then located within the index file, else is the unique ID of the data file
   @Getter private final long position;   // Position within the log file or the index file
-  @Getter private final long expiry;     // Expiry of this entry
-  @Getter private final long length;     // Expiry of this entry
+  @Getter private final long expiry;     // Expiry of this entry in seconds. Max value is 2^32 seconds or 136 years. Should be enough
+  @Getter private final long length;     // The number of bytes that the record consumes
 
-  @Getter @Setter private long key;
+  @Getter @Setter private long key;      // The key, this is calculated and is NOT stored in the header!
 
   HeaderItem(){
     locationId = 0;
