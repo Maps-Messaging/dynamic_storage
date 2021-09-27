@@ -24,6 +24,7 @@ import io.mapsmessaging.storage.LayeredStorage;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.tasks.Completion;
+import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,24 +69,29 @@ public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T
 
   @Override
   public void delete() throws IOException {
+    cacheClear();
     if(baseStorage != null) baseStorage.delete();
   }
 
+
+  @Override
   public void add(@NotNull T object,  Completion<T> completion) throws IOException{
+    cachePut(object);
     if(enableWriteThrough && completion != null ){
       completion.onCompletion(object);
     }
     if(baseStorage != null) baseStorage.add(object);
   }
 
-
   @Override
   public void add(@NotNull T object) throws IOException {
+    cachePut(object);
     if(baseStorage != null) baseStorage.add(object);
   }
 
   @Override
   public boolean remove(long key) throws IOException {
+    cacheRemove(key);
     if(baseStorage != null)
       return baseStorage.remove(key);
     return false;
@@ -105,6 +111,7 @@ public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T
 
   @Override
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
+    cacheClear();
     if(baseStorage != null)
       return baseStorage.keepOnly(listToKeep);
     return new ArrayList<>();
@@ -112,6 +119,7 @@ public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T
 
   @Override
   public void close() throws IOException {
+    cacheClear();
     if(baseStorage != null) baseStorage.close();
   }
 
@@ -133,9 +141,15 @@ public abstract class CacheLayer<T extends Storable> implements LayeredStorage<T
     return obj;
   }
 
+  protected abstract void cacheClear();
 
   protected abstract T cacheGet(long key);
 
   protected abstract void cachePut(T obj);
+
+  protected abstract void cacheRemove(long key);
+
+  @Override
+  public void setTaskQueue(TaskScheduler scheduler) {}
 
 }
