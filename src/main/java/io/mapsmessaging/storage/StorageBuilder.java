@@ -112,7 +112,7 @@ public class StorageBuilder<T extends Storable> {
     if(storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
       if (baseStore.isCacheable() && cacheName != null) {
-        baseStore = StorageFactoryFactory.getInstance().createLayer(cacheName, enableWriteThrough, baseStore);
+        baseStore = StorageFactoryFactory.getInstance().createCache(cacheName, enableWriteThrough, baseStore);
       }
       return baseStore;
     }
@@ -126,7 +126,7 @@ public class StorageBuilder<T extends Storable> {
     if(storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
       if (baseStore.isCacheable() && cacheName != null) {
-        baseStore = StorageFactoryFactory.getInstance().createLayer(cacheName, enableWriteThrough, baseStore);
+        baseStore = StorageFactoryFactory.getInstance().createCache(cacheName, enableWriteThrough, baseStore);
       }
       return new AsyncStorage<>(baseStore, enableReadWriteQueues);
     }

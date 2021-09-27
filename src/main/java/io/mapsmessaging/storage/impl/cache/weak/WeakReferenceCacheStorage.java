@@ -21,30 +21,21 @@
 package io.mapsmessaging.storage.impl.cache.weak;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.impl.cache.CacheLayer;
-import io.mapsmessaging.storage.tasks.Completion;
-import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
-import java.io.IOException;
+import io.mapsmessaging.storage.impl.cache.Cache;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public class WeakReferenceCacheStorage<T extends Storable> extends CacheLayer<T> {
+public class WeakReferenceCacheStorage<T extends Storable> implements Cache<T> {
 
   private final Map<Long, T> cache;
 
   public WeakReferenceCacheStorage(){
-    super(false, null);
     cache = new LinkedHashMap<>();
   }
 
 
-  public WeakReferenceCacheStorage(boolean enableWriteThrough, Storage<T> actual) {
-    super(enableWriteThrough, actual);
+  public WeakReferenceCacheStorage(String name) {
     cache = new WeakHashMap<>();
   }
 
@@ -76,5 +67,5 @@ public class WeakReferenceCacheStorage<T extends Storable> extends CacheLayer<T>
   @Override
   public void cacheDelete(){
     cacheClear();
-  };
+  }
 }

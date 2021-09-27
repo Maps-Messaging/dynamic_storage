@@ -28,6 +28,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.ServiceLoader.Provider;
+
+import io.mapsmessaging.storage.impl.cache.Cache;
+import io.mapsmessaging.storage.impl.cache.CacheLayer;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,13 +40,12 @@ class StorageFactoryFactory {
 
   private static final StorageFactoryFactory instance = new StorageFactoryFactory();
   private final ServiceLoader<StorageFactory> storageFactories;
-
-  private final ServiceLoader<LayeredStorage> layeredStorages;
+  private final ServiceLoader<Cache> caches;
 
 
   private StorageFactoryFactory() {
     storageFactories = ServiceLoader.load(StorageFactory.class);
-    layeredStorages = ServiceLoader.load(LayeredStorage.class);
+    caches = ServiceLoader.load(Cache.class);
   }
 
   public static StorageFactoryFactory getInstance() {
@@ -58,7 +60,7 @@ class StorageFactoryFactory {
 
   public List<String> getKnownLayers() {
     List<String> layered = new ArrayList<>();
-    layeredStorages.forEach(layer -> layered.add(layer.getName()));
+    caches.forEach(layer -> layered.add(layer.getName()));
     return layered;
   }
 
@@ -86,21 +88,22 @@ class StorageFactoryFactory {
 
   @SneakyThrows
   @NotNull
-  public <T extends Storable> LayeredStorage<T> createLayer(@NotNull String name, boolean enableWriteThrough, @NotNull Storage<T> baseStore) {
-    Optional<Provider<LayeredStorage>> first = layeredStorages.stream().filter(layer -> layer.get().getName().equals(name)).findFirst();
+  public <T extends Storable> CacheLayer<T> createCache(@NotNull String name, boolean enableWriteThrough, @NotNull Storage<T> baseStore) {
+    Optional<Provider<Cache>> first = caches.stream().filter(layer -> layer.get().getName().equals(name)).findFirst();
     if (first.isPresent()) {
-      LayeredStorage<?> found = first.get().get();
+      Cache<?> found = first.get().get();
       Class<T> clazz = (Class<T>) found.getClass();
       Constructor<T>[] constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
       Constructor<T> constructor = null;
       for (Constructor<T> cstr : constructors) {
-        if (cstr.getParameters().length == 2) {
+        if (cstr.getParameters().length == 1) {
           constructor = cstr;
           break;
         }
       }
       if (constructor != null) {
-        return (LayeredStorage<T>) constructor.newInstance(enableWriteThrough, baseStore);
+        Cache<T> cache = (Cache<T>) constructor.newInstance(baseStore.getName());
+        return new CacheLayer<T>(enableWriteThrough, cache, baseStore);
       }
     }
     throw new IOException("Unknown layered storage declared");

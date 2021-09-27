@@ -21,6 +21,8 @@
 package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.impl.cache.Cache;
+import io.mapsmessaging.storage.impl.cache.CacheLayer;
 import io.mapsmessaging.storage.impl.cache.jcs.JCSCachedStorage;
 import java.io.IOException;
 
@@ -28,6 +30,7 @@ public class JCSCacheTest extends BaseLayeredTest{
 
   @Override
   public Storage<MappedData> createStore(Storage<MappedData> storage) throws IOException {
-    return new JCSCachedStorage<>(false, storage);
+    Cache<MappedData> cache = new JCSCachedStorage<>(storage.getName());
+    return new CacheLayer<MappedData>(false, cache, storage);
   }
 }

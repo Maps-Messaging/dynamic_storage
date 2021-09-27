@@ -30,7 +30,6 @@ import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.file.tasks.ValidateIndexAndDataTask;
-import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.File;
 import java.io.IOException;

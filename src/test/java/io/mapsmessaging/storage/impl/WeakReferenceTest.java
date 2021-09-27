@@ -21,13 +21,15 @@
 package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.impl.cache.Cache;
+import io.mapsmessaging.storage.impl.cache.CacheLayer;
 import io.mapsmessaging.storage.impl.cache.weak.WeakReferenceCacheStorage;
-import java.io.IOException;
 
 public class WeakReferenceTest extends BaseLayeredTest{
 
   @Override
-  public Storage<MappedData> createStore(Storage<MappedData> storage) throws IOException {
-    return new WeakReferenceCacheStorage<>(false, storage);
+  public Storage<MappedData> createStore(Storage<MappedData> storage) {
+    Cache<MappedData> cache = new WeakReferenceCacheStorage<>(storage.getName());
+    return new CacheLayer<MappedData>(false, cache, storage);
   }
 }

@@ -21,29 +21,20 @@
 package io.mapsmessaging.storage.impl.cache.jcs;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.impl.cache.CacheLayer;
-import io.mapsmessaging.storage.tasks.Completion;
-import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
-import java.io.IOException;
-import java.util.List;
+import io.mapsmessaging.storage.impl.cache.Cache;
 import org.apache.commons.jcs3.JCS;
 import org.apache.commons.jcs3.access.CacheAccess;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public class JCSCachedStorage<T extends Storable> extends CacheLayer<T> {
+public class JCSCachedStorage<T extends Storable> implements Cache<T> {
 
   private final CacheAccess<Long, T> cache;
 
   public JCSCachedStorage(){
-    super(false,null);
     cache = null;
   }
 
-  public JCSCachedStorage(boolean enableWriteThrough, Storage<T> baseStorage) {
-    super(enableWriteThrough, baseStorage);
-    cache = JCS.getInstance(baseStorage.getName() + "_cache");
+  public JCSCachedStorage(String name) {
+    cache = JCS.getInstance(name + "_cache");
   }
 
   @Override
