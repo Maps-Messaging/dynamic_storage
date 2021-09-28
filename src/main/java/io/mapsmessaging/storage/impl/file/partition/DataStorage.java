@@ -50,7 +50,10 @@ public class DataStorage<T extends Storable> implements Closeable {
   private final ByteBuffer lengthBuffer;
 
   private volatile boolean closed;
-  private @Getter boolean validationRequired;
+  private @Getter
+  boolean validationRequired;
+  private @Getter
+  boolean full;
 
   public DataStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
     objectFactory = factory;
@@ -61,6 +64,7 @@ public class DataStorage<T extends Storable> implements Closeable {
     if (file.exists()) {
       length = file.length();
     }
+    full = length > (1L << 32);
     StandardOpenOption[] writeOptions;
     StandardOpenOption[] readOptions;
     if (sync) {
@@ -154,7 +158,9 @@ public class DataStorage<T extends Storable> implements Closeable {
     System.arraycopy(buffers, 0, inclusive, 1, buffers.length);
     inclusive[0] = meta;
     writeChannel.write(inclusive);
-    long length = writeChannel.size() - eof;
+    long fileLength = writeChannel.size();
+    long length = fileLength - eof;
+    full = fileLength > (1L << 32);
     IndexRecord item = new IndexRecord(0, eof, 0, length);
     item.setKey(object.getKey());
     return item;

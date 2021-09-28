@@ -167,6 +167,10 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     indexManager.add(object.getKey(), item);
   }
 
+  public boolean isFull(){
+    return dataStorage.isFull();
+  }
+
   @Override
   public boolean remove(long key) throws IOException {
     return indexManager.delete(key);
@@ -215,5 +219,9 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
   @Override
   public void setExecutor(TaskScheduler scheduler) {
     // We don't actually get the executor here
+  }
+
+  public void setEnd(long key) throws IOException {
+    indexManager.setEnd(key);
   }
 }

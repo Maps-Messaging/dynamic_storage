@@ -321,7 +321,7 @@ public class BaseTest {
 
     @Override
     public @NotNull ByteBuffer[] write() throws IOException {
-      ByteBuffer[] packed = new ByteBuffer[2];
+      ByteBuffer[] packed = new ByteBuffer[3];
       ByteBuffer headers = ByteBuffer.allocate(10240);
       BufferObjectWriter bow = new BufferObjectWriter(headers);
       writeHeader(bow);
@@ -332,6 +332,7 @@ public class BaseTest {
       buf.put(prebuilt);
       buf.flip();
       packed[1] = buf;
+      packed[2] = data;
       return packed;
     }
   }

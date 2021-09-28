@@ -78,6 +78,10 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   public void add(@NotNull T object) throws IOException {
     IndexStorage<T> partition = locateOrCreatePartition(object.getKey());
     partition.add(object);
+    if(partition.isFull()){
+      System.err.println("Setting End to "+object.getKey());
+      partition.setEnd(object.getKey());
+    }
   }
 
   @Override

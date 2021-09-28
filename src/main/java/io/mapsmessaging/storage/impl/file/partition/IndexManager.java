@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 public class IndexManager implements Closeable {
 
   private volatile boolean closed;
+  private final FileChannel channel;
   private final long position;
   private final long localEnd;
   private long end;
@@ -51,22 +52,21 @@ public class IndexManager implements Closeable {
   private volatile IndexManager next;
 
   private @Getter final long start;
-  private @Getter final int itemSize;
 
   private MappedByteBuffer index;
 
   public IndexManager(FileChannel channel) throws IOException {
+    this.channel = channel;
     ByteBuffer header = ByteBuffer.allocate(24);
-
     channel.read(header);
     header.flip();
     long nextPos = header.getLong();
     start = header.getLong();
-    itemSize = (int)header.getLong();
-    end = start+itemSize;
+    end   = header.getLong();
     localEnd = end;
+
     position = channel.position();
-    int totalSize = itemSize * IndexRecord.HEADER_SIZE;
+    int totalSize = (int)(end-start) * IndexRecord.HEADER_SIZE;
     index = channel.map(MapMode.READ_WRITE, position, totalSize);
     index.load(); // Ensure the file contents are loaded
     closed = false;
@@ -83,8 +83,8 @@ public class IndexManager implements Closeable {
   }
 
   public IndexManager(long start, int itemSize, FileChannel channel) throws IOException {
+    this.channel = channel;
     this.start = start;
-    this.itemSize = itemSize;
     end = start+itemSize;
     localEnd = end;
     counter = new LongAdder();
@@ -93,7 +93,7 @@ public class IndexManager implements Closeable {
     ByteBuffer header = ByteBuffer.allocate(24);
     header.putLong(0L);
     header.putLong(start);
-    header.putLong(itemSize);
+    header.putLong(end);
     header.flip();
     channel.write(header);
     header.flip();
@@ -220,7 +220,8 @@ public class IndexManager implements Closeable {
   void walkIndex(){
     IndexRecord indexRecord;
     index.position(0);
-    for(int x=0;x<itemSize;x++){
+    int size = (int)(end -start);
+    for(int x=0;x<size;x++){
       indexRecord = new IndexRecord(index);
       if(indexRecord.getPosition() != 0){
         counter.increment();
@@ -245,19 +246,13 @@ public class IndexManager implements Closeable {
     return new HeaderIterator();
   }
 
-  void expandHeader(long start, FileChannel channel) throws IOException {
-    if(next == null) {
-      long pos = channel.position();
-      next = new IndexManager(start, itemSize, channel);
-      channel.position(pos);
-      ByteBuffer header = ByteBuffer.allocate(8);
-      header.putLong(pos);
-      channel.write(header); // Map in the new pointer
-    }
-    else{
-      next.expandHeader(start, channel); // keep moving forward until you get to the end
-    }
-    end = start + itemSize;
+  public void setEnd(long key) throws IOException {
+    end = key;
+    channel.position(position+16);
+    ByteBuffer header = ByteBuffer.allocate(8);
+    header.putLong(key);
+    header.flip();
+    channel.write(header);
   }
 
   public class HeaderIterator implements Iterator<IndexRecord>{

@@ -25,6 +25,7 @@ import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -170,6 +171,36 @@ public abstract class BaseStoreTest extends BaseTest{
       }
       for(int x=counter;x<10000000;x++){
         storage.remove(x, null).get();
+      }
+      Assertions.assertEquals(0, storage.size().get());
+    } finally {
+      if(storage != null) {
+        storage.delete(null).get();
+      }
+    }
+  }
+
+  @Test
+  void basicLargeDataUseCaseTest() throws Exception {
+    AsyncStorage<MappedData> storage = null;
+    try {
+      storage = createAsyncStore(false);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+      int size = 8 * 1024 * 1024 * 100;
+      ByteBuffer bb = ByteBuffer.allocate(size);
+      long y=0;
+      while(bb.limit() - bb.position() > 8){
+        bb.putLong(y);
+        y++;
+      }
+      for (int x = 0; x < 10000000; x++) {
+        bb.flip();
+        MappedData message = createMessageBuilder(x);
+        message.setData(bb);
+        storage.add(message, null).get();
       }
       Assertions.assertEquals(0, storage.size().get());
     } finally {
