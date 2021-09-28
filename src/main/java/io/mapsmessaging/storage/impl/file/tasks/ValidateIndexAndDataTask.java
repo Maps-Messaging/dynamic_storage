@@ -22,7 +22,7 @@ package io.mapsmessaging.storage.impl.file.tasks;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
 
-public class ValidateIndexAndDataTask<N, T extends Storable> implements FileTask<N>{
+public class ValidateIndexAndDataTask<T extends Storable> implements FileTask<Boolean>{
 
   private final IndexStorage<T> storeToValidate;
   private long index;
@@ -33,7 +33,7 @@ public class ValidateIndexAndDataTask<N, T extends Storable> implements FileTask
   }
 
   @Override
-  public N call() throws Exception {
+  public Boolean call() throws Exception {
 
     return null;
   }

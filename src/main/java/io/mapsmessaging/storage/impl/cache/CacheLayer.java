@@ -125,8 +125,8 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   }
 
   @Override
-  public void setTaskQueue(TaskScheduler scheduler) {
-    baseStorage.setTaskQueue(scheduler);
+  public void setExecutor(TaskScheduler scheduler) {
+    baseStorage.setExecutor(scheduler);
   }
 
 }

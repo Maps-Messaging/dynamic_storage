@@ -22,6 +22,7 @@ package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,6 +50,7 @@ public class DataStorage<T extends Storable> implements Closeable {
   private final ByteBuffer lengthBuffer;
 
   private volatile boolean closed;
+  private @Getter boolean validationRequired;
 
   public DataStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
     objectFactory = factory;
@@ -68,7 +70,7 @@ public class DataStorage<T extends Storable> implements Closeable {
       writeOptions = new StandardOpenOption[]{CREATE, WRITE, SPARSE};
       readOptions = new StandardOpenOption[]{READ, WRITE, SPARSE};
     }
-
+    validationRequired = false;
     writeChannel = (FileChannel) Files.newByteChannel(file.toPath(), writeOptions);
     readChannel = (FileChannel) Files.newByteChannel(file.toPath(), readOptions);
     if (length != 0) {
@@ -108,7 +110,7 @@ public class DataStorage<T extends Storable> implements Closeable {
     ByteBuffer headerValidation = ByteBuffer.allocate(24);
     readChannel.read(headerValidation);
     headerValidation.flip();
-    boolean wasClosed = headerValidation.getLong() != CLOSE_STATE;
+    validationRequired = headerValidation.getLong() != CLOSE_STATE;
     if (headerValidation.getLong() != UNIQUE_ID) {
       throw new IOException("Unexpected file identifier located");
     }

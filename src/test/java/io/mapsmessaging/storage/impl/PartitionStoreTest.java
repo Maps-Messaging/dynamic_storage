@@ -50,7 +50,6 @@ public class PartitionStoreTest extends BaseStoreTest{
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
-        .setCache()
         .setName("Test")
         .setProperties(properties);
     return storageBuilder.buildAsync();

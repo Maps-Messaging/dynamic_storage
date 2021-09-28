@@ -23,6 +23,7 @@ package io.mapsmessaging.storage.impl.file.partition;
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.file.tasks.ValidateIndexAndDataTask;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import org.jetbrains.annotations.NotNull;
@@ -53,13 +54,14 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
   private final FileChannel mapChannel;
   private final DataStorage<T> dataStorage;
 
-  private TaskScheduler scheduler;
+  private final TaskQueue scheduler;
   private volatile boolean closed;
   private boolean requiresValidation;
 
-  public IndexStorage(String fileName, Factory<T> factory, boolean sync, long start) throws IOException {
+  public IndexStorage(String fileName, Factory<T> factory, boolean sync, long start, TaskQueue taskScheduler) throws IOException {
     this.fileName = fileName+"_index";
     File file = new File(this.fileName);
+    scheduler = taskScheduler;
     long length = 0;
     if (file.exists()) {
       length = file.length();
@@ -80,8 +82,10 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
       initialise(start);
     }
     dataStorage = new DataStorage<T>(fileName+"_data", factory, sync);
+    if(dataStorage.isValidationRequired() || requiresValidation){
+      scheduler.submit(new ValidateIndexAndDataTask<>(this));
+    }
     closed = false;
-    scheduler = null;
   }
 
   @Override
@@ -209,11 +213,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public void setTaskQueue(TaskScheduler scheduler) {
-    this.scheduler = scheduler;
-    if(requiresValidation && scheduler != null){
-      scheduler.submit(new ValidateIndexAndDataTask<Void, T>(this)); // Will be submitted at low priority
-    }
+  public void setExecutor(TaskScheduler scheduler) {
+    // We don't actually get the executor here
   }
-
 }

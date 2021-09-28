@@ -12,17 +12,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class PartitionStorage <T extends Storable> implements Storage<T> {
 
-  private TaskScheduler taskScheduler;
-  private final Queue<FileTask<?>> taskQueue;
   private long partitionCounter;
+  private final TaskQueue taskScheduler;
   private final List<IndexStorage<T>> partitions;
   private final String fileName;
   private final String rootDirectory;
@@ -31,7 +28,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
 
   public PartitionStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
     partitions = new ArrayList<>();
-    taskQueue = new LinkedList<>();
+    taskScheduler = new TaskQueue();
     rootDirectory = fileName;
     this.fileName = fileName+File.separator+"partition_";
     this.sync = sync;
@@ -53,7 +50,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
         for (String test :childFiles) {
           if (test.startsWith("partition_") && test.endsWith("index")){
             String loadName = test.substring("partition_".length(), test.length()-"_index".length());
-            IndexStorage<T> indexStorage = new IndexStorage<>(fileName+loadName, factory, sync, 0);
+            IndexStorage<T> indexStorage = new IndexStorage<>(fileName+loadName, factory, sync, 0, taskScheduler);
             partitions.add(indexStorage);
           }
         }
@@ -133,8 +130,8 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public void setTaskQueue(TaskScheduler taskScheduler) {
-    this.taskScheduler = taskScheduler;
+  public void setExecutor(TaskScheduler scheduler) {
+    taskScheduler.setTaskScheduler(scheduler);
   }
 
   @Override
@@ -165,38 +162,18 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     if(!partitions.isEmpty()) {
       start = partitions.get(partitions.size() - 1).getEnd();
     }
-    IndexStorage<T> indexStorage = new IndexStorage<>(partitionName, factory, sync, start);
-    indexStorage.setTaskQueue(taskScheduler);
+    IndexStorage<T> indexStorage = new IndexStorage<>(partitionName, factory, sync, start, taskScheduler);
     partitions.add(indexStorage);
     partitions.sort(Comparator.comparingLong(IndexStorage::getStart));
     return indexStorage;
   }
 
   private void submit(FileTask<?> task) throws IOException {
-    if(taskScheduler == null){
-      taskQueue.offer(task);
-      if(taskQueue.size() > 10){
-        while(!taskQueue.isEmpty()){
-          executeTasks();
-        }
-      }
-    }
-    else{
-      Thread t = new Thread(() -> taskScheduler.submit(task));
-      t.start();
-    }
+    taskScheduler.submit(task);
   }
 
   @Override
   public boolean executeTasks() throws IOException {
-    FileTask<?> task = taskQueue.poll();
-    if(task != null){
-      try {
-        task.call();
-      } catch (Exception e) {
-        throw new IOException(e);
-      }
-    }
-    return !taskQueue.isEmpty();
+    return taskScheduler.executeTasks();
   }
 }

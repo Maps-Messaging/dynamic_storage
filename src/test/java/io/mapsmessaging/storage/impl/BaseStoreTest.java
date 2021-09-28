@@ -160,16 +160,15 @@ public abstract class BaseStoreTest extends BaseTest{
       // Remove any before we start
 
       int counter = -10000;
-      for (int x = 0; x < 1000000; x++) {
+      for (int x = 0; x < 10000000; x++) {
         MappedData message = createMessageBuilder(x);
-        validateMessage(message, x);
         storage.add(message, null).get();
         counter++;
         if(counter >= 0){
           storage.remove(counter, null).get();
         }
       }
-      for(int x=counter;x<1000000;x++){
+      for(int x=counter;x<10000000;x++){
         storage.remove(x, null).get();
       }
       Assertions.assertEquals(0, storage.size().get());

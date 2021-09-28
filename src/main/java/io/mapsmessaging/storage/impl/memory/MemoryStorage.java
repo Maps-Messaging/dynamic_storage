@@ -95,7 +95,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public void setTaskQueue(TaskScheduler scheduler) {
+  public void setExecutor(TaskScheduler scheduler) {
 
   }
 
