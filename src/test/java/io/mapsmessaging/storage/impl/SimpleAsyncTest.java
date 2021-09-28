@@ -45,7 +45,7 @@ public class SimpleAsyncTest extends BaseTest {
     properties.put("Sync", "true");
     properties.put("basePath", "./test.db");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Managed")
+    storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);
@@ -85,7 +85,7 @@ public class SimpleAsyncTest extends BaseTest {
     properties.put("Sync", "true");
     properties.put("basePath", "./test.db");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Managed")
+    storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);
@@ -128,13 +128,14 @@ public class SimpleAsyncTest extends BaseTest {
         async.get(x, new Completion<>() {
           @Override
           public void onCompletion(MappedData result) {
+            completed.set(true);
             Assertions.assertNotNull(result);
             validateMessage(result, finalX);
-            completed.set(true);
           }
 
           @Override
           public void onException(Exception exception) {
+            completed.set(true);
             Assertions.fail(exception);
           }
         });
@@ -146,12 +147,13 @@ public class SimpleAsyncTest extends BaseTest {
         async.remove(x, new Completion<>() {
           @Override
           public void onCompletion(Boolean result) {
-            Assertions.assertTrue(result);
             completed.set(true);
+            Assertions.assertTrue(result);
           }
 
           @Override
           public void onException(Exception exception) {
+            completed.set(true);
             Assertions.fail(exception);
           }
         });
@@ -185,7 +187,7 @@ public class SimpleAsyncTest extends BaseTest {
     properties.put("Sync", "true");
     properties.put("basePath", "./test.db");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Managed")
+    storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);

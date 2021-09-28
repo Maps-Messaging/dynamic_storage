@@ -18,7 +18,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file;
+package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
@@ -133,7 +133,7 @@ public class DataStorage<T extends Storable> implements Closeable {
     Files.delete(path.toPath());
   }
 
-  public HeaderItem add(@NotNull T object) throws IOException {
+  public IndexRecord add(@NotNull T object) throws IOException {
     long eof = writeChannel.size();
     writeChannel.position(eof);
     ByteBuffer[] buffers = object.write();
@@ -153,12 +153,12 @@ public class DataStorage<T extends Storable> implements Closeable {
     inclusive[0] = meta;
     writeChannel.write(inclusive);
     long length = writeChannel.size() - eof;
-    HeaderItem item = new HeaderItem(0, eof, 0, length);
+    IndexRecord item = new IndexRecord(0, eof, 0, length);
     item.setKey(object.getKey());
     return item;
   }
 
-  public @Nullable T get(HeaderItem item) throws IOException {
+  public @Nullable T get(IndexRecord item) throws IOException {
     T obj = null;
     if (item != null) {
       long pos = item.getPosition();

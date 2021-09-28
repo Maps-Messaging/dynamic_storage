@@ -20,14 +20,14 @@
 package io.mapsmessaging.storage.impl.file.tasks;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.ManagedStorage;
+import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
 
 public class ValidateIndexAndDataTask<N, T extends Storable> implements FileTask<N>{
 
-  private final ManagedStorage<T> storeToValidate;
+  private final IndexStorage<T> storeToValidate;
   private long index;
 
-  public ValidateIndexAndDataTask(ManagedStorage<T> storeToValidate){
+  public ValidateIndexAndDataTask(IndexStorage<T> storeToValidate){
     this.storeToValidate = storeToValidate;
     index = 0;
   }

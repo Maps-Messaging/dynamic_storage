@@ -18,7 +18,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file;
+package io.mapsmessaging.storage.impl.file.partition;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -26,7 +26,7 @@ import lombok.Setter;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class HeaderItem {
+public class IndexRecord {
 
   public static final int HEADER_SIZE = 16;
   private static final byte[] RESET_HEADER;
@@ -42,21 +42,21 @@ public class HeaderItem {
 
   @Getter @Setter private long key;      // The key, this is calculated and is NOT stored in the header!
 
-  HeaderItem(){
+  IndexRecord(){
     locationId = 0;
     position = 0;
     expiry =0;
     length = 0;
   }
 
-  public HeaderItem(long locationId, long position, long expiry, long length){
+  public IndexRecord(long locationId, long position, long expiry, long length){
     this.locationId = locationId;
     this.position = position;
     this.expiry = expiry;
     this.length = length;
   }
 
-  public HeaderItem(ByteBuffer buffer){
+  public IndexRecord(ByteBuffer buffer){
     long tmp1 = buffer.getLong();
     long tmp2 = buffer.getLong();
 

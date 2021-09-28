@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class ManagedStoreTest extends BaseStoreTest{
+public class PartitionStoreTest extends BaseStoreTest{
 
 
   @Override
@@ -34,7 +34,7 @@ public class ManagedStoreTest extends BaseStoreTest{
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", ""+sync);
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Managed")
+    storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);

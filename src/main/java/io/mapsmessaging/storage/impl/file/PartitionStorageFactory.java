@@ -25,23 +25,24 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
 
+import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ManagedFactory<T extends Storable> extends BaseStorageFactory<T> {
+public class PartitionStorageFactory<T extends Storable> extends BaseStorageFactory<T> {
 
-  public ManagedFactory() {
+  public PartitionStorageFactory() {
   }
 
-  public ManagedFactory(Map<String, String> properties, Factory<T> factory) {
+  public PartitionStorageFactory(Map<String, String> properties, Factory<T> factory) {
     super(properties, factory);
   }
 
   @Override
   public String getName() {
-    return "Managed";
+    return "Partition";
   }
 
   @Override
@@ -50,7 +51,7 @@ public class ManagedFactory<T extends Storable> extends BaseStorageFactory<T> {
     if (properties.containsKey("Sync")) {
       sync = Boolean.parseBoolean(properties.get("Sync"));
     }
-    return new ManagedStorage<>(name, factory, sync);
+    return new PartitionStorage<>(name, factory, sync);
   }
 
   @Override
