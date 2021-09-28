@@ -161,7 +161,7 @@ public abstract class BaseStoreTest extends BaseTest{
       // Remove any before we start
 
       int counter = -10000;
-      for (int x = 0; x < 10000000; x++) {
+      for (int x = 0; x < 100000; x++) {
         MappedData message = createMessageBuilder(x);
         storage.add(message, null).get();
         counter++;
@@ -169,7 +169,7 @@ public abstract class BaseStoreTest extends BaseTest{
           storage.remove(counter, null).get();
         }
       }
-      for(int x=counter;x<10000000;x++){
+      for(int x=counter;x<100000;x++){
         storage.remove(x, null).get();
       }
       Assertions.assertEquals(0, storage.size().get());
@@ -196,13 +196,13 @@ public abstract class BaseStoreTest extends BaseTest{
         bb.putLong(y);
         y++;
       }
-      for (int x = 0; x < 10000000; x++) {
+      for (int x = 0; x < 20; x++) {
         bb.flip();
         MappedData message = createMessageBuilder(x);
         message.setData(bb);
         storage.add(message, null).get();
       }
-      Assertions.assertEquals(0, storage.size().get());
+      Assertions.assertEquals(20, storage.size().get());
     } finally {
       if(storage != null) {
         storage.delete(null).get();

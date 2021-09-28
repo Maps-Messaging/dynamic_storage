@@ -79,8 +79,8 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     IndexStorage<T> partition = locateOrCreatePartition(object.getKey());
     partition.add(object);
     if(partition.isFull()){
-      System.err.println("Setting End to "+object.getKey());
-      partition.setEnd(object.getKey());
+      System.err.println("Setting End to "+object.getKey()+1);
+      partition.setEnd(object.getKey()+1);
     }
   }
 

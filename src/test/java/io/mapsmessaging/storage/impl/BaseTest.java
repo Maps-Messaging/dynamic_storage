@@ -171,6 +171,12 @@ public class BaseTest {
     @Getter @Setter Map<String, Object> map;
     @Getter @Setter ByteBuffer data;
 
+    public MappedData(){
+      byte[] buf = build();
+      data = ByteBuffer.allocate(buf.length);
+      data.put(buf);
+      data.flip();
+    }
     @Override
     public void read(@NotNull ByteBuffer[] buffers) throws IOException {
       BufferObjectReader bor = new BufferObjectReader(buffers[0]);
