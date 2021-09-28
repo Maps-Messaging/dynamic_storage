@@ -46,7 +46,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
   private static final long OPEN_STATE = 0xEFFFFFFFFFFFFFFFL;
   private static final long CLOSE_STATE = 0x0000000000000000L;
 
-  private static final int ITEM_COUNT = 8192;
+  private static final int ITEM_COUNT = 524288;
 
   private IndexManager indexManager;
   private final String fileName;
@@ -57,7 +57,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
   private volatile boolean closed;
   private boolean requiresValidation;
 
-  public IndexStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
+  public IndexStorage(String fileName, Factory<T> factory, boolean sync, long start) throws IOException {
     this.fileName = fileName+"_index";
     File file = new File(this.fileName);
     long length = 0;
@@ -77,7 +77,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
       reload();
     }
     else{
-      initialise();
+      initialise(start);
     }
     dataStorage = new DataStorage<T>(fileName+"_data", factory, sync);
     closed = false;
@@ -98,7 +98,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     }
   }
 
-  private void initialise() throws IOException {
+  private void initialise(long start) throws IOException {
     ByteBuffer headerValidation = ByteBuffer.allocate(32);
     headerValidation.putLong(OPEN_STATE);
     headerValidation.putLong(UNIQUE_ID);
@@ -106,7 +106,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     headerValidation.putLong(ITEM_COUNT);
     headerValidation.flip();
     mapChannel.write(headerValidation);
-    indexManager = new IndexManager(0L, ITEM_COUNT, mapChannel);
+    indexManager = new IndexManager(start, ITEM_COUNT, mapChannel);
     mapChannel.force(false);
     requiresValidation = false;
   }
@@ -149,7 +149,9 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
 
   @Override
   public void delete() throws IOException {
-    close();
+    indexManager.close();
+    mapChannel.close();
+    dataStorage.close();
     File path = new File(fileName);
     Files.delete(path.toPath());
     dataStorage.delete();

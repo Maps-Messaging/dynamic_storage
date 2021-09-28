@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.storage.impl;
 
+import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
 import java.io.IOException;
@@ -48,5 +49,18 @@ public class MemoryStoreTest extends BaseStoreTest{
         .setName("Test")
         .setProperties(properties);
     return storageBuilder.build();
+  }
+
+  @Override
+  public AsyncStorage<MappedData> createAsyncStore(boolean sync) throws IOException {
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("Sync", ""+sync);
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder.setStorageType("Memory")
+        .setFactory(getFactory())
+        .setCache()
+        .setName("Test")
+        .setProperties(properties);
+    return storageBuilder.buildAsync();
   }
 }

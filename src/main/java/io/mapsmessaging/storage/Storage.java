@@ -48,6 +48,10 @@ public interface Storage<T extends Storable> extends Closeable {
     return true;
   }
 
+  default boolean executeTasks() throws Exception {
+    return false;
+  }
+
   // Returns a list of events NOT found but was in the to keep list
   @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException;
 

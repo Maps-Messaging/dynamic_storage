@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.storage.impl;
 
+import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
@@ -34,6 +35,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 public abstract class BaseStoreTest extends BaseTest{
 
   public abstract Storage<MappedData> createStore(boolean sync) throws IOException;
+  public abstract AsyncStorage<MappedData> createAsyncStore(boolean sync) throws IOException;
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
@@ -143,6 +145,37 @@ public abstract class BaseStoreTest extends BaseTest{
     } finally {
       if(storage != null) {
         storage.delete();
+      }
+    }
+  }
+
+  @Test
+  void basicUseCaseTest() throws Exception {
+    AsyncStorage<MappedData> storage = null;
+    try {
+      storage = createAsyncStore(false);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      int counter = -10000;
+      for (int x = 0; x < 1000000; x++) {
+        MappedData message = createMessageBuilder(x);
+        validateMessage(message, x);
+        storage.add(message, null).get();
+        counter++;
+        if(counter >= 0){
+          storage.remove(counter, null).get();
+        }
+      }
+      for(int x=counter;x<1000000;x++){
+        storage.remove(x, null).get();
+      }
+      Assertions.assertEquals(0, storage.size().get());
+    } finally {
+      if(storage != null) {
+        storage.delete(null).get();
       }
     }
   }
