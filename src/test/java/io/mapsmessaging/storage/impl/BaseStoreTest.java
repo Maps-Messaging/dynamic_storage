@@ -166,16 +166,16 @@ public abstract class BaseStoreTest extends BaseTest{
         storage.add(message, null).get();
         counter++;
         if(counter >= 0){
-          storage.remove(counter, null).get();
+          storage.remove(counter).get();
         }
       }
       for(int x=counter;x<100000;x++){
-        storage.remove(x, null).get();
+        storage.remove(x).get();
       }
       Assertions.assertEquals(0, storage.size().get());
     } finally {
       if(storage != null) {
-        storage.delete(null).get();
+        storage.delete().get();
       }
     }
   }
@@ -196,16 +196,25 @@ public abstract class BaseStoreTest extends BaseTest{
         bb.putLong(y);
         y++;
       }
-      for (int x = 0; x < 20; x++) {
+      for (int x = 0; x < 24; x++) {
         bb.flip();
         MappedData message = createMessageBuilder(x);
         message.setData(bb);
-        storage.add(message, null).get();
+        storage.add(message).get();
       }
-      Assertions.assertEquals(20, storage.size().get());
+      Assertions.assertEquals(24, storage.size().get());
+      Thread.sleep(100); // Allow any background tasks to kick off. Would expect at least 4 header compactions
+      for (int x = 0; x < 24; x++) {
+        MappedData mappedData = storage.get(x).get();
+        validateMessage(mappedData, x);
+      }
+      for (int x = 0; x < 24; x++) {
+        storage.remove(x).get();
+      }
+      Thread.sleep(100); // allow things to complete
     } finally {
       if(storage != null) {
-        storage.delete(null).get();
+        storage.delete().get();
       }
     }
   }

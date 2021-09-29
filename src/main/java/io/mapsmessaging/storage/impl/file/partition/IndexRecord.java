@@ -36,24 +36,27 @@ public class IndexRecord {
     Arrays.fill(RESET_HEADER, (byte)0);
   }
 
-  @Getter private final long expiry;     // Expiry of this entry in seconds. Max value is 2^32 seconds or 136 years. Should be enough
+  @Getter private final long expiry;     // Expiry of this entry in milliseconds
   @Getter private final long position;   // Position within the log file or the index file
+
   @Getter private final int locationId; // If 0 then located within the index file, else is the unique ID of the data file
   @Getter private final int length;     // The number of bytes that the record consumes
 
   @Getter @Setter private long key;      // The key, this is calculated and is NOT stored in the header!
 
   IndexRecord(){
-    locationId = 0;
     position = 0;
     expiry =0;
+
+    locationId = 0;
     length = 0;
   }
 
   public IndexRecord(int locationId, long position, long expiry, int length){
-    this.locationId = locationId;
     this.position = position;
     this.expiry = expiry;
+
+    this.locationId = locationId;
     this.length = length;
   }
 

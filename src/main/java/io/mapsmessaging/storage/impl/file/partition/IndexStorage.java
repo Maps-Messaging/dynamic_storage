@@ -24,8 +24,11 @@ import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
+import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
 import io.mapsmessaging.storage.impl.file.tasks.ValidateIndexAndDataTask;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
+import java.nio.file.CopyOption;
+import java.nio.file.StandardCopyOption;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,8 +53,10 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
   private static final int ITEM_COUNT = 524288;
 
   private IndexManager indexManager;
+  private FileChannel mapChannel;
+
+  private final boolean sync;
   private final String fileName;
-  private final FileChannel mapChannel;
   private final DataStorage<T> dataStorage;
 
   private final TaskQueue scheduler;
@@ -62,6 +67,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     this.fileName = fileName+"_index";
     File file = new File(this.fileName);
     scheduler = taskScheduler;
+    this.sync = sync;
     long length = 0;
     if (file.exists()) {
       length = file.length();
@@ -138,12 +144,50 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     mapChannel.force(false);
   }
 
+  public void compact() throws IOException {
+    long size = ((indexManager.getEnd() - indexManager.getStart() + 1) * IndexRecord.HEADER_SIZE) + 24 + 16;
+    if(size < mapChannel.size()){
+      File currentIndex = new File(fileName);
+      File tmpIndex = new File(fileName+"_tmp");
+      FileChannel tmp = (FileChannel) Files.newByteChannel(tmpIndex.toPath(), CREATE_NEW, WRITE);
+      mapChannel.position(0);
+      long moved = tmp.transferFrom(mapChannel, 0, size);
+      if(moved != size){
+        tmp.close();
+        tmpIndex.delete();
+        throw new IOException("Unable to compact index");
+      }
+      tmp.force(true);
+      tmp.close();
+      indexManager.close();
+      mapChannel.force(true);
+      mapChannel.close();
+      Files.copy(tmpIndex.toPath(), currentIndex.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      tmpIndex.delete();
+
+      StandardOpenOption[] writeOptions;
+      if (sync) {
+        writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE, DSYNC};
+      }
+      else{
+        writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE};
+      }
+      mapChannel = (FileChannel) Files.newByteChannel(currentIndex.toPath(), writeOptions);
+      reload();
+    }
+  }
+
   public long getStart(){
     return indexManager.getStart();
   }
 
   public long getEnd(){
     return indexManager.getEnd();
+  }
+
+  public void setEnd(long key) throws IOException {
+    indexManager.setEnd(key);
+    scheduler.submit(new CompactIndexTask<>(this));
   }
 
   @Override
@@ -155,10 +199,26 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
   public void delete() throws IOException {
     indexManager.close();
     mapChannel.close();
-    dataStorage.close();
-    File path = new File(fileName);
-    Files.delete(path.toPath());
     dataStorage.delete();
+    File path = new File(fileName);
+    boolean deleted = false;
+    int count = 0;
+    while(!deleted) {
+      try {
+        Files.delete(path.toPath());
+        deleted = true;
+      } catch (IOException e) {
+        e.printStackTrace();
+        count++;
+        deleted = count > 5;
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+          ex.printStackTrace();
+        }
+      }
+    }
+    System.err.println("Deleting "+fileName);
   }
 
   @Override
@@ -219,9 +279,5 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
   @Override
   public void setExecutor(TaskScheduler scheduler) {
     // We don't actually get the executor here
-  }
-
-  public void setEnd(long key) throws IOException {
-    indexManager.setEnd(key);
   }
 }

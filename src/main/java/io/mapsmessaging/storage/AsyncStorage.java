@@ -22,6 +22,7 @@ package io.mapsmessaging.storage;
 
 import io.mapsmessaging.storage.tasks.*;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
+import java.util.concurrent.Callable;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
@@ -65,10 +66,28 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     return scheduler.submit(new CloseTask<T>(storage, completion), FOREGROUND_PRIORITY);
   }
 
+  public final Future<Boolean> delete() throws IOException {
+    return delete(null);
+  }
+
   public final Future<Boolean> delete(Completion<Boolean> completion) throws IOException {
     checkClose();
     closed.set(true);
+    try {
+      while(!scheduler.isEmpty()) {
+        // Wait for the background tasks to finish
+        scheduler.submit(new ClearScheduleTask<>(storage, null), BACKGROUND_PRIORITY).get();
+      }
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
     return scheduler.submit(new DeleteTask<T>(storage, completion), FOREGROUND_PRIORITY);
+  }
+
+  public final Future<T> add(@NotNull T toStore) throws IOException {
+    return add(toStore, null);
   }
 
   public Future<T> add(@NotNull T toStore, Completion<T> completion) throws IOException {
@@ -76,9 +95,17 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     return scheduler.submit(new AddTask<>(storage, toStore, completion), FOREGROUND_PRIORITY);
   }
 
+  public Future<Boolean> remove(long key) throws IOException {
+    return remove(key, null);
+  }
+
   public Future<Boolean> remove(long key, Completion<Boolean> completion) throws IOException {
     checkClose();
     return scheduler.submit(new RemoveTask<>(storage, key, completion), FOREGROUND_PRIORITY);
+  }
+
+  public Future<T> get(long key) throws IOException {
+    return get(key, null);
   }
 
   public Future<T> get(long key, Completion<T> completion) throws IOException {
@@ -97,6 +124,10 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   }
 
   // Returns a list of events NOT found but was in the to keep list
+  public Future<List<Long>> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
+    return keepOnly(listToKeep, null);
+  }
+
   public Future<List<Long>> keepOnly(@NotNull List<Long> listToKeep, Completion<List<Long>> completion) throws IOException {
     checkClose();
     return scheduler.submit(new KeepOnlyTask<>(storage, listToKeep, completion), FOREGROUND_PRIORITY);

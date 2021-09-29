@@ -71,16 +71,33 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     }
     partitions.clear();
     File file = new File(rootDirectory);
-    Files.deleteIfExists(file.toPath());
+    String[] children = file.list();
+    if(children != null && children.length > 0){
+      for(String child:children){
+        File t = new File(child);
+        Files.deleteIfExists(t.toPath());
+      }
+    }
+    children = file.list();
+    if(children == null || children.length == 0) {
+      Files.deleteIfExists(file.toPath());
+    }
+    else{
+      System.err.println("Unable to delete child files");
+    }
   }
 
   @Override
   public void add(@NotNull T object) throws IOException {
     IndexStorage<T> partition = locateOrCreatePartition(object.getKey());
-    partition.add(object);
-    if(partition.isFull()){
-      System.err.println("Setting End to "+object.getKey()+1);
-      partition.setEnd(object.getKey()+1);
+    try {
+      partition.add(object);
+      if(partition.isFull()){
+        partition.setEnd(object.getKey());
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+      throw e;
     }
   }
 
@@ -148,7 +165,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
 
   private @Nullable IndexStorage<T> locatePartition(long key){
     for(IndexStorage<T> partition:partitions){
-      if(partition.getStart() <= key && key < partition.getEnd()){
+      if(partition.getStart() <= key && key <= partition.getEnd()){
         return partition;
       }
     }
@@ -157,14 +174,14 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
 
   private @NotNull IndexStorage<T> locateOrCreatePartition(long key) throws IOException {
     for(IndexStorage<T> partition:partitions){
-      if(partition.getStart() <= key && key < partition.getEnd()){
+      if(partition.getStart() <= key && key <= partition.getEnd()){
         return partition;
       }
     }
     String partitionName = fileName+partitionCounter++;
     long start = 0;
     if(!partitions.isEmpty()) {
-      start = partitions.get(partitions.size() - 1).getEnd();
+      start = partitions.get(partitions.size() - 1).getEnd()+1;
     }
     IndexStorage<T> indexStorage = new IndexStorage<>(partitionName, factory, sync, start, taskScheduler);
     partitions.add(indexStorage);
