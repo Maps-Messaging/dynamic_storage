@@ -30,19 +30,22 @@ import java.util.WeakHashMap;
 public class WeakReferenceCacheStorage<T extends Storable> implements Cache<T> {
 
   private final Map<Long, T> weakMap;
+  private final String name;
 
   public WeakReferenceCacheStorage(){
     weakMap = new LinkedHashMap<>();
+    name = "WeakReference";
   }
 
 
   public WeakReferenceCacheStorage(String name) {
     weakMap = new WeakHashMap<>();
+    this.name = name;
   }
 
   @Override
   public String getName(){
-    return "WeakReference";
+    return name;
   }
 
   @Override
