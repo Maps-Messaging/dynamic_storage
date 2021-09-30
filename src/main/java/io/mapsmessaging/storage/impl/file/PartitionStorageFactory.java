@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 
 public class PartitionStorageFactory<T extends Storable> extends BaseStorageFactory<T> {
+  private static final int ITEM_COUNT = 524288;
+  private static final long MAXIMUM_DATA_SIZE = (1L << 32); //4GB by default
 
   public PartitionStorageFactory() {
   }
@@ -50,7 +52,16 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
     if (properties.containsKey("Sync")) {
       sync = Boolean.parseBoolean(properties.get("Sync"));
     }
-    return new PartitionStorage<>(name, factory, sync);
+    int itemCount = ITEM_COUNT;
+    if(properties.containsKey("ItemCount")){
+      itemCount = Integer.parseInt(properties.get("ItemCount"));
+    }
+    long maxPartitionSize = MAXIMUM_DATA_SIZE;
+    if(properties.containsKey("MaxPartitionSize")){
+      maxPartitionSize = Long.parseLong(properties.get("MaxPartitionSize"));
+    }
+
+    return new PartitionStorage<>(name, factory, sync, itemCount, maxPartitionSize);
   }
 
   @Override

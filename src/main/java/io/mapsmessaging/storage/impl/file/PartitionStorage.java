@@ -20,8 +20,11 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
 
   private static final String PARTITION_FILE_NAME = "partition_";
 
+
   private long partitionCounter;
   private final TaskQueue taskScheduler;
+  private final int itemCount;
+  private final long maxPartitionSize;
   private final List<IndexStorage<T>> partitions;
   private final String fileName;
   private final String rootDirectory;
@@ -29,10 +32,12 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   private final boolean sync;
   private boolean shutdown;
 
-  public PartitionStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
+  public PartitionStorage(String fileName, Factory<T> factory, boolean sync, int itemCount, long maxPartitionSize) throws IOException {
     partitions = new ArrayList<>();
     taskScheduler = new TaskQueue();
     rootDirectory = fileName;
+    this.itemCount = itemCount;
+    this.maxPartitionSize = maxPartitionSize;
     this.fileName = fileName+File.separator+PARTITION_FILE_NAME;
     this.sync = sync;
     this.factory = factory;
@@ -54,7 +59,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
         for (String test :childFiles) {
           if (test.startsWith(PARTITION_FILE_NAME) && test.endsWith("index")){
             String loadName = test.substring(PARTITION_FILE_NAME.length(), test.length()-"_index".length());
-            IndexStorage<T> indexStorage = new IndexStorage<>(fileName+loadName, factory, sync, 0, taskScheduler);
+            IndexStorage<T> indexStorage = new IndexStorage<>(fileName+loadName, factory, sync, 0, itemCount, maxPartitionSize, taskScheduler);
             partitions.add(indexStorage);
           }
         }
@@ -192,7 +197,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     if(!partitions.isEmpty()) {
       start = partitions.get(partitions.size() - 1).getEnd()+1;
     }
-    IndexStorage<T> indexStorage = new IndexStorage<>(partitionName, factory, sync, start, taskScheduler);
+    IndexStorage<T> indexStorage = new IndexStorage<>(partitionName, factory, sync, start, itemCount, maxPartitionSize, taskScheduler);
     partitions.add(indexStorage);
     partitions.sort(Comparator.comparingLong(IndexStorage::getStart));
     return indexStorage;

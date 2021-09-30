@@ -39,6 +39,7 @@ public class PartitionStoreTest extends BaseStoreTest{
     }
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", ""+sync);
+    properties.put("MaxPartitionSize", ""+(5*1024*1024)); // set to 5MB data limit
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
@@ -57,6 +58,7 @@ public class PartitionStoreTest extends BaseStoreTest{
     }
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", ""+sync);
+    properties.put("MaxPartitionSize", ""+(5*1024*1024)); // set to 5MB data limit
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())

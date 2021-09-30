@@ -43,6 +43,7 @@ public class DataStorage<T extends Storable> implements Closeable {
   private static final long OPEN_STATE = 0xEFFFFFFFFFFFFFFFL;
   private static final long CLOSE_STATE = 0x0000000000000000L;
 
+  private final long maxPartitionSize;
   private final Factory<T> objectFactory;
   private final String fileName;
   private final FileChannel readChannel;
@@ -53,16 +54,17 @@ public class DataStorage<T extends Storable> implements Closeable {
   private @Getter boolean validationRequired;
   private @Getter boolean full;
 
-  public DataStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
+  public DataStorage(String fileName, Factory<T> factory, boolean sync, long maxPartitionSize) throws IOException {
     objectFactory = factory;
     this.fileName = fileName;
+    this.maxPartitionSize = maxPartitionSize;
     lengthBuffer = ByteBuffer.allocate(8);
     File file = new File(fileName);
     long length = 0;
     if (file.exists()) {
       length = file.length();
     }
-    full = length > (1L << 32);
+    full = length > maxPartitionSize;
     StandardOpenOption[] writeOptions;
     StandardOpenOption[] readOptions;
     if (sync) {
@@ -158,7 +160,7 @@ public class DataStorage<T extends Storable> implements Closeable {
     writeChannel.write(inclusive);
     long fileLength = writeChannel.size();
     long length = fileLength - eof;
-    full = fileLength > (1L << 32);
+    full = fileLength > maxPartitionSize;
     IndexRecord item = new IndexRecord(0, eof, 0, (int)length);
     item.setKey(object.getKey());
     return item;

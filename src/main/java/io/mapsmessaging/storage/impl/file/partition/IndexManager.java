@@ -75,7 +75,6 @@ public class IndexManager implements Closeable {
   }
 
   public IndexManager(long start, int itemSize, FileChannel channel) throws IOException {
-
     this.channel = channel;
     position = channel.position();
     this.start = start;

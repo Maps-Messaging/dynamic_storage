@@ -190,7 +190,6 @@ public abstract class BaseStoreTest extends BaseTest{
     }
   }
 
-  @Disabled // Need build machine with over 32GB free
   @Test
   void basicLargeDataUseCaseTest() throws Exception {
     AsyncStorage<MappedData> storage = null;
@@ -201,7 +200,7 @@ public abstract class BaseStoreTest extends BaseTest{
       context.add("domain", "ResourceAccessKey");
       ThreadLocalContext.set(context);
       // Remove any before we start
-      int size = 1024 * 1024 * 1024; //1GB
+      int size = 512 * 1024; //1GB
       ByteBuffer bb = ByteBuffer.allocate(size);
       long y=0;
       while(bb.limit() - bb.position() > 8){

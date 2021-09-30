@@ -49,11 +49,11 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
   private static final long OPEN_STATE = 0xEFFFFFFFFFFFFFFFL;
   private static final long CLOSE_STATE = 0x0000000000000000L;
 
-  private static final int ITEM_COUNT = 524288;
-
   private IndexManager indexManager;
   private FileChannel mapChannel;
 
+  private final int itemCount;
+  private final long maxPartitionSize;
   private final boolean sync;
   private final String fileName;
   private final DataStorage<T> dataStorage;
@@ -62,11 +62,13 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
   private volatile boolean closed;
   private boolean requiresValidation;
 
-  public IndexStorage(String fileName, Factory<T> factory, boolean sync, long start, TaskQueue taskScheduler) throws IOException {
+  public IndexStorage(String fileName, Factory<T> factory, boolean sync, long start, int itemCount, long maxPartitionSize, TaskQueue taskScheduler) throws IOException {
     this.fileName = fileName+"_index";
     File file = new File(this.fileName);
     scheduler = taskScheduler;
     this.sync = sync;
+    this.itemCount = itemCount;
+    this.maxPartitionSize = maxPartitionSize;
     long length = 0;
     if (file.exists()) {
       length = file.length();
@@ -86,7 +88,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     else{
       initialise(start);
     }
-    dataStorage = new DataStorage<>(fileName+"_data", factory, sync);
+    dataStorage = new DataStorage<>(fileName+"_data", factory, sync, maxPartitionSize);
     if(dataStorage.isValidationRequired() || requiresValidation){
       scheduler.submit(new ValidateIndexAndDataTask<>(this));
     }
@@ -112,10 +114,10 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     headerValidation.putLong(OPEN_STATE);
     headerValidation.putLong(UNIQUE_ID);
     headerValidation.putLong(Double.doubleToLongBits(VERSION));
-    headerValidation.putLong(ITEM_COUNT);
+    headerValidation.putLong(itemCount);
     headerValidation.flip();
     mapChannel.write(headerValidation);
-    indexManager = new IndexManager(start, ITEM_COUNT, mapChannel);
+    indexManager = new IndexManager(start, itemCount, mapChannel);
     mapChannel.force(false);
     requiresValidation = false;
   }
@@ -131,7 +133,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     if(Double.longBitsToDouble(headerValidation.getLong()) != VERSION){
       throw new IOException("Unexpected file version");
     }
-    if(headerValidation.getLong() != ITEM_COUNT){
+    if(headerValidation.getLong() != itemCount){
       throw new IOException("Unexpected item count");
     }
     indexManager = new IndexManager(mapChannel);
