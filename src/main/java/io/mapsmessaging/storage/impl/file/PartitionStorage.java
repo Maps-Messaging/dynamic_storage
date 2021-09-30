@@ -18,6 +18,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class PartitionStorage <T extends Storable> implements Storage<T> {
 
+  private static final String PARTITION_FILE_NAME = "partition_";
+
   private long partitionCounter;
   private final TaskQueue taskScheduler;
   private final List<IndexStorage<T>> partitions;
@@ -31,7 +33,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     partitions = new ArrayList<>();
     taskScheduler = new TaskQueue();
     rootDirectory = fileName;
-    this.fileName = fileName+File.separator+"partition_";
+    this.fileName = fileName+File.separator+PARTITION_FILE_NAME;
     this.sync = sync;
     this.factory = factory;
     partitionCounter =0;
@@ -50,8 +52,8 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
       String[] childFiles = location.list();
       if(childFiles != null) {
         for (String test :childFiles) {
-          if (test.startsWith("partition_") && test.endsWith("index")){
-            String loadName = test.substring("partition_".length(), test.length()-"_index".length());
+          if (test.startsWith(PARTITION_FILE_NAME) && test.endsWith("index")){
+            String loadName = test.substring(PARTITION_FILE_NAME.length(), test.length()-"_index".length());
             IndexStorage<T> indexStorage = new IndexStorage<>(fileName+loadName, factory, sync, 0, taskScheduler);
             partitions.add(indexStorage);
           }

@@ -47,9 +47,8 @@ public class TaskQueue {
             entry.getValue().get(TIMEOUT, TimeUnit.SECONDS);
           } catch (InterruptedException | ExecutionException | TimeoutException e) {
             if (Thread.interrupted()) {
-              return; // there is something a miss here
+              Thread.currentThread().interrupt();
             }
-            e.printStackTrace();
             raised = e;
           }
         }
@@ -92,6 +91,7 @@ public class TaskQueue {
     }
   }
 
+  @SuppressWarnings("java:S112")
   public boolean executeTasks() throws IOException {
     FileTask<?> task = taskQueue.poll();
     if(task != null){

@@ -35,8 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AsyncStorage<T extends Storable> implements Closeable {
 
-  private final static int BACKGROUND_PRIORITY = 0;
-  private final static int FOREGROUND_PRIORITY = 1;
+  private static final int FOREGROUND_PRIORITY = 1;
 
   private final Storage<T> storage;
   private final PriorityConcurrentTaskScheduler scheduler;
