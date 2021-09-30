@@ -37,6 +37,10 @@ public class TaskQueue {
       LockSupport.parkNanos(10000000);
     }
     taskQueue.clear();
+    clearQueue();
+  }
+
+  private void clearQueue() throws IOException {
     Exception raised = null;
     for(Map.Entry<FileTask<?>,Future<?>> entry: pending.entrySet()){
       if(!entry.getValue().isDone()) {
