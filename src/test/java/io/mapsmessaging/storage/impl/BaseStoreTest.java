@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -189,10 +190,11 @@ public abstract class BaseStoreTest extends BaseTest{
     }
   }
 
+  @Disabled // Need build machine with over 32GB free
   @Test
   void basicLargeDataUseCaseTest() throws Exception {
     AsyncStorage<MappedData> storage = null;
-    int iterations = 6;
+    int iterations = 5;
     try {
       storage = createAsyncStore(testName,false);
       ThreadStateContext context = new ThreadStateContext();
