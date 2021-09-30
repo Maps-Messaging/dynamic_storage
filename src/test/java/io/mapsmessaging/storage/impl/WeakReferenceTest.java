@@ -30,6 +30,6 @@ public class WeakReferenceTest extends BaseLayeredTest{
   @Override
   public Storage<MappedData> createStore(Storage<MappedData> storage) {
     Cache<MappedData> cache = new WeakReferenceCacheStorage<>(storage.getName());
-    return new CacheLayer<MappedData>(false, cache, storage);
+    return new CacheLayer<>(false, cache, storage);
   }
 }

@@ -39,27 +39,27 @@ public class MemoryStoreTest extends BaseStoreTest{
   }
 
   @Override
-  public Storage<MappedData> createStore(boolean sync) throws IOException {
+  public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", ""+sync);
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Memory")
         .setFactory(getFactory())
         .setCache()
-        .setName("Test")
+        .setName(testName)
         .setProperties(properties);
     return storageBuilder.build();
   }
 
   @Override
-  public AsyncStorage<MappedData> createAsyncStore(boolean sync) throws IOException {
+  public AsyncStorage<MappedData> createAsyncStore(String testName, boolean sync) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", ""+sync);
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Memory")
         .setFactory(getFactory())
         .setCache()
-        .setName("Test")
+        .setName(testName)
         .setProperties(properties);
     return storageBuilder.buildAsync();
   }

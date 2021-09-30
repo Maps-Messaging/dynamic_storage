@@ -24,8 +24,6 @@ import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
-import io.mapsmessaging.storage.impl.streams.ObjectReader;
-import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
@@ -119,12 +117,12 @@ public class SimpleFactoryCreationTest {
     }
 
     @Override
-    public void read(@NotNull ByteBuffer[] buffers) throws IOException {
+    public void read(@NotNull ByteBuffer[] buffers)  {
 
     }
 
     @Override
-    public @NotNull ByteBuffer[] write() throws IOException {
+    public @NotNull ByteBuffer[] write()  {
       return new ByteBuffer[0];
     }
 

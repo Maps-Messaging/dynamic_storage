@@ -23,33 +23,43 @@ package io.mapsmessaging.storage.impl;
 import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class PartitionStoreTest extends BaseStoreTest{
 
   @Override
-  public Storage<MappedData> createStore(boolean sync) throws IOException {
+  public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
+    File file = new File("test_file"+ File.separator);
+    if(!file.exists()) {
+      Files.createDirectory(file.toPath());
+    }
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", ""+sync);
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
-        .setName("Test")
+        .setName("test_file"+ File.separator+testName)
         .setProperties(properties);
     return storageBuilder.build();
   }
 
 
   @Override
-  public AsyncStorage<MappedData> createAsyncStore(boolean sync) throws IOException {
+  public AsyncStorage<MappedData> createAsyncStore(String testName, boolean sync) throws IOException {
+    File file = new File("test_file"+ File.separator);
+    if(!file.exists()) {
+      Files.createDirectory(file.toPath());
+    }
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", ""+sync);
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
-        .setName("Test")
+        .setName("test_file"+ File.separator+testName)
         .setProperties(properties);
     return storageBuilder.buildAsync();
   }

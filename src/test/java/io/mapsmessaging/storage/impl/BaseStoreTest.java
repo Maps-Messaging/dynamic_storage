@@ -29,21 +29,30 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public abstract class BaseStoreTest extends BaseTest{
 
-  public abstract Storage<MappedData> createStore(boolean sync) throws IOException;
-  public abstract AsyncStorage<MappedData> createAsyncStore(boolean sync) throws IOException;
+  public abstract Storage<MappedData> createStore(String testName, boolean sync) throws IOException;
+  public abstract AsyncStorage<MappedData> createAsyncStore(String testName, boolean sync) throws IOException;
+
+  private String testName;
+
+  @BeforeEach
+  public void beforeEachTest(final TestInfo testInfo) {
+    testName = testInfo.getDisplayName();
+  }
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void basicIOTestWithAndWithoutSync(boolean sync) throws IOException {
     Storage<MappedData> storage = null;
     try {
-      storage = createStore(sync);
+      storage = createStore(testName, sync);
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");
       ThreadLocalContext.set(context);
@@ -74,7 +83,7 @@ public abstract class BaseStoreTest extends BaseTest{
   void basicKeepOnlyTest() throws IOException {
     Storage<MappedData> storage = null;
     try {
-      storage = createStore(false);
+      storage = createStore(testName,false);
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");
       ThreadLocalContext.set(context);
@@ -119,7 +128,7 @@ public abstract class BaseStoreTest extends BaseTest{
   void basicOpenCloseOpen() throws IOException {
     Storage<MappedData> storage = null;
     try {
-      storage = createStore(false);
+      storage = createStore(testName,false);
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");
       ThreadLocalContext.set(context);
@@ -133,7 +142,7 @@ public abstract class BaseStoreTest extends BaseTest{
       Assertions.assertEquals(1000, storage.size());
 
       storage.close();
-      storage = createStore(false);
+      storage = createStore(testName,false);
 
 
       for (int x = 0; x < 1000; x++) {
@@ -154,7 +163,7 @@ public abstract class BaseStoreTest extends BaseTest{
   void basicUseCaseTest() throws Exception {
     AsyncStorage<MappedData> storage = null;
     try {
-      storage = createAsyncStore(false);
+      storage = createAsyncStore(testName,false);
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");
       ThreadLocalContext.set(context);
@@ -183,31 +192,32 @@ public abstract class BaseStoreTest extends BaseTest{
   @Test
   void basicLargeDataUseCaseTest() throws Exception {
     AsyncStorage<MappedData> storage = null;
+    int iterations = 6;
     try {
-      storage = createAsyncStore(false);
+      storage = createAsyncStore(testName,false);
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");
       ThreadLocalContext.set(context);
       // Remove any before we start
-      int size = 8 * 1024 * 1024 * 100;
+      int size = 1024 * 1024 * 1024; //1GB
       ByteBuffer bb = ByteBuffer.allocate(size);
       long y=0;
       while(bb.limit() - bb.position() > 8){
         bb.putLong(y);
         y++;
       }
-      for (int x = 0; x < 24; x++) {
+      for (int x = 0; x < iterations; x++) {
         bb.flip();
         MappedData message = createMessageBuilder(x);
         message.setData(bb);
         storage.add(message).get();
       }
-      Assertions.assertEquals(24, storage.size().get());
-      for (int x = 0; x < 24; x++) {
+      Assertions.assertEquals(iterations, storage.size().get());
+      for (int x = 0; x < iterations; x++) {
         MappedData mappedData = storage.get(x).get();
         validateMessage(mappedData, x);
       }
-      for (int x = 0; x < 24; x++) {
+      for (int x = 0; x < iterations; x++) {
         storage.remove(x).get();
       }
     } finally {

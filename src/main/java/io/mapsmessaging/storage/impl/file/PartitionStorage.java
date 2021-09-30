@@ -25,6 +25,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   private final String rootDirectory;
   private final Factory<T> factory;
   private final boolean sync;
+  private boolean shutdown;
 
   public PartitionStorage(String fileName, Factory<T> factory, boolean sync) throws IOException {
     partitions = new ArrayList<>();
@@ -34,6 +35,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     this.sync = sync;
     this.factory = factory;
     partitionCounter =0;
+    shutdown = false;
     File location = new File(fileName);
     if(location.exists()){
       reload(location);
@@ -66,6 +68,8 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
 
   @Override
   public void shutdown()throws IOException{
+    shutdown = true;
+    while(taskScheduler.executeTasks()){}
     taskScheduler.abortAll(); // We are about to delete the partition, any tasks can be cancelled now
   }
 
@@ -80,6 +84,9 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
 
   @Override
   public void delete() throws IOException {
+    if(!shutdown){
+      shutdown();
+    }
     for(IndexStorage<T> partition:partitions){
       partition.delete();
     }
