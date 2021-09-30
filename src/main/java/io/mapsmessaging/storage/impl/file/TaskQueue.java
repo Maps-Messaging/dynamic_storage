@@ -8,6 +8,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -18,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 public class TaskQueue {
 
   private static final long TIMEOUT = 60;
+
+  private static final ExecutorService INDEPENDENT_EXECUTOR = Executors.newSingleThreadExecutor();
 
   private final Queue<FileTask<?>> syncTasks;
   private final AtomicLong waitingScheduler;
@@ -83,20 +86,24 @@ public class TaskQueue {
   }
 
   public void submit(FileTask<?> raw) throws IOException {
-    waitingScheduler.incrementAndGet();
-    FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
-    if(taskScheduler != null) {
-      Thread t = new Thread(() -> {
-        pending.put(task, taskScheduler.submit(task));
-        waitingScheduler.decrementAndGet();
-      });
-      t.start();
+    if(raw.independentTask()){
+      INDEPENDENT_EXECUTOR.submit(raw);
     }
-    else{
-      syncTasks.offer(task);
-      if(syncTasks.size() > 10){
-        while(!syncTasks.isEmpty()){
-          executeTasks();
+    else {
+      waitingScheduler.incrementAndGet();
+      FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
+      if (taskScheduler != null) {
+        Thread t = new Thread(() -> {
+          pending.put(task, taskScheduler.submit(task));
+          waitingScheduler.decrementAndGet();
+        });
+        t.start();
+      } else {
+        syncTasks.offer(task);
+        if (syncTasks.size() > 10) {
+          while (!syncTasks.isEmpty()) {
+            executeTasks();
+          }
         }
       }
     }

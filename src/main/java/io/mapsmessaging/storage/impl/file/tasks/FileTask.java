@@ -27,4 +27,7 @@ public interface FileTask<V> extends Callable<V> {
     return true;
   }
 
+  default boolean independentTask(){
+    return false;
+  }
 }
