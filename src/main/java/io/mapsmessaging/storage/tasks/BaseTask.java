@@ -49,7 +49,6 @@ public abstract class BaseTask<T extends Storable, V> implements Callable<V> {
     try {
       result = execute();
     } catch (Exception e) {
-      e.printStackTrace();
       exception = e;
     }
     if (completion != null) {
