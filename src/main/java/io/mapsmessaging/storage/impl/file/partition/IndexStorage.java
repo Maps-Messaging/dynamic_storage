@@ -152,9 +152,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
         mapChannel.position(0);
         long moved = tmp.transferFrom(mapChannel, 0, size);
         if(moved != size){
-          if(!tmpIndex.delete()){
-            //ToDo log this for later info
-          }
+          Files.deleteIfExists(tmpIndex.toPath());
           throw new IOException("Unable to compact index");
         }
         tmp.force(true);
@@ -163,10 +161,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
       mapChannel.force(true);
       mapChannel.close();
       Files.copy(tmpIndex.toPath(), currentIndex.toPath(), StandardCopyOption.REPLACE_EXISTING);
-      if(!tmpIndex.delete()){
-        // ToDo log this for later
-      }
-
+      Files.deleteIfExists(tmpIndex.toPath());
       StandardOpenOption[] writeOptions;
       if (sync) {
         writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE, DSYNC};
