@@ -46,6 +46,11 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
     this.cache = cache;
   }
 
+  @Override
+  public void shutdown() throws IOException {
+    baseStorage.shutdown();
+  }
+
   public long getCacheMiss() {
     return cacheMiss.sum();
   }
