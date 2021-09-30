@@ -168,6 +168,4 @@ public abstract class ObjectWriter {
 
   protected abstract void write(long val, int size) throws IOException;
 
-  public abstract void write(ByteBuffer[] buffers) throws IOException;
-
 }

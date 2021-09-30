@@ -57,11 +57,4 @@ public class BufferObjectWriter extends ObjectWriter {
     buffer.put(toByteArray(val, size));
   }
 
-  @Override
-  public void write(ByteBuffer[] buffers) throws IOException {
-    for(ByteBuffer buf:buffers){
-      this.buffer.put(buf);
-    }
-  }
-
 }

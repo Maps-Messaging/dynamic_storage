@@ -61,11 +61,4 @@ public class StreamObjectWriter extends ObjectWriter {
     outputStream.write(toByteArray(val, size));
   }
 
-  @Override
-  public void write(ByteBuffer[] buffers) throws IOException {
-    for(ByteBuffer buffer:buffers){
-      outputStream.write(toByteArray(buffer));
-    }
-  }
-
 }

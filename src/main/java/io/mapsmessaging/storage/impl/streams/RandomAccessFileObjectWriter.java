@@ -93,11 +93,4 @@ public class RandomAccessFileObjectWriter extends ObjectWriter {
     randomAccessFile.write(toByteArray(val, size));
   }
 
-  @Override
-  public void write(ByteBuffer[] buffers) throws IOException {
-    for(ByteBuffer buffer:buffers){
-      randomAccessFile.write(toByteArray(buffer));
-    }
-  }
-
 }
