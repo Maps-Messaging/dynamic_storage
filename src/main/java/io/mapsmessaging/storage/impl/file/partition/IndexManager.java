@@ -220,7 +220,7 @@ public class IndexManager implements Closeable {
     private IndexRecord current;
 
     public HeaderIterator(){
-      key = start -1;
+      key = start;
       current = null;
       next = locateNext();
     }
@@ -231,17 +231,12 @@ public class IndexManager implements Closeable {
     }
 
     private IndexRecord locateNext(){
-      key++;
-      while(key != end){
-        IndexRecord item = get(key);
-        if(item != null) {
-          if (item.getPosition() != 0) {
-            return item;
-          }
-        }
+      IndexRecord item = null;
+      while(key != end && item == null){
+        item = get(key);
         key++;
       }
-      return null;
+      return item;
     }
 
     @Override
