@@ -20,17 +20,54 @@
 
 package io.mapsmessaging.storage.impl;
 
+import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.storage.impl.cache.Cache;
 import io.mapsmessaging.storage.impl.cache.CacheLayer;
 import io.mapsmessaging.storage.impl.cache.jcs.JCSCachedStorage;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-public class JCSCacheTest extends BaseLayeredTest{
+public class JCSCacheTest extends BaseLayeredTest {
+
 
   @Override
-  public Storage<MappedData> createStore(Storage<MappedData> storage) throws IOException {
-    Cache<MappedData> cache = new JCSCachedStorage<>(storage.getName());
-    return new CacheLayer<>(false, cache, storage);
+  public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
+    File file = new File("test_file" + File.separator);
+    if (!file.exists()) {
+      Files.createDirectory(file.toPath());
+    }
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("Sync", "" + sync);
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder.setStorageType("Partition")
+        .setFactory(getFactory())
+        .setCache("JCS")
+        .setName("test_file" + File.separator + testName)
+        .setProperties(properties);
+
+    return storageBuilder.build();
+  }
+
+
+  @Override
+  public AsyncStorage<MappedData> createAsyncStore(String testName, boolean sync) throws IOException {
+    File file = new File("test_file" + File.separator);
+    if (!file.exists()) {
+      Files.createDirectory(file.toPath());
+    }
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("Sync", "" + sync);
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder.setStorageType("Partition")
+        .setFactory(getFactory())
+        .setCache("JCS")
+        .setName("test_file" + File.separator + testName)
+        .setProperties(properties);
+    return storageBuilder.buildAsync();
   }
 }

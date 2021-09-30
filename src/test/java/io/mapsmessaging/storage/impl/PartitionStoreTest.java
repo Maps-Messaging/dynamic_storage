@@ -42,7 +42,6 @@ public class PartitionStoreTest extends BaseStoreTest{
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
-        .setCache()
         .setName("test_file"+ File.separator+testName)
         .setProperties(properties);
 
@@ -61,7 +60,6 @@ public class PartitionStoreTest extends BaseStoreTest{
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
-        .setCache()
         .setName("test_file"+ File.separator+testName)
         .setProperties(properties);
     return storageBuilder.buildAsync();

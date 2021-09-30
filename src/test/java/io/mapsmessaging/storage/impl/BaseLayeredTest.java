@@ -20,11 +20,6 @@
 
 package io.mapsmessaging.storage.impl;
 
-import io.mapsmessaging.storage.Storage;
-import java.io.IOException;
-
-public abstract class BaseLayeredTest extends BaseTest{
-
-  public abstract Storage<MappedData> createStore(Storage<MappedData> storage) throws IOException;
+public abstract class BaseLayeredTest extends BaseStoreTest {
 
 }
