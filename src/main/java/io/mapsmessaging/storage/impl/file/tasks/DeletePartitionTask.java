@@ -22,6 +22,7 @@ public class DeletePartitionTask <T extends Storable> implements FileTask<Boolea
     return false;
   }
 
+  @Override
   public boolean independentTask(){
     return true;
   }
