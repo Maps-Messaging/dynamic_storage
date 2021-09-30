@@ -23,6 +23,7 @@ package io.mapsmessaging.storage.impl.file.partition;
 import io.mapsmessaging.utilities.collections.MappedBufferHelper;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.ByteBufferBitSetFactoryImpl;
+import java.util.NoSuchElementException;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -223,20 +224,23 @@ public class IndexManager implements Closeable {
   public class HeaderIterator implements Iterator<IndexRecord>{
 
     private long key;
+    private IndexRecord next;
+    private IndexRecord current;
 
     public HeaderIterator(){
       key = start -1;
+      current = null;
+      next = locateNext();
     }
 
     @Override
     public boolean hasNext() {
-      return key != end;
+      return next != null;
     }
 
-    @Override
-    public IndexRecord next() {
+    private IndexRecord locateNext(){
       key++;
-      while(hasNext()){
+      while(key != end){
         IndexRecord item = get(key);
         if(item != null) {
           if (item.getPosition() != 0) {
@@ -249,8 +253,16 @@ public class IndexManager implements Closeable {
     }
 
     @Override
+    public IndexRecord next() {
+      if(!hasNext()) throw new NoSuchElementException();
+      current = next;
+      next = locateNext();
+      return current;
+    }
+
+    @Override
     public void remove() {
-      delete(key);
+      delete(current.getKey());
     }
 
     @Override
