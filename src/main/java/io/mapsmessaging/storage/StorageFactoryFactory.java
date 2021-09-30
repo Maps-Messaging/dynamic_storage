@@ -60,6 +60,8 @@ class StorageFactoryFactory {
     return layered;
   }
 
+
+  @SuppressWarnings("java:S2293")
   @SneakyThrows
   @Nullable
   public <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull Factory<T> factory) {
@@ -82,6 +84,7 @@ class StorageFactoryFactory {
     return null;
   }
 
+  @SuppressWarnings("java:S2293")
   @SneakyThrows
   @NotNull
   public <T extends Storable> CacheLayer<T> createCache(@NotNull String name, boolean enableWriteThrough, @NotNull Storage<T> baseStore) {

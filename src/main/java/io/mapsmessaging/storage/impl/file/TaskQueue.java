@@ -19,14 +19,14 @@ public class TaskQueue {
 
   private static final long TIMEOUT = 60;
 
-  private final Queue<FileTask<?>> taskQueue;
+  private final Queue<FileTask<?>> syncTasks;
   private final AtomicLong waitingScheduler;
   private final Map<FileTask<?>,Future<?>> pending;
 
   private ExecutorService taskScheduler;
 
   public TaskQueue(){
-    taskQueue = new LinkedList<>();
+    syncTasks = new LinkedList<>();
     pending = new ConcurrentHashMap<>();
     waitingScheduler = new AtomicLong(0);
   }
@@ -36,7 +36,7 @@ public class TaskQueue {
     while(waitingScheduler.get() != 0 && timeout>System.currentTimeMillis()){
       LockSupport.parkNanos(10000000);
     }
-    taskQueue.clear();
+    syncTasks.clear();
     clearQueue();
   }
 
@@ -70,8 +70,8 @@ public class TaskQueue {
 
   public void setTaskScheduler(@NotNull ExecutorService scheduler){
     taskScheduler = scheduler;
-    while(!taskQueue.isEmpty()){
-      taskScheduler.submit(taskQueue.poll());
+    while(!syncTasks.isEmpty()){
+      taskScheduler.submit(syncTasks.poll());
     }
   }
 
@@ -86,9 +86,9 @@ public class TaskQueue {
       t.start();
     }
     else{
-      taskQueue.offer(task);
-      if(taskQueue.size() > 10){
-        while(!taskQueue.isEmpty()){
+      syncTasks.offer(task);
+      if(syncTasks.size() > 10){
+        while(!syncTasks.isEmpty()){
           executeTasks();
         }
       }
@@ -97,7 +97,7 @@ public class TaskQueue {
 
   @SuppressWarnings("java:S112")
   public boolean executeTasks() throws IOException {
-    FileTask<?> task = taskQueue.poll();
+    FileTask<?> task = syncTasks.poll();
     if(task != null){
       try {
         task.call();
@@ -105,7 +105,7 @@ public class TaskQueue {
         throw new IOException(e);
       }
     }
-    return !taskQueue.isEmpty();
+    return !syncTasks.isEmpty();
   }
 
   private static final class FileWrapperTask<T> implements FileTask<T>{

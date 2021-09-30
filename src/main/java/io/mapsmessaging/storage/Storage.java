@@ -48,6 +48,7 @@ public interface Storage<T extends Storable> extends Closeable {
     return true;
   }
 
+  @SuppressWarnings("java:S112")
   default boolean executeTasks() throws Exception {
     return false;
   }

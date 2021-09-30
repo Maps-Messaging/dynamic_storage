@@ -25,7 +25,6 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
 
-import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

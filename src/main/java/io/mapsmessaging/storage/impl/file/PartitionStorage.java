@@ -110,14 +110,9 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   @Override
   public void add(@NotNull T object) throws IOException {
     IndexStorage<T> partition = locateOrCreatePartition(object.getKey());
-    try {
-      partition.add(object);
-      if(partition.isFull()){
-        partition.setEnd(object.getKey());
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-      throw e;
+    partition.add(object);
+    if(partition.isFull()){
+      partition.setEnd(object.getKey());
     }
   }
 
@@ -128,7 +123,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
       partition.remove(key);
       if(partition.isEmpty() && !partitions.isEmpty()){
         partitions.remove(partition);
-        submit(new DeletePartitionTask<T>( partition));
+        submit(new DeletePartitionTask<>( partition));
       }
     }
     return false;

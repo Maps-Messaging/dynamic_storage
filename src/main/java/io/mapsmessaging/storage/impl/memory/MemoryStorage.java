@@ -96,7 +96,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
 
   @Override
   public void setExecutor(TaskScheduler scheduler) {
-
+    // The memory storage doesn't use the scheduler for any tasks
   }
 
   @Override

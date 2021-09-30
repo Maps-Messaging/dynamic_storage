@@ -17,6 +17,7 @@ public class DeletePartitionTask <T extends Storable> implements FileTask<Boolea
     return true;
   }
 
+  @Override
   public boolean canCancel(){
     return false;
   }

@@ -35,6 +35,6 @@ public class ValidateIndexAndDataTask<T extends Storable> implements FileTask<Bo
   @Override
   public Boolean call() throws Exception {
 
-    return null;
+    return true;
   }
 }
