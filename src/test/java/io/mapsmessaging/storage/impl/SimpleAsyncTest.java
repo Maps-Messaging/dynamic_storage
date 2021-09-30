@@ -20,7 +20,6 @@
 
 package io.mapsmessaging.storage.impl;
 
-import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.tasks.Completion;
