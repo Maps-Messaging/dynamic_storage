@@ -26,13 +26,11 @@ import io.mapsmessaging.storage.StorageBuilder;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class MemoryStoreTest extends BaseStoreTest{
 
   @Test
-  @Disabled
   @Override
   void basicOpenCloseOpen() throws IOException {
 
