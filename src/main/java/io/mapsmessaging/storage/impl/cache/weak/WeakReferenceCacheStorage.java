@@ -29,15 +29,15 @@ import java.util.WeakHashMap;
 
 public class WeakReferenceCacheStorage<T extends Storable> implements Cache<T> {
 
-  private final Map<Long, T> cache;
+  private final Map<Long, T> weakMap;
 
   public WeakReferenceCacheStorage(){
-    cache = new LinkedHashMap<>();
+    weakMap = new LinkedHashMap<>();
   }
 
 
   public WeakReferenceCacheStorage(String name) {
-    cache = new WeakHashMap<>();
+    weakMap = new WeakHashMap<>();
   }
 
   @Override
@@ -47,22 +47,22 @@ public class WeakReferenceCacheStorage<T extends Storable> implements Cache<T> {
 
   @Override
   public T cacheGet(long key) {
-    return cache.get(key);
+    return weakMap.get(key);
   }
 
   @Override
   public void cachePut(T obj) {
-    cache.put(obj.getKey(), obj);
+    weakMap.put(obj.getKey(), obj);
   }
 
   @Override
   public void cacheRemove(long key) {
-    cache.remove(key);
+    weakMap.remove(key);
   }
 
   @Override
   public void cacheClear(){
-    cache.clear();
+    weakMap.clear();
   }
 
   @Override
