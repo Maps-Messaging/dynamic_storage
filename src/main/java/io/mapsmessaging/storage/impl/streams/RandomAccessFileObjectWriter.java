@@ -22,7 +22,6 @@ package io.mapsmessaging.storage.impl.streams;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 
 public class RandomAccessFileObjectWriter extends ObjectWriter {
 

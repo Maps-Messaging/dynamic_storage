@@ -22,7 +22,6 @@ package io.mapsmessaging.storage.impl.streams;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 
 public class StreamObjectWriter extends ObjectWriter {
 
