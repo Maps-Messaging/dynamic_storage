@@ -27,7 +27,6 @@ import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
 import io.mapsmessaging.storage.impl.file.tasks.ValidateIndexAndDataTask;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
-import java.nio.file.CopyOption;
 import java.nio.file.StandardCopyOption;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -87,7 +86,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     else{
       initialise(start);
     }
-    dataStorage = new DataStorage<T>(fileName+"_data", factory, sync);
+    dataStorage = new DataStorage<>(fileName+"_data", factory, sync);
     if(dataStorage.isValidationRequired() || requiresValidation){
       scheduler.submit(new ValidateIndexAndDataTask<>(this));
     }
@@ -153,7 +152,6 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
         mapChannel.position(0);
         long moved = tmp.transferFrom(mapChannel, 0, size);
         if(moved != size){
-          tmp.close();
           if(!tmpIndex.delete()){
             //ToDo log this for later info
           }

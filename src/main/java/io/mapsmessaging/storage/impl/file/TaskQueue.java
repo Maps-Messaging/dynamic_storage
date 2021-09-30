@@ -41,29 +41,36 @@ public class TaskQueue {
   }
 
   private void clearQueue() throws IOException {
-    Exception raised = null;
+    IOException raised = null;
     for(Map.Entry<FileTask<?>,Future<?>> entry: pending.entrySet()){
-      if(!entry.getValue().isDone()) {
-        if (entry.getKey().canCancel()) {
-          entry.getValue().cancel(true);
-        } else {
-          try {
-            entry.getValue().get(TIMEOUT, TimeUnit.SECONDS);
-          } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            if (Thread.interrupted()) {
-              Thread.currentThread().interrupt();
-            }
-            raised = e;
-          }
-        }
+      try {
+        processOutstandingTask(entry.getKey(), entry.getValue());
+      } catch (IOException e) {
+        raised = e;
       }
     }
     pending.clear();
     if(raised != null){
-      throw new IOException(raised);
+      throw raised;
     }
   }
 
+  private void processOutstandingTask(FileTask<?> task,Future<?> future ) throws IOException {
+    if(!future.isDone()) {
+      if (task.canCancel()) {
+        future.cancel(true);
+      } else {
+        try {
+          future.get(TIMEOUT, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+          if (Thread.interrupted()) {
+            Thread.currentThread().interrupt();
+          }
+          throw new IOException(e);
+        }
+      }
+    }
+  }
   public boolean isEmpty(){
     return pending.isEmpty();
   }
@@ -105,6 +112,10 @@ public class TaskQueue {
         throw new IOException(e);
       }
     }
+    return hasTasks();
+  }
+
+  public boolean hasTasks(){
     return !syncTasks.isEmpty();
   }
 

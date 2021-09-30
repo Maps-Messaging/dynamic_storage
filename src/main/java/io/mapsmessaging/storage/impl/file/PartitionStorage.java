@@ -71,7 +71,9 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   @Override
   public void shutdown()throws IOException{
     shutdown = true;
-    while(taskScheduler.executeTasks()){}
+    while(taskScheduler.hasTasks()){
+      taskScheduler.executeTasks();
+    }
     taskScheduler.abortAll(); // We are about to delete the partition, any tasks can be cancelled now
   }
 

@@ -51,7 +51,7 @@ public class IndexManager implements Closeable {
   private final LongAdder counter;
   private final LongAdder emptySpace;
 
-  private @Getter final long start;
+  private final  @Getter  long start;
 
   private MappedByteBuffer index;
 
@@ -135,52 +135,44 @@ public class IndexManager implements Closeable {
 
 
   public boolean add(long key, @NotNull IndexRecord item){
-    if(key>= start && key <= localEnd && !closed){
-      if(key<=end){
-        setMapPosition(key);
-        item.update(index);
-        counter.increment();
-        return true;
-      }
+    if(key>= start && key <= localEnd && !closed && key<=end){
+      setMapPosition(key);
+      item.update(index);
+      counter.increment();
+      return true;
     }
     return false;
   }
 
   public @Nullable IndexRecord get(long key){
     IndexRecord item = null;
-    if(key>= start && key <= localEnd  && !closed){
-      if(key<=end){
-        setMapPosition(key);
-        item = new IndexRecord(index);
-        item.setKey(key);
-      }
+    if(key>= start && key <= localEnd  && !closed && key<=end){
+      setMapPosition(key);
+      item = new IndexRecord(index);
+      item.setKey(key);
     }
     return item;
   }
 
   public boolean contains(long key){
-    if(key>= start && key <= localEnd && !closed){
-      if(key<=end){
-        setMapPosition(key);
-        IndexRecord item = new IndexRecord(index);
-        return item.getPosition() != 0;
-      }
+    if(key>= start && key <= localEnd && !closed && key<=end){
+      setMapPosition(key);
+      IndexRecord item = new IndexRecord(index);
+      return item.getPosition() != 0;
     }
     return false;
   }
 
   public boolean delete(long key){
-    if(key>= start && key <= localEnd && !closed){
-      if(key<=end){
+    if(key>= start && key <= localEnd && !closed && key <=end){
+      setMapPosition(key);
+      IndexRecord item = new IndexRecord(index);
+      if(item.getPosition() != 0) {
+        counter.decrement();
+        emptySpace.add(item.getLength());
         setMapPosition(key);
-        IndexRecord item = new IndexRecord(index);
-        if(item.getPosition() != 0) {
-          counter.decrement();
-          emptySpace.add(item.getLength());
-          setMapPosition(key);
-          IndexRecord.clear(index);
-          return true;
-        }
+        IndexRecord.clear(index);
+        return true;
       }
     }
     return false;

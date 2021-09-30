@@ -59,8 +59,8 @@ public class BufferObjectWriter extends ObjectWriter {
 
   @Override
   public void write(ByteBuffer[] buffers) throws IOException {
-    for(ByteBuffer buffer:buffers){
-      this.buffer.put(buffer);
+    for(ByteBuffer buf:buffers){
+      this.buffer.put(buf);
     }
   }
 
