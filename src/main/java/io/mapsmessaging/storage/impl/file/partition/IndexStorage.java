@@ -53,7 +53,6 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
   private FileChannel mapChannel;
 
   private final int itemCount;
-  private final long maxPartitionSize;
   private final boolean sync;
   private final String fileName;
   private final DataStorage<T> dataStorage;
@@ -68,7 +67,6 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     scheduler = taskScheduler;
     this.sync = sync;
     this.itemCount = itemCount;
-    this.maxPartitionSize = maxPartitionSize;
     long length = 0;
     if (file.exists()) {
       length = file.length();
