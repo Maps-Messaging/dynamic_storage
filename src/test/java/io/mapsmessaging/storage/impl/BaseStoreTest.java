@@ -203,7 +203,6 @@ public abstract class BaseStoreTest extends BaseTest{
         storage.add(message).get();
       }
       Assertions.assertEquals(24, storage.size().get());
-      Thread.sleep(100); // Allow any background tasks to kick off. Would expect at least 4 header compactions
       for (int x = 0; x < 24; x++) {
         MappedData mappedData = storage.get(x).get();
         validateMessage(mappedData, x);
@@ -211,7 +210,6 @@ public abstract class BaseStoreTest extends BaseTest{
       for (int x = 0; x < 24; x++) {
         storage.remove(x).get();
       }
-      Thread.sleep(100); // allow things to complete
     } finally {
       if(storage != null) {
         storage.delete().get();

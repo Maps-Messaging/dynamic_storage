@@ -16,4 +16,9 @@ public class DeletePartitionTask <T extends Storable> implements FileTask<Boolea
     partitionToDelete.delete();
     return true;
   }
+
+  public boolean canCancel(){
+    return false;
+  }
+
 }

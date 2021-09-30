@@ -29,7 +29,6 @@ import java.util.Map;
 
 public class PartitionStoreTest extends BaseStoreTest{
 
-  private static long testNumber = 0;
   @Override
   public Storage<MappedData> createStore(boolean sync) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();
@@ -37,7 +36,7 @@ public class PartitionStoreTest extends BaseStoreTest{
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
-        .setName("Test_"+testNumber++)
+        .setName("Test")
         .setProperties(properties);
     return storageBuilder.build();
   }
@@ -50,7 +49,7 @@ public class PartitionStoreTest extends BaseStoreTest{
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
-        .setName("Test_"+testNumber++)
+        .setName("Test")
         .setProperties(properties);
     return storageBuilder.buildAsync();
   }

@@ -65,6 +65,20 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   }
 
   @Override
+  public void shutdown()throws IOException{
+    taskScheduler.abortAll(); // We are about to delete the partition, any tasks can be cancelled now
+  }
+
+
+  @Override
+  public void close() throws IOException {
+    for(IndexStorage<T> partition:partitions){
+      partition.close();
+    }
+    partitions.clear();
+  }
+
+  @Override
   public void delete() throws IOException {
     for(IndexStorage<T> partition:partitions){
       partition.delete();
@@ -81,9 +95,6 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     children = file.list();
     if(children == null || children.length == 0) {
       Files.deleteIfExists(file.toPath());
-    }
-    else{
-      System.err.println("Unable to delete child files");
     }
   }
 
@@ -153,14 +164,6 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   @Override
   public void setExecutor(TaskScheduler scheduler) {
     taskScheduler.setTaskScheduler(scheduler);
-  }
-
-  @Override
-  public void close() throws IOException {
-    for(IndexStorage<T> partition:partitions){
-      partition.close();
-    }
-    partitions.clear();
   }
 
   private @Nullable IndexStorage<T> locatePartition(long key){

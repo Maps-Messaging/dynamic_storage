@@ -63,7 +63,6 @@ public class IndexManager implements Closeable {
     start = header.getLong();
     end   = header.getLong();
     localEnd = end;
-    System.err.println("Index Reload::"+start+" - "+end);
 
     int totalSize = (int)((end-start)+1) * IndexRecord.HEADER_SIZE;
     index = channel.map(MapMode.READ_WRITE, position+HEADER_SIZE, totalSize);
@@ -80,7 +79,6 @@ public class IndexManager implements Closeable {
     position = channel.position();
     this.start = start;
     end = start+itemSize;
-    System.err.println("Index opened::"+start+" - "+end);
 
     localEnd = end;
     counter = new LongAdder();
@@ -106,7 +104,6 @@ public class IndexManager implements Closeable {
   @Override
   public void close() throws IOException {
     if(!closed) {
-      System.err.println("Index closed::"+start+" - "+end);
       closed = true;
       index.force();
       MappedBufferHelper.closeDirectBuffer(index);

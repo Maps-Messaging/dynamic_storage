@@ -201,24 +201,7 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     mapChannel.close();
     dataStorage.delete();
     File path = new File(fileName);
-    boolean deleted = false;
-    int count = 0;
-    while(!deleted) {
-      try {
-        Files.delete(path.toPath());
-        deleted = true;
-      } catch (IOException e) {
-        e.printStackTrace();
-        count++;
-        deleted = count > 5;
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException ex) {
-          ex.printStackTrace();
-        }
-      }
-    }
-    System.err.println("Deleting "+fileName);
+    Files.delete(path.toPath());
   }
 
   @Override

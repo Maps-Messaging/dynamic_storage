@@ -56,4 +56,6 @@ public interface Storage<T extends Storable> extends Closeable {
   @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException;
 
   void setExecutor(TaskScheduler executor);
+
+  default void shutdown()throws IOException{}
 }

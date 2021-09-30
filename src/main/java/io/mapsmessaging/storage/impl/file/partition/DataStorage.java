@@ -135,7 +135,6 @@ public class DataStorage<T extends Storable> implements Closeable {
     close();
     File path = new File(fileName);
     Files.delete(path.toPath());
-    System.err.println("Deleting "+fileName);
   }
 
   public IndexRecord add(@NotNull T object) throws IOException {

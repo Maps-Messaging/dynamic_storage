@@ -42,7 +42,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   private final PriorityConcurrentTaskScheduler scheduler;
   private final AtomicBoolean closed;
 
-  AsyncStorage(@NotNull Storage<T> storage, boolean enableReadWriteQueues) {
+  AsyncStorage(@NotNull Storage<T> storage) {
     this.storage = storage;
     scheduler = new PriorityConcurrentTaskScheduler(storage.getName(), 2);
     closed = new AtomicBoolean(false);
@@ -63,6 +63,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   public final Future<Boolean> close(Completion<Boolean> completion) throws IOException {
     checkClose();
     closed.set(true);
+    storage.shutdown();
     return scheduler.submit(new CloseTask<T>(storage, completion), FOREGROUND_PRIORITY);
   }
 
@@ -73,16 +74,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   public final Future<Boolean> delete(Completion<Boolean> completion) throws IOException {
     checkClose();
     closed.set(true);
-    try {
-      while(!scheduler.isEmpty()) {
-        // Wait for the background tasks to finish
-        scheduler.submit(new ClearScheduleTask<>(storage, null), BACKGROUND_PRIORITY).get();
-      }
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } catch (ExecutionException e) {
-      e.printStackTrace();
-    }
+    storage.shutdown();
     return scheduler.submit(new DeleteTask<T>(storage, completion), FOREGROUND_PRIORITY);
   }
 

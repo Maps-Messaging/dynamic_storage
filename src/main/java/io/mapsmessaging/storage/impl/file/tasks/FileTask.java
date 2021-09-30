@@ -23,4 +23,8 @@ import java.util.concurrent.Callable;
 
 public interface FileTask<V> extends Callable<V> {
 
+  default boolean canCancel(){
+    return true;
+  }
+
 }

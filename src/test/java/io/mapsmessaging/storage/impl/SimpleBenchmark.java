@@ -85,7 +85,6 @@ public class SimpleBenchmark extends BaseTest {
       StorageBuilder<BufferedData> storageBuilder = new StorageBuilder<>();
       storageBuilder.setStorageType("SeekableChannel")
           .setFactory(new DataFactory())
-          .enableReadWriteQueues(readWriteQueues)
           .setName(drive+"FileTest2_"+x)
           .setCache(enableCache)
           .setProperties(properties);
