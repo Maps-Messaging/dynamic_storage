@@ -59,4 +59,6 @@ public interface Storage<T extends Storable> extends Closeable {
   void setExecutor(TaskScheduler executor);
 
   default void shutdown()throws IOException{}
+
+  Statistics getStatistics();
 }

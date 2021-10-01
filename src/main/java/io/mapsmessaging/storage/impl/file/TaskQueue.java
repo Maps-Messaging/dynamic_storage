@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -19,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 public class TaskQueue {
 
   private static final long TIMEOUT = 60;
-
+  private static final ScheduledExecutorService SCHEDULER_EXECUTOR = Executors.newScheduledThreadPool(2);
   private static final ExecutorService INDEPENDENT_EXECUTOR = Executors.newSingleThreadExecutor();
 
   private final Queue<FileTask<?>> syncTasks;
@@ -85,6 +86,15 @@ public class TaskQueue {
     }
   }
 
+  public Future<?> schedule(FileTask<?> raw, long startIn, TimeUnit timeUnit){
+    FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
+    return SCHEDULER_EXECUTOR.schedule (task, startIn, timeUnit);
+  }
+
+  public Future<?> scheduleAtFixedRate(Runnable raw, long startIn, TimeUnit timeUnit){
+    return SCHEDULER_EXECUTOR.scheduleAtFixedRate (raw, startIn, startIn, timeUnit);
+  }
+
   public void submit(FileTask<?> raw) throws IOException {
     if(raw.independentTask()){
       INDEPENDENT_EXECUTOR.submit(raw);
@@ -93,11 +103,8 @@ public class TaskQueue {
       waitingScheduler.incrementAndGet();
       FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
       if (taskScheduler != null) {
-        Thread t = new Thread(() -> {
-          pending.put(task, taskScheduler.submit(task));
-          waitingScheduler.decrementAndGet();
-        });
-        t.start();
+        SubmitTask submitTask = new SubmitTask(task);
+        INDEPENDENT_EXECUTOR.submit(submitTask);
       } else {
         syncTasks.offer(task);
         if (syncTasks.size() > 10) {
@@ -148,6 +155,21 @@ public class TaskQueue {
       } finally {
         pending.remove(this);
       }
+    }
+  }
+
+  private final class SubmitTask implements FileTask<Boolean>{
+
+    private final FileTask<?> toSubmit;
+    public SubmitTask(FileTask<?> toSubmit){
+      this.toSubmit = toSubmit;
+    }
+
+    @Override
+    public Boolean call()  {
+      pending.put(toSubmit, taskScheduler.submit(toSubmit));
+      waitingScheduler.decrementAndGet();
+      return true;
     }
   }
 

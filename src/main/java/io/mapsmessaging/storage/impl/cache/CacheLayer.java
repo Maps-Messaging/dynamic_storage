@@ -21,6 +21,7 @@
 package io.mapsmessaging.storage.impl.cache;
 
 import io.mapsmessaging.storage.LayeredStorage;
+import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.tasks.Completion;
@@ -37,6 +38,7 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   private final boolean enableWriteThrough;
   private final Cache<T> cache;
   private final Storage<T> baseStorage;
+
   private final LongAdder cacheMiss = new LongAdder();
   private final LongAdder cacheHit =new LongAdder();
 
@@ -49,14 +51,6 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   @Override
   public void shutdown() throws IOException {
     baseStorage.shutdown();
-  }
-
-  public long getCacheMiss() {
-    return cacheMiss.sum();
-  }
-
-  public long getCacheHit() {
-    return cacheHit.sum();
   }
 
   @Override
@@ -134,4 +128,7 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
     baseStorage.setExecutor(scheduler);
   }
 
+  public Statistics getStatistics(){
+    return new CacheStatistics(cacheMiss.sumThenReset(), cacheHit.sumThenReset(), cache.size(), baseStorage.getStatistics());
+  }
 }

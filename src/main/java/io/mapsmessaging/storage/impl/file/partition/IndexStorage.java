@@ -22,11 +22,9 @@ package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.storage.Factory;
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
 import io.mapsmessaging.storage.impl.file.tasks.ValidateIndexAndDataTask;
-import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.nio.file.StandardCopyOption;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +40,7 @@ import java.util.List;
 
 import static java.nio.file.StandardOpenOption.*;
 
-public class IndexStorage<T extends Storable> implements Storage<T> {
+public class IndexStorage<T extends Storable> {
 
   private static final double VERSION = 1.0;
   private static final long UNIQUE_ID = 0xf00d0000d00f0000L;
@@ -93,7 +91,6 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     closed = false;
   }
 
-  @Override
   public void close() throws IOException {
     if(!closed) {
       closed = true;
@@ -105,6 +102,14 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
       mapChannel.close();
       dataStorage.close();
     }
+  }
+
+  public void delete() throws IOException {
+    indexManager.close();
+    mapChannel.close();
+    dataStorage.delete();
+    File path = new File(fileName);
+    Files.delete(path.toPath());
   }
 
   private void initialise(long start) throws IOException {
@@ -173,6 +178,14 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
       reload();
     }
   }
+  public boolean hasExpired() {
+    return !indexManager.getExpiryIndex().isEmpty();
+  }
+
+
+  public boolean scanForExpired() {
+    return indexManager.scanForExpired();
+  }
 
   public long getStart(){
     return indexManager.getStart();
@@ -187,58 +200,45 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
     scheduler.submit(new CompactIndexTask<>(this));
   }
 
-  @Override
+
   public String getName() {
     return fileName;
   }
 
-  @Override
-  public void delete() throws IOException {
-    indexManager.close();
-    mapChannel.close();
-    dataStorage.delete();
-    File path = new File(fileName);
-    Files.delete(path.toPath());
-  }
-
-  @Override
-  public void add(@NotNull T object) throws IOException {
+  public IndexRecord add(@NotNull T object) throws IOException {
     IndexRecord item = dataStorage.add(object);
     indexManager.add(object.getKey(), item);
+    return item;
   }
 
   public boolean isFull(){
     return dataStorage.isFull();
   }
 
-  @Override
   public boolean remove(long key) throws IOException {
     return indexManager.delete(key);
   }
 
-  @Override
-  public @Nullable T get(long key) throws IOException {
+  public @Nullable IndexGet<T> get(long key) throws IOException {
     T obj = null;
+    IndexRecord item = null;
     if (key >= 0) {
-      IndexRecord item = indexManager.get(key);
+      item = indexManager.get(key);
       if(item != null){
         obj = dataStorage.get(item);
       }
     }
-    return obj;
+    return new IndexGet<>(item, obj);
   }
 
-  @Override
   public long size() throws IOException {
     return indexManager.size();
   }
 
-  @Override
   public boolean isEmpty() {
     return indexManager.size() == 0;
   }
 
-  @Override
   public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
     List<Long> itemsToRemove = indexManager.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
@@ -254,10 +254,5 @@ public class IndexStorage<T extends Storable> implements Storage<T> {
       return listToKeep;
     }
     return new ArrayList<>();
-  }
-
-  @Override
-  public void setExecutor(TaskScheduler scheduler) {
-    // We don't actually get the executor here
   }
 }

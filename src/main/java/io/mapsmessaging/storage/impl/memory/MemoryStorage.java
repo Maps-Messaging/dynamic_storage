@@ -20,9 +20,12 @@
 
 package io.mapsmessaging.storage.impl.memory;
 
+import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
+import java.util.concurrent.atomic.LongAdder;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -35,10 +38,16 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
 
   private final Map<Long, T> memoryMap;
   private final String name;
+  private final LongAdder reads;
+  private final LongAdder writes;
+  private final LongAdder deletes;
 
   public MemoryStorage() {
     memoryMap = new LinkedHashMap<>();
     name = "memory" + counter.get();
+    reads = new LongAdder();
+    writes = new LongAdder();
+    deletes = new LongAdder();
   }
 
   @Override
@@ -54,15 +63,18 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
   @Override
   public void add(@NotNull T object) throws IOException {
     memoryMap.put(object.getKey(), object);
+    writes.increment();
   }
 
   @Override
   public boolean remove(long key) throws IOException {
+    deletes.increment();
     return memoryMap.remove(key) != null;
   }
 
   @Override
   public T get(long key) throws IOException {
+    reads.increment();
     return memoryMap.get(key);
   }
 
@@ -99,6 +111,9 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
     // The memory storage doesn't use the scheduler for any tasks
   }
 
+  public Statistics getStatistics(){
+    return new StorageStatistics(reads.sumThenReset(), writes.sumThenReset(), deletes.sumThenReset(), 0L, 0L,0L, 0L);
+  }
   @Override
   public void close() throws IOException {
     memoryMap.clear();

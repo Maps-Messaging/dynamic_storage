@@ -22,7 +22,9 @@ package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.utilities.collections.MappedBufferHelper;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.ByteBufferBitSetFactoryImpl;
+import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +44,9 @@ import java.util.function.Consumer;
 public class IndexManager implements Closeable {
 
   private static final int HEADER_SIZE = 16;
+
+
+  private final @Getter List<Long> expiryIndex;
   private volatile boolean closed;
   private final FileChannel channel;
   private final long position;
@@ -71,6 +76,8 @@ public class IndexManager implements Closeable {
     closed = false;
     counter = new LongAdder();
     emptySpace = new LongAdder();
+    expiryIndex = new NaturalOrderedLongList(0, new BitSetFactoryImpl(8192));
+
     walkIndex();
   }
 
@@ -98,6 +105,8 @@ public class IndexManager implements Closeable {
       empty.update(index); // fill with 0's
     }
     index.force(); // ensure the disk / memory are in sync
+    expiryIndex = new NaturalOrderedLongList(0, new BitSetFactoryImpl(8192));
+
     closed = false;
   }
 
@@ -110,6 +119,28 @@ public class IndexManager implements Closeable {
       index = null; // ensure NPE rather than a full-blown JVM crash!!!
     }
   }
+
+  public boolean scanForExpired() {
+    if(!expiryIndex.isEmpty()){
+      Iterator<Long> expiryIterator = expiryIndex.listIterator();
+      long now = System.currentTimeMillis();
+      while(expiryIterator.hasNext()){
+        long key = expiryIterator.next();
+        IndexRecord record = get(key);
+        if(record != null) {
+          if (record.getExpiry() < now) {
+            delete(key);
+            expiryIterator.remove();
+          }
+        }
+        else{
+          expiryIterator.remove();
+        }
+      }
+    }
+    return !expiryIndex.isEmpty();
+  }
+
 
   public long getEnd(){
     return end;
@@ -135,6 +166,9 @@ public class IndexManager implements Closeable {
 
   public boolean add(long key, @NotNull IndexRecord item){
     if(key>= start && key <= localEnd && !closed && key<=end){
+      if(item.getExpiry() > 0){
+        expiryIndex.add(key);
+      }
       setMapPosition(key);
       item.update(index);
       counter.increment();
@@ -148,7 +182,13 @@ public class IndexManager implements Closeable {
     if(key>= start && key <= localEnd  && !closed && key<=end){
       setMapPosition(key);
       item = new IndexRecord(index);
-      item.setKey(key);
+      if(item.getExpiry() == 0 || item.getExpiry() > System.currentTimeMillis()){
+        item.setKey(key);
+      }
+      else{
+        delete(key); // It has expired, lets simply remove it
+        item = null;
+      }
     }
     return item;
   }
@@ -184,17 +224,30 @@ public class IndexManager implements Closeable {
   }
 
   void walkIndex(){
+    List<Long> expired = new ArrayList<>();
     IndexRecord indexRecord;
     index.position(0);
     int size = (int)(end -start)+1;
+    long now = System.currentTimeMillis();
     for(int x=0;x<size;x++){
       indexRecord = new IndexRecord(index);
       if(indexRecord.getPosition() != 0){
         counter.increment();
+        if(indexRecord.getExpiry() != 0){
+          if(indexRecord.getExpiry() > now){
+            expiryIndex.add(indexRecord.getKey());
+          }
+          else{
+            expired.add(indexRecord.getKey());
+          }
+        }
       }
       else if(indexRecord.getLength() > 0){
         emptySpace.add(indexRecord.getLength());
       }
+    }
+    for(Long key:expired){
+      delete(key);
     }
   }
 

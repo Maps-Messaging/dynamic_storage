@@ -13,4 +13,6 @@ public interface Cache<T> {
   void cacheClear();
 
   void cacheDelete();
+
+  int size();
 }

@@ -72,4 +72,9 @@ public class WeakReferenceCacheStorage<T extends Storable> implements Cache<T> {
   public void cacheDelete(){
     cacheClear();
   }
+
+  @Override
+  public int size(){
+    return weakMap.size();
+  }
 }
