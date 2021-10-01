@@ -231,7 +231,15 @@ public class IndexStorage<T extends Storable> {
     return new IndexGet<>(item, obj);
   }
 
-  public long size() throws IOException {
+  public long length() throws IOException{
+    return mapChannel.size();
+  }
+
+  public long emptySpace() {
+    return indexManager.emptySpace();
+  }
+
+  public long size() {
     return indexManager.size();
   }
 

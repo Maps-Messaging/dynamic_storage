@@ -159,7 +159,7 @@ public class IndexManager implements Closeable {
     return (int) counter.sum();
   }
 
-  public int emptySpace(){
+  public long emptySpace(){
     return (int) emptySpace.sum();
   }
 

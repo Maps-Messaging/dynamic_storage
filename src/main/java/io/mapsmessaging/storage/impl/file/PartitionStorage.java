@@ -11,7 +11,6 @@ import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
 import io.mapsmessaging.storage.impl.file.tasks.DeletePartitionTask;
 import io.mapsmessaging.storage.impl.file.tasks.FileTask;
 import io.mapsmessaging.storage.impl.file.tasks.IndexExpiryMonitorTask;
-import io.mapsmessaging.storage.impl.file.tasks.PartitionStatisticsTask;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.File;
 import java.io.IOException;
@@ -41,7 +40,6 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   private final boolean sync;
   private boolean shutdown;
   private Future<?> expiryTask;
-  private Future<?> statsMonitorTask;
 
   private final LongAdder reads;
   private final LongAdder writes;
@@ -80,7 +78,6 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     deletes = new LongAdder();
     byteWrites = new LongAdder();
     byteReads = new LongAdder();
-    statsMonitorTask = taskScheduler.scheduleAtFixedRate(new PartitionStatisticsTask<>(this), 10 , TimeUnit.SECONDS);
   }
 
   private void reload(File location) throws IOException {
@@ -114,7 +111,6 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   @Override
   public void shutdown()throws IOException{
     shutdown = true;
-    statsMonitorTask.cancel(true);
     if(expiryTask != null){
       expiryTask.cancel(true);
       expiryTask = null;
@@ -210,7 +206,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public long size() throws IOException {
+  public long size() {
     long size =0;
     for(IndexStorage<T> partition:partitions){
       size += partition.size();
@@ -218,6 +214,21 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     return size;
   }
 
+  public long length() throws IOException {
+    long length =0;
+    for(IndexStorage<T> partition:partitions){
+      length += partition.length();
+    }
+    return length;
+  }
+
+  public long emptySpace(){
+    long emptySpace =0;
+    for(IndexStorage<T> partition:partitions){
+      emptySpace += partition.emptySpace();
+    }
+    return emptySpace;
+  }
   @Override
   public boolean isEmpty() {
     for(IndexStorage<T> partition:partitions){
@@ -230,14 +241,18 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
 
   public void scanForExpired() throws IOException {
     boolean hasExpired = false;
+    List<IndexStorage<T>> toBeRemoved = new ArrayList<>();
     for(IndexStorage<T> partition:partitions){
       if(partition.scanForExpired()){
         hasExpired = true;
       }
       if(partition.isEmpty() && !partitions.isEmpty()){
-        partitions.remove(partition);
-        submit(new DeletePartitionTask<>( partition));
+        toBeRemoved.add(partition);
       }
+    }
+    for(IndexStorage<T> partition:toBeRemoved){
+      partitions.remove(partition);
+      submit(new DeletePartitionTask<>( partition));
     }
     if(hasExpired){
       expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 1, TimeUnit.MINUTES);
@@ -293,7 +308,25 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   }
 
   public Statistics getStatistics(){
-    return new StorageStatistics(reads.sumThenReset(), writes.sumThenReset(), deletes.sumThenReset(), byteReads.sumThenReset(), byteWrites.sumThenReset(), readTimes.sumThenReset(), writeTimes.sumThenReset());
+    long length;
+    try {
+      length = length();
+    } catch (IOException e) {
+      length = -1;
+    }
+
+    return new StorageStatistics(
+        reads.sumThenReset(),
+        writes.sumThenReset(),
+        deletes.sumThenReset(),
+        byteReads.sumThenReset(),
+        byteWrites.sumThenReset(),
+        readTimes.sumThenReset(),
+        writeTimes.sumThenReset(),
+        length,
+        emptySpace(),
+        partitions.size()
+    );
   }
 }
 

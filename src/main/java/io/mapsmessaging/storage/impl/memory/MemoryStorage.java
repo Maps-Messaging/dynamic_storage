@@ -112,10 +112,10 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
   }
 
   public Statistics getStatistics(){
-    return new StorageStatistics(reads.sumThenReset(), writes.sumThenReset(), deletes.sumThenReset(), 0L, 0L,0L, 0L);
+    return new StorageStatistics(reads.sumThenReset(), writes.sumThenReset(), deletes.sumThenReset());
   }
   @Override
-  public void close() throws IOException {
+  public void close() {
     memoryMap.clear();
   }
 
