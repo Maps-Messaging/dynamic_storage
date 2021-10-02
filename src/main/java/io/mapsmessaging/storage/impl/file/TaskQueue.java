@@ -86,13 +86,9 @@ public class TaskQueue {
     }
   }
 
-  public Future<?> schedule(FileTask<?> raw, long startIn, TimeUnit timeUnit){
-    FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
+  public <V> Future<V> schedule(FileTask<V> raw, long startIn, TimeUnit timeUnit){
+    FileWrapperTask<V> task = new FileWrapperTask<>(raw, pending);
     return SCHEDULER_EXECUTOR.schedule (task, startIn, timeUnit);
-  }
-
-  public Future<?> scheduleAtFixedRate(Runnable raw, long startIn, TimeUnit timeUnit){
-    return SCHEDULER_EXECUTOR.scheduleAtFixedRate (raw, startIn, startIn, timeUnit);
   }
 
   public void submit(FileTask<?> raw) throws IOException {
