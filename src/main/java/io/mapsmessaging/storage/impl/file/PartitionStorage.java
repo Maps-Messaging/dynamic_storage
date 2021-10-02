@@ -243,29 +243,25 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   }
 
   public void scanForExpired() throws IOException {
-    try {
-      boolean hasExpired = false;
-      List<IndexStorage<T>> toBeRemoved = new ArrayList<>();
-      for(IndexStorage<T> partition:partitions){
-        if(partition.scanForExpired()){
-          hasExpired = true;
-        }
-        if(partition.isEmpty() && partitions.size() > 1){
-          toBeRemoved.add(partition);
-        }
+    boolean hasExpired = false;
+    List<IndexStorage<T>> toBeRemoved = new ArrayList<>();
+    for(IndexStorage<T> partition:partitions){
+      if(partition.scanForExpired()){
+        hasExpired = true;
       }
-      for(IndexStorage<T> partition:toBeRemoved){
-        partitions.remove(partition);
-        submit(new DeletePartitionTask<>( partition));
+      if(partition.isEmpty() && partitions.size() > 1){
+        toBeRemoved.add(partition);
       }
-      if(hasExpired){
-        expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 5, TimeUnit.SECONDS);
-      }
-      else{
-        expiryTask = null;
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
+    }
+    for(IndexStorage<T> partition:toBeRemoved){
+      partitions.remove(partition);
+      submit(new DeletePartitionTask<>( partition));
+    }
+    if(hasExpired){
+      expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 5, TimeUnit.SECONDS);
+    }
+    else{
+      expiryTask = null;
     }
   }
 
