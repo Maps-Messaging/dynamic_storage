@@ -102,8 +102,13 @@ public class BaseTest {
   }
 
   protected BaseStoreTest.MappedData createMessageBuilder(long id) {
+    ByteBuffer data = ByteBuffer.allocate(prebuilt.length);
+    data.put(prebuilt);
+    data.flip();
+
     BaseStoreTest.MappedData mappedData = new BaseStoreTest.MappedData();
     mappedData.setMap(dataMapValues);
+    mappedData.setData(data);
     mappedData.setKey(id);
     return mappedData;
   }
@@ -170,19 +175,16 @@ public class BaseTest {
     @Getter @Setter long key;
     @Getter @Setter Map<String, Object> map;
     @Getter @Setter ByteBuffer data;
+    @Getter @Setter long expiry = 0;
 
-    public MappedData(){
-      byte[] buf = build();
-      data = ByteBuffer.allocate(buf.length);
-      data.put(buf);
-      data.flip();
-    }
+    public MappedData(){}
+
     @Override
     public void read(@NotNull ByteBuffer[] buffers) throws IOException {
       BufferObjectReader bor = new BufferObjectReader(buffers[0]);
       readHeader(bor);
       readMap(bor);
-      data = buffers[1];
+      data = buffers[2];
     }
 
     void readHeader(@NotNull ObjectReader objectReader) throws IOException {

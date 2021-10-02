@@ -36,6 +36,11 @@ public class MemoryStoreTest extends BaseStoreTest{
 
   }
 
+  @Test
+  @Override
+  void basicExpiryTest() throws IOException, InterruptedException {
+
+  }
   @Override
   public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();

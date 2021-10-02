@@ -28,6 +28,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -36,9 +39,10 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-public abstract class BaseStoreTest extends BaseTest{
+public abstract class BaseStoreTest extends BaseTest {
 
   public abstract Storage<MappedData> createStore(String testName, boolean sync) throws IOException;
+
   public abstract AsyncStorage<MappedData> createAsyncStore(String testName, boolean sync) throws IOException;
 
   private String testName;
@@ -74,7 +78,7 @@ public abstract class BaseStoreTest extends BaseTest{
       }
       Assertions.assertTrue(storage.isEmpty());
     } finally {
-      if(storage != null) {
+      if (storage != null) {
         storage.delete();
       }
     }
@@ -84,7 +88,7 @@ public abstract class BaseStoreTest extends BaseTest{
   void basicKeepOnlyTest() throws IOException {
     Storage<MappedData> storage = null;
     try {
-      storage = createStore(testName,false);
+      storage = createStore(testName, false);
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");
       ThreadLocalContext.set(context);
@@ -98,27 +102,52 @@ public abstract class BaseStoreTest extends BaseTest{
       Assertions.assertEquals(1000, storage.size());
 
       List<Long> keepList = new ArrayList<>();
-      for(long x=0;x<1000;x=x+2){
+      for (long x = 0; x < 1000; x = x + 2) {
         keepList.add(x);
       }
       storage.keepOnly(keepList);
       Assertions.assertEquals(500, storage.size());
 
-
       for (int x = 0; x < 1000; x++) {
         MappedData message = storage.get(x);
-        if(x%2 == 0){
+        if (x % 2 == 0) {
           validateMessage(message, x);
           storage.remove(x);
           Assertions.assertNotNull(message);
-        }
-        else{
+        } else {
           Assertions.assertNull(message);
         }
       }
       Assertions.assertTrue(storage.isEmpty());
     } finally {
-      if(storage != null) {
+      if (storage != null) {
+        storage.delete();
+      }
+    }
+  }
+
+
+
+  @Test
+  void basicExpiryTest() throws IOException, InterruptedException {
+    Storage<MappedData> storage = null;
+    try {
+      storage = createStore(testName, false);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      for (int x = 0; x < 1000; x++) {
+        MappedData message = createMessageBuilder(x);
+        message.setExpiry(1000);
+        storage.add(message);
+      }
+      Assertions.assertEquals(1000, storage.size());
+      Thread.sleep(6000);
+      Assertions.assertTrue(storage.isEmpty());
+    } finally {
+      if (storage != null) {
         storage.delete();
       }
     }
@@ -129,7 +158,7 @@ public abstract class BaseStoreTest extends BaseTest{
   void basicOpenCloseOpen() throws IOException {
     Storage<MappedData> storage = null;
     try {
-      storage = createStore(testName,false);
+      storage = createStore(testName, false);
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");
       ThreadLocalContext.set(context);
@@ -143,8 +172,7 @@ public abstract class BaseStoreTest extends BaseTest{
       Assertions.assertEquals(1000, storage.size());
 
       storage.close();
-      storage = createStore(testName,false);
-
+      storage = createStore(testName, false);
 
       for (int x = 0; x < 1000; x++) {
         MappedData message = storage.get(x);
@@ -154,7 +182,7 @@ public abstract class BaseStoreTest extends BaseTest{
       }
       Assertions.assertTrue(storage.isEmpty());
     } finally {
-      if(storage != null) {
+      if (storage != null) {
         storage.delete();
       }
     }
@@ -164,7 +192,7 @@ public abstract class BaseStoreTest extends BaseTest{
   void basicUseCaseTest() throws Exception {
     AsyncStorage<MappedData> storage = null;
     try {
-      storage = createAsyncStore(testName,false);
+      storage = createAsyncStore(testName, false);
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");
       ThreadLocalContext.set(context);
@@ -175,35 +203,36 @@ public abstract class BaseStoreTest extends BaseTest{
         MappedData message = createMessageBuilder(x);
         storage.add(message, null).get();
         counter++;
-        if(counter >= 0){
+        if (counter >= 0) {
           storage.remove(counter).get();
         }
       }
-      for(int x=counter;x<100000;x++){
+      for (int x = counter; x < 100000; x++) {
         storage.remove(x).get();
       }
       Assertions.assertEquals(0, storage.size().get());
     } finally {
-      if(storage != null) {
+      if (storage != null) {
         storage.delete().get();
       }
     }
   }
+
 
   @Test
   void basicLargeDataUseCaseTest() throws Exception {
     AsyncStorage<MappedData> storage = null;
     int iterations = 5;
     try {
-      storage = createAsyncStore(testName,false);
+      storage = createAsyncStore(testName, false);
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");
       ThreadLocalContext.set(context);
       // Remove any before we start
       int size = 512 * 1024; //1GB
       ByteBuffer bb = ByteBuffer.allocate(size);
-      long y=0;
-      while(bb.limit() - bb.position() > 8){
+      long y = 0;
+      while (bb.limit() - bb.position() > 8) {
         bb.putLong(y);
         y++;
       }
@@ -222,9 +251,176 @@ public abstract class BaseStoreTest extends BaseTest{
         storage.remove(x).get();
       }
     } finally {
-      if(storage != null) {
+      if (storage != null) {
         storage.delete().get();
       }
     }
   }
+
+
+  void threadedBasicUseCaseTest() throws Exception {
+    long eventsToPublish = 25000;
+    AsyncStorage<MappedData> storage = null;
+    try {
+      storage = createAsyncStore(testName, false);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      AtomicLong currentKey = new AtomicLong(0);
+      AtomicLong lastRemovedKey = new AtomicLong(0);
+
+      Thread t1 = new Thread(new Writer(storage, currentKey, eventsToPublish));
+      long time = System.currentTimeMillis();
+      t1.start();
+      t1.join();
+      long writeTime = (System.currentTimeMillis() - time);
+
+      Thread[] readerThreads = new Thread[10];
+      for (int x = 0; x < readerThreads.length; x++) {
+        readerThreads[x] = new Thread(new Reader(storage, lastRemovedKey, eventsToPublish));
+      }
+
+      time = System.currentTimeMillis();
+      for (Thread readerThread : readerThreads) {
+        readerThread.start();
+      }
+
+      for (Thread readerThread : readerThreads) {
+        readerThread.join();
+      }
+      long readTime = (System.currentTimeMillis() - time);
+
+      time = System.currentTimeMillis();
+      storage.close();
+      long closeTime =  (System.currentTimeMillis() - time);
+
+      time = System.currentTimeMillis();
+      storage = createAsyncStore(testName, false);
+      long reOpenTime =  (System.currentTimeMillis() - time);
+
+      lastRemovedKey.set(0);
+      for (int x = 0; x < readerThreads.length; x++) {
+        readerThreads[x] = new Thread(new Reader(storage, lastRemovedKey, eventsToPublish));
+      }
+
+      time = System.currentTimeMillis();
+      for (Thread readerThread : readerThreads) {
+        readerThread.start();
+      }
+
+      for (Thread readerThread : readerThreads) {
+        readerThread.join();
+      }
+      long reReadTime =  (System.currentTimeMillis() - time);
+
+      lastRemovedKey.set(0);
+      Thread[] trimmerThreads = new Thread[10];
+      for (int x = 0; x < trimmerThreads.length; x++) {
+        trimmerThreads[x] = new Thread(new Trimmer(storage, lastRemovedKey, eventsToPublish));
+      }
+
+      time = System.currentTimeMillis();
+      for (Thread trimmerThread : trimmerThreads) {
+        trimmerThread.start();
+      }
+
+      for (Thread trimmerThread : trimmerThreads) {
+        trimmerThread.join();
+      }
+      long removeTime =  (System.currentTimeMillis() - time);
+
+      System.err.println("Time to write 1TB " + writeTime + " ms");
+      System.err.println("Time to read 1TB " +readTime+ " ms");
+      System.err.println("Time to close 1TB " + closeTime+ " ms");
+      System.err.println("Time to open 1TB " + reOpenTime + " ms");
+      System.err.println("Time to reread 1TB " + reReadTime + " ms");
+      System.err.println("Time to remove 1TB " +removeTime + " ms");
+
+
+    } finally {
+      if (storage != null) {
+        storage.delete().get();
+      }
+    }
+  }
+
+  private class Writer implements Runnable {
+
+    private final AsyncStorage<MappedData> storage;
+    private final long eventsToPublish;
+    private final AtomicLong currentKey;
+    private final ByteBuffer bb;
+
+    public Writer(AsyncStorage<MappedData> storage, AtomicLong currentKey, long eventsToPublish) {
+      this.storage = storage;
+      this.eventsToPublish = eventsToPublish;
+      this.currentKey = currentKey;
+      bb = ByteBuffer.allocate(1024 * 1024);
+      for (int x = 0; x < (1024 * 1024) / 8; x++) {
+        bb.putLong(x);
+      }
+      bb.flip();
+
+    }
+
+    @SneakyThrows
+    @Override
+    public void run() {
+      for (int x = 0; x < eventsToPublish; x++) {
+        MappedData message = createMessageBuilder(x);
+        message.setData(bb);
+        storage.add(message, null).get();
+        currentKey.incrementAndGet();
+        bb.flip();
+      }
+    }
+  }
+
+  private class Reader implements Runnable {
+
+    private final AsyncStorage<MappedData> storage;
+    private final long eventsToPublish;
+    private final AtomicLong sharedKey;
+
+    public Reader(AsyncStorage<MappedData> storage, AtomicLong sharedKey, long eventsToPublish) {
+      this.storage = storage;
+      this.eventsToPublish = eventsToPublish;
+      this.sharedKey = sharedKey;
+    }
+
+    @SneakyThrows
+    @Override
+    public void run() {
+      while (sharedKey.get() < eventsToPublish) {
+        long key = sharedKey.getAndIncrement();
+        MappedData data = storage.get(key).get();
+        validateMessage(data, key);
+      }
+    }
+  }
+
+  private class Trimmer implements Runnable {
+
+    private final AsyncStorage<MappedData> storage;
+    private final long eventsToPublish;
+    private final AtomicLong sharedKey;
+
+    public Trimmer(AsyncStorage<MappedData> storage, AtomicLong sharedKey, long eventsToPublish) {
+      this.storage = storage;
+      this.eventsToPublish = eventsToPublish;
+      this.sharedKey = sharedKey;
+    }
+
+    @SneakyThrows
+    @Override
+    public void run() {
+      while (sharedKey.get() < eventsToPublish) {
+        long key = sharedKey.getAndIncrement();
+        storage.remove(key).get();
+      }
+    }
+  }
+
 }
+
+

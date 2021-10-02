@@ -96,7 +96,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
           }
         }
         if(hasExpired){
-          expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 1, TimeUnit.MINUTES);
+          expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 5, TimeUnit.SECONDS);
         }
       }
     }
@@ -166,6 +166,9 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     IndexRecord record = partition.add(object);
     if(partition.isFull()){
       partition.setEnd(object.getKey());
+    }
+    if(object.getExpiry() > 0 && expiryTask == null){
+      expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 5, TimeUnit.SECONDS);
     }
     byteWrites.add(record.getLength());
     writes.increment();
@@ -240,22 +243,29 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   }
 
   public void scanForExpired() throws IOException {
-    boolean hasExpired = false;
-    List<IndexStorage<T>> toBeRemoved = new ArrayList<>();
-    for(IndexStorage<T> partition:partitions){
-      if(partition.scanForExpired()){
-        hasExpired = true;
+    try {
+      boolean hasExpired = false;
+      List<IndexStorage<T>> toBeRemoved = new ArrayList<>();
+      for(IndexStorage<T> partition:partitions){
+        if(partition.scanForExpired()){
+          hasExpired = true;
+        }
+        if(partition.isEmpty() && partitions.size() > 1){
+          toBeRemoved.add(partition);
+        }
       }
-      if(partition.isEmpty() && !partitions.isEmpty()){
-        toBeRemoved.add(partition);
+      for(IndexStorage<T> partition:toBeRemoved){
+        partitions.remove(partition);
+        submit(new DeletePartitionTask<>( partition));
       }
-    }
-    for(IndexStorage<T> partition:toBeRemoved){
-      partitions.remove(partition);
-      submit(new DeletePartitionTask<>( partition));
-    }
-    if(hasExpired){
-      expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 1, TimeUnit.MINUTES);
+      if(hasExpired){
+        expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 5, TimeUnit.SECONDS);
+      }
+      else{
+        expiryTask = null;
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 
