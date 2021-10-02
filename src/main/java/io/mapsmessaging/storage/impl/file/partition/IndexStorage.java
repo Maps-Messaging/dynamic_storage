@@ -247,7 +247,7 @@ public class IndexStorage<T extends Storable> {
     return indexManager.size() == 0;
   }
 
-  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
+  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) {
     List<Long> itemsToRemove = indexManager.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
     if (!itemsToRemove.isEmpty()) {
