@@ -163,14 +163,14 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   public void add(@NotNull T object) throws IOException {
     long time = System.currentTimeMillis();
     IndexStorage<T> partition = locateOrCreatePartition(object.getKey());
-    IndexRecord record = partition.add(object);
+    IndexRecord indexRecord = partition.add(object);
     if(partition.isFull()){
       partition.setEnd(object.getKey());
     }
     if(object.getExpiry() > 0 && expiryTask == null){
       expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 5, TimeUnit.SECONDS);
     }
-    byteWrites.add(record.getLength());
+    byteWrites.add(indexRecord.getLength());
     writes.increment();
     writeTimes.add((System.currentTimeMillis() - time));
   }
