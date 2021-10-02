@@ -2,7 +2,7 @@ package io.mapsmessaging.storage;
 
 import lombok.Getter;
 
-public class StorageStatistics extends Statistics {
+public class StorageStatistics implements Statistics {
 
   private final @Getter long reads;
   private final @Getter long writes;
@@ -28,6 +28,7 @@ public class StorageStatistics extends Statistics {
     this.writeLatency = 0;
   }
 
+  @SuppressWarnings("java:S107")
   public StorageStatistics(long reads, long writes, long deletes, long bytesRead, long bytesWritten, long readTime, long writeTime, long totalSize, long totalEmptySpace, int partitionCount){
     this.reads = reads;
     this.writes = writes;

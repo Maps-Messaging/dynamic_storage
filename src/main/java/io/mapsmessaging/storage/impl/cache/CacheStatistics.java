@@ -3,7 +3,7 @@ package io.mapsmessaging.storage.impl.cache;
 import io.mapsmessaging.storage.Statistics;
 import lombok.Getter;
 
-public class CacheStatistics extends Statistics {
+public class CacheStatistics implements Statistics {
 
   private final @Getter long miss;
   private final @Getter long hit;

@@ -215,7 +215,7 @@ public class IndexStorage<T extends Storable> {
     return dataStorage.isFull();
   }
 
-  public boolean remove(long key) throws IOException {
+  public boolean remove(long key){
     return indexManager.delete(key);
   }
 

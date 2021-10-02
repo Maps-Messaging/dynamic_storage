@@ -126,9 +126,9 @@ public class IndexManager implements Closeable {
       long now = System.currentTimeMillis();
       while(expiryIterator.hasNext()){
         long key = expiryIterator.next();
-        IndexRecord record = get(key);
-        if(record != null) {
-          if (record.getExpiry() < now) {
+        IndexRecord indexRecord = get(key);
+        if(indexRecord != null) {
+          if (indexRecord.getExpiry() < now) {
             delete(key);
             expiryIterator.remove();
           }

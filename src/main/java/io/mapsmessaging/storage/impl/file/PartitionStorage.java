@@ -198,7 +198,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
         IndexGet<T> retrieved = partition.get(key);
         if(retrieved != null) {
           reads.increment();
-          byteReads.add(retrieved.getRecord().getLength());
+          byteReads.add(retrieved.getIndexRecord().getLength());
           return retrieved.getObject();
         }
       }
