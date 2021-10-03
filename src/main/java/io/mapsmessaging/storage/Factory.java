@@ -20,9 +20,12 @@
 
 package io.mapsmessaging.storage;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 @FunctionalInterface
 public interface Factory<T extends Storable> {
 
-  T create();
+  T create(ByteBuffer[] reloadBuffers) throws IOException;
 
 }

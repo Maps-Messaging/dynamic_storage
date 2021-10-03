@@ -194,8 +194,7 @@ public class DataStorage<T extends Storable> implements Closeable {
       for (ByteBuffer buffer : data) {
         buffer.flip();
       }
-      obj = objectFactory.create();
-      obj.read(data);
+      obj = objectFactory.create(data);
     }
     return obj;
   }

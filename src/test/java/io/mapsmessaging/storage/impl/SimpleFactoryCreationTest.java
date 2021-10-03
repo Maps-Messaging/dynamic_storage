@@ -104,7 +104,7 @@ public class SimpleFactoryCreationTest {
   static final class SimpleFactory implements Factory<StorableString> {
 
     @Override
-    public StorableString create() {
+    public StorableString create(ByteBuffer[] buffers) {
       return new StorableString();
     }
   }
@@ -117,9 +117,10 @@ public class SimpleFactoryCreationTest {
     }
 
     @Override
-    public void read(@NotNull ByteBuffer[] buffers)  {
-
+    public long getExpiry() {
+      return 0;
     }
+
 
     @Override
     public @NotNull ByteBuffer[] write()  {

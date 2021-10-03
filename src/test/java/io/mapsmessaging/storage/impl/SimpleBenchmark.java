@@ -163,12 +163,12 @@ public class SimpleBenchmark extends BaseTest {
 
     private final MappedData data;
 
-    public BufferedData(){
-      this.data = new MappedData();
-    }
-
     public BufferedData(MappedData data){
       this.data = data;
+    }
+
+    public BufferedData(@NotNull ByteBuffer[] buffers) throws IOException {
+      this.data = new MappedData(buffers);
     }
 
     @Override
@@ -177,8 +177,8 @@ public class SimpleBenchmark extends BaseTest {
     }
 
     @Override
-    public void read(@NotNull ByteBuffer[] buffers) throws IOException {
-      data.read(buffers);
+    public long getExpiry() {
+      return 0;
     }
 
     @Override
@@ -191,8 +191,8 @@ public class SimpleBenchmark extends BaseTest {
 
 
     @Override
-    public BufferedData create() {
-      return new BufferedData();
+    public BufferedData create(ByteBuffer[] buffers) throws IOException {
+      return new BufferedData(buffers);
     }
   }
 

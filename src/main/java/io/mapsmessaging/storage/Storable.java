@@ -29,11 +29,7 @@ public interface Storable {
 
   long getKey();
 
-  default long getExpiry(){
-    return 0;
-  }
-
-  void read(@NotNull ByteBuffer[] buffers) throws IOException;
+  long getExpiry();
 
   @NotNull ByteBuffer[] write() throws IOException;
 

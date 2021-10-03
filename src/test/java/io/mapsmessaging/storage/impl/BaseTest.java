@@ -179,13 +179,13 @@ public class BaseTest {
 
     public MappedData(){}
 
-    @Override
-    public void read(@NotNull ByteBuffer[] buffers) throws IOException {
+    public MappedData(@NotNull ByteBuffer[] buffers) throws IOException {
       BufferObjectReader bor = new BufferObjectReader(buffers[0]);
       readHeader(bor);
       readMap(bor);
       data = buffers[2];
     }
+
 
     void readHeader(@NotNull ObjectReader objectReader) throws IOException {
       key = objectReader.readLong();
@@ -352,8 +352,8 @@ public class BaseTest {
   public static final class MappedDataFactory implements Factory<MappedData>{
 
     @Override
-    public MappedData create() {
-      return new MappedData();
+    public MappedData create(ByteBuffer[] buffers) throws IOException {
+      return new MappedData(buffers);
     }
   }
 
