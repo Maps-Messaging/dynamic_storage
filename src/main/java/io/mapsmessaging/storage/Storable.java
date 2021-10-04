@@ -20,17 +20,10 @@
 
 package io.mapsmessaging.storage;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 public interface Storable {
 
   long getKey();
 
   long getExpiry();
-
-  @NotNull ByteBuffer[] write() throws IOException;
 
 }

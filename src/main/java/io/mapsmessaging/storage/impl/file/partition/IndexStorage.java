@@ -20,7 +20,7 @@
 
 package io.mapsmessaging.storage.impl.file.partition;
 
-import io.mapsmessaging.storage.Factory;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
@@ -59,7 +59,7 @@ public class IndexStorage<T extends Storable> {
   private volatile boolean closed;
   private boolean requiresValidation;
 
-  public IndexStorage(String fileName, Factory<T> factory, boolean sync, long start, int itemCount, long maxPartitionSize, TaskQueue taskScheduler) throws IOException {
+  public IndexStorage(String fileName, StorableFactory<T> storableFactory, boolean sync, long start, int itemCount, long maxPartitionSize, TaskQueue taskScheduler) throws IOException {
     this.fileName = fileName+"_index";
     File file = new File(this.fileName);
     scheduler = taskScheduler;
@@ -84,7 +84,7 @@ public class IndexStorage<T extends Storable> {
     else{
       initialise(start);
     }
-    dataStorage = new DataStorage<>(fileName+"_data", factory, sync, maxPartitionSize);
+    dataStorage = new DataStorage<>(fileName+"_data", storableFactory, sync, maxPartitionSize);
     if(dataStorage.isValidationRequired() || requiresValidation){
       scheduler.submit(new ValidateIndexAndDataTask<>(this));
     }

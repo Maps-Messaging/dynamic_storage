@@ -64,7 +64,7 @@ class StorageFactoryFactory {
   @SuppressWarnings("java:S2293")
   @SneakyThrows
   @Nullable
-  public <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull Factory<T> factory) {
+  public <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory) {
     Optional<Provider<StorageFactory>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.get().getName().equals(name)).findFirst();
     if (first.isPresent()) {
       StorageFactory<?> found = first.get().get();
@@ -78,7 +78,7 @@ class StorageFactoryFactory {
         }
       }
       if (constructor != null) {
-        return (StorageFactory<T>) constructor.newInstance(properties, factory);
+        return (StorageFactory<T>) constructor.newInstance(properties, storableFactory);
       }
     }
     return null;

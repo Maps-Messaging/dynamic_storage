@@ -20,7 +20,7 @@
 
 package io.mapsmessaging.storage.impl.memory;
 
-import io.mapsmessaging.storage.Factory;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
@@ -34,8 +34,8 @@ public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
   public MemoryFactory() {
   }
 
-  public MemoryFactory(Map<String, String> properties, Factory<T> factory) {
-    super(properties, factory);
+  public MemoryFactory(Map<String, String> properties, StorableFactory<T> storableFactory) {
+    super(properties, storableFactory);
   }
 
   @Override

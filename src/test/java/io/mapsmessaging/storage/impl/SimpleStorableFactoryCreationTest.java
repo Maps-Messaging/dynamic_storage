@@ -20,7 +20,7 @@
 
 package io.mapsmessaging.storage.impl;
 
-import io.mapsmessaging.storage.Factory;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class SimpleFactoryCreationTest {
+public class SimpleStorableFactoryCreationTest {
 
 
   @Test
@@ -42,14 +42,14 @@ public class SimpleFactoryCreationTest {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "false");
     properties.put("basePath", "./test.db");
-    List<String> known =StorageBuilder.getKnownStorages();
+    List<String> known = StorageBuilder.getKnownStorages();
     Assertions.assertFalse(known.isEmpty());
-    for(String test:known) {
+    for (String test : known) {
       StorageBuilder<StorableString> storageBuilder = new StorageBuilder<>();
       storageBuilder.setStorageType(test)
-          .setFactory(new SimpleFactory())
+          .setFactory(new SimpleStorableFactory())
           .setName("Test")
-          .setProperties( properties);
+          .setProperties(properties);
       Storage<StorableString> store = storageBuilder.build();
       Assertions.assertNotNull(store);
       store.delete();
@@ -62,13 +62,13 @@ public class SimpleFactoryCreationTest {
     properties.put("Sync", "false");
     properties.put("basePath", "./test.db");
     List<String> caches = StorageBuilder.getKnownLayers();
-    List<String> known =StorageBuilder.getKnownStorages();
+    List<String> known = StorageBuilder.getKnownStorages();
     Assertions.assertFalse(known.isEmpty());
-    for(String layer:caches) {
+    for (String layer : caches) {
       for (String test : known) {
         StorageBuilder<StorableString> storageBuilder = new StorageBuilder<>();
         storageBuilder.setStorageType(test)
-            .setFactory(new SimpleFactory())
+            .setFactory(new SimpleStorableFactory())
             .setName("Test")
             .setCache(layer)
             .setProperties(properties);
@@ -85,12 +85,12 @@ public class SimpleFactoryCreationTest {
     properties.put("Sync", "false");
     properties.put("basePath", "./test.db");
     List<String> caches = StorageBuilder.getKnownLayers();
-    List<String> known =StorageBuilder.getKnownStorages();
+    List<String> known = StorageBuilder.getKnownStorages();
     Assertions.assertFalse(known.isEmpty());
     for (String test : known) {
       StorageBuilder<StorableString> storageBuilder = new StorageBuilder<>();
       storageBuilder.setStorageType(test)
-          .setFactory(new SimpleFactory())
+          .setFactory(new SimpleStorableFactory())
           .setName("Test")
           .setCache()
           .setProperties(properties);
@@ -101,11 +101,16 @@ public class SimpleFactoryCreationTest {
   }
 
 
-  static final class SimpleFactory implements Factory<StorableString> {
+  static final class SimpleStorableFactory implements StorableFactory<StorableString> {
 
     @Override
-    public StorableString create(ByteBuffer[] buffers) {
+    public @NotNull StorableString unpack(@NotNull ByteBuffer[] buffers) {
       return new StorableString();
+    }
+
+    @Override
+    public @NotNull ByteBuffer[] pack(@NotNull StorableString object) throws IOException {
+      return object.write();
     }
   }
 
@@ -121,12 +126,9 @@ public class SimpleFactoryCreationTest {
       return 0;
     }
 
-
-    @Override
-    public @NotNull ByteBuffer[] write()  {
+    public @NotNull ByteBuffer[] write() {
       return new ByteBuffer[0];
     }
-
   }
 
 }

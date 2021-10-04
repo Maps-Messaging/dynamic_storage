@@ -20,7 +20,7 @@
 
 package io.mapsmessaging.storage.impl.file;
 
-import io.mapsmessaging.storage.Factory;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
@@ -37,8 +37,8 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
   public PartitionStorageFactory() {
   }
 
-  public PartitionStorageFactory(Map<String, String> properties, Factory<T> factory) {
-    super(properties, factory);
+  public PartitionStorageFactory(Map<String, String> properties, StorableFactory<T> storableFactory) {
+    super(properties, storableFactory);
   }
 
   @Override
@@ -61,7 +61,7 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
       maxPartitionSize = Long.parseLong(properties.get("MaxPartitionSize"));
     }
 
-    return new PartitionStorage<>(name, factory, sync, itemCount, maxPartitionSize);
+    return new PartitionStorage<>(name, storableFactory, sync, itemCount, maxPartitionSize);
   }
 
   @Override

@@ -33,7 +33,7 @@ public class StorageBuilder<T extends Storable> {
   private String cacheName;
   private String name;
   private Map<String, String> properties;
-  private Factory<T> factory;
+  private StorableFactory<T> storableFactory;
 
   private boolean enableWriteThrough = false;
 
@@ -47,8 +47,8 @@ public class StorageBuilder<T extends Storable> {
     return this;
   }
 
-  public @NotNull StorageBuilder<T> setFactory(@NotNull Factory<T> factory) {
-    this.factory = factory;
+  public @NotNull StorageBuilder<T> setFactory(@NotNull StorableFactory<T> storableFactory) {
+    this.storableFactory = storableFactory;
     return this;
   }
 
@@ -102,7 +102,7 @@ public class StorageBuilder<T extends Storable> {
 
 
   public Storage<T> build() throws IOException {
-    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, factory);
+    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, storableFactory);
     if(storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
       if (baseStore.isCacheable() && cacheName != null) {
@@ -116,7 +116,7 @@ public class StorageBuilder<T extends Storable> {
   }
 
   public AsyncStorage<T> buildAsync() throws IOException {
-    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, factory);
+    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, storableFactory);
     if(storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
       if (baseStore.isCacheable() && cacheName != null) {

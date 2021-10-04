@@ -20,7 +20,7 @@
 
 package io.mapsmessaging.storage.impl;
 
-import io.mapsmessaging.storage.Factory;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
 import io.mapsmessaging.storage.impl.streams.BufferObjectWriter;
@@ -327,7 +327,6 @@ public class BaseTest {
     }
 
 
-    @Override
     public @NotNull ByteBuffer[] write() throws IOException {
       ByteBuffer[] packed = new ByteBuffer[3];
       ByteBuffer headers = ByteBuffer.allocate(10240);
@@ -345,15 +344,20 @@ public class BaseTest {
     }
   }
 
-  public Factory<MappedData> getFactory(){
-    return new MappedDataFactory();
+  public StorableFactory<MappedData> getFactory(){
+    return new MappedDataStorableFactory();
   }
 
-  public static final class MappedDataFactory implements Factory<MappedData>{
+  public static final class MappedDataStorableFactory implements StorableFactory<MappedData> {
 
     @Override
-    public MappedData create(ByteBuffer[] buffers) throws IOException {
+    public @NotNull MappedData unpack(@NotNull ByteBuffer[] buffers) throws IOException {
       return new MappedData(buffers);
+    }
+
+    @Override
+    public @NotNull ByteBuffer[] pack(@NotNull MappedData object) throws IOException {
+      return object.write();
     }
   }
 

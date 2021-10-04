@@ -21,7 +21,7 @@
 package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.AsyncStorage;
-import io.mapsmessaging.storage.Factory;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.storage.tasks.Completion;
@@ -41,7 +41,6 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -84,7 +83,7 @@ public class SimpleBenchmark extends BaseTest {
       properties.put("Sync", ""+enableSync);
       StorageBuilder<BufferedData> storageBuilder = new StorageBuilder<>();
       storageBuilder.setStorageType("SeekableChannel")
-          .setFactory(new DataFactory())
+          .setFactory(new DataStorableFactory())
           .setName(drive+"FileTest2_"+x)
           .setCache(enableCache)
           .setProperties(properties);
@@ -181,18 +180,22 @@ public class SimpleBenchmark extends BaseTest {
       return 0;
     }
 
-    @Override
     public @NotNull ByteBuffer[] write() throws IOException {
       return data.write();
     }
   }
 
-  static class DataFactory implements Factory<BufferedData>{
+  static class DataStorableFactory implements StorableFactory<BufferedData> {
 
 
     @Override
-    public BufferedData create(ByteBuffer[] buffers) throws IOException {
+    public @NotNull BufferedData unpack(@NotNull ByteBuffer[] buffers) throws IOException {
       return new BufferedData(buffers);
+    }
+
+    @Override
+    public @NotNull ByteBuffer[] pack(@NotNull BufferedData object) throws IOException {
+      return object.write();
     }
   }
 

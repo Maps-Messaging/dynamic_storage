@@ -20,7 +20,7 @@
 
 package io.mapsmessaging.storage.impl.file.partition;
 
-import io.mapsmessaging.storage.Factory;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +44,7 @@ public class DataStorage<T extends Storable> implements Closeable {
   private static final long CLOSE_STATE = 0x0000000000000000L;
 
   private final long maxPartitionSize;
-  private final Factory<T> objectFactory;
+  private final StorableFactory<T> objectStorableFactory;
   private final String fileName;
   private final FileChannel readChannel;
   private final FileChannel writeChannel;
@@ -54,8 +54,8 @@ public class DataStorage<T extends Storable> implements Closeable {
   private @Getter boolean validationRequired;
   private @Getter boolean full;
 
-  public DataStorage(String fileName, Factory<T> factory, boolean sync, long maxPartitionSize) throws IOException {
-    objectFactory = factory;
+  public DataStorage(String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
+    objectStorableFactory = storableFactory;
     this.fileName = fileName;
     this.maxPartitionSize = maxPartitionSize;
     lengthBuffer = ByteBuffer.allocate(8);
@@ -142,7 +142,7 @@ public class DataStorage<T extends Storable> implements Closeable {
   public IndexRecord add(@NotNull T object) throws IOException {
     long eof = writeChannel.size();
     writeChannel.position(eof);
-    ByteBuffer[] buffers = object.write();
+    ByteBuffer[] buffers = objectStorableFactory.pack(object);
     ByteBuffer meta = ByteBuffer.allocate((buffers.length + 2) * 4);
     int len = 4; // Initial address
     meta.position(4);
@@ -194,7 +194,7 @@ public class DataStorage<T extends Storable> implements Closeable {
       for (ByteBuffer buffer : data) {
         buffer.flip();
       }
-      obj = objectFactory.create(data);
+      obj = objectStorableFactory.unpack(data);
     }
     return obj;
   }

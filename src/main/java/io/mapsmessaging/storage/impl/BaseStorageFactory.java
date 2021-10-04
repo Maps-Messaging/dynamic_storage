@@ -20,7 +20,7 @@
 
 package io.mapsmessaging.storage.impl;
 
-import io.mapsmessaging.storage.Factory;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorageFactory;
 
@@ -29,14 +29,14 @@ import java.util.Map;
 public abstract class BaseStorageFactory<T extends Storable> implements StorageFactory<T> {
 
   protected Map<String, String> properties;
-  protected Factory<T> factory;
+  protected StorableFactory<T> storableFactory;
 
   protected BaseStorageFactory() {
   }
 
-  protected BaseStorageFactory(Map<String, String> properties, Factory<T> factory) {
+  protected BaseStorageFactory(Map<String, String> properties, StorableFactory<T> storableFactory) {
     this.properties = properties;
-    this.factory = factory;
+    this.storableFactory = storableFactory;
   }
 
 }

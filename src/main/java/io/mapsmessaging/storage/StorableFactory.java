@@ -22,10 +22,12 @@ package io.mapsmessaging.storage;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import org.jetbrains.annotations.NotNull;
 
-@FunctionalInterface
-public interface Factory<T extends Storable> {
+public interface StorableFactory<T extends Storable> {
 
-  T create(ByteBuffer[] reloadBuffers) throws IOException;
+  @NotNull T unpack(@NotNull ByteBuffer[] reloadBuffers) throws IOException;
+
+  @NotNull ByteBuffer[] pack(@NotNull T object) throws IOException;
 
 }

@@ -1,6 +1,6 @@
 package io.mapsmessaging.storage.impl.file;
 
-import io.mapsmessaging.storage.Factory;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storable;
@@ -36,7 +36,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   private final List<IndexStorage<T>> partitions;
   private final String fileName;
   private final String rootDirectory;
-  private final Factory<T> factory;
+  private final StorableFactory<T> storableFactory;
   private final boolean sync;
   private boolean shutdown;
   private Future<?> expiryTask;
@@ -52,7 +52,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   private final LongAdder byteReads;
 
 
-  public PartitionStorage(String fileName, Factory<T> factory, boolean sync, int itemCount, long maxPartitionSize) throws IOException {
+  public PartitionStorage(String fileName, StorableFactory<T> storableFactory, boolean sync, int itemCount, long maxPartitionSize) throws IOException {
     partitions = new ArrayList<>();
     taskScheduler = new TaskQueue();
     rootDirectory = fileName;
@@ -60,7 +60,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     this.maxPartitionSize = maxPartitionSize;
     this.fileName = fileName+File.separator+PARTITION_FILE_NAME;
     this.sync = sync;
-    this.factory = factory;
+    this.storableFactory = storableFactory;
     partitionCounter =0;
     shutdown = false;
     File location = new File(fileName);
@@ -88,7 +88,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
         for (String test :childFiles) {
           if (test.startsWith(PARTITION_FILE_NAME) && test.endsWith("index")){
             String loadName = test.substring(PARTITION_FILE_NAME.length(), test.length()-"_index".length());
-            IndexStorage<T> indexStorage = new IndexStorage<>(fileName+loadName, factory, sync, 0, itemCount, maxPartitionSize, taskScheduler);
+            IndexStorage<T> indexStorage = new IndexStorage<>(fileName+loadName, storableFactory, sync, 0, itemCount, maxPartitionSize, taskScheduler);
             partitions.add(indexStorage);
             if(indexStorage.hasExpired()){
               hasExpired = true;
@@ -298,7 +298,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     if(!partitions.isEmpty()) {
       start = partitions.get(partitions.size() - 1).getEnd()+1;
     }
-    IndexStorage<T> indexStorage = new IndexStorage<>(partitionName, factory, sync, start, itemCount, maxPartitionSize, taskScheduler);
+    IndexStorage<T> indexStorage = new IndexStorage<>(partitionName, storableFactory, sync, start, itemCount, maxPartitionSize, taskScheduler);
     partitions.add(indexStorage);
     partitions.sort(Comparator.comparingLong(IndexStorage::getStart));
     return indexStorage;
