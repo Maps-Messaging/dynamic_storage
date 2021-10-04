@@ -8,13 +8,13 @@ public class CacheStatistics implements Statistics {
   private final @Getter long miss;
   private final @Getter long hit;
   private final @Getter int size;
-  private final @Getter Statistics partitionStatistics;
+  private final @Getter Statistics storageStatistics;
 
-  public CacheStatistics(long miss, long hit, int size, Statistics partitionStatistics){
+  public CacheStatistics(long miss, long hit, int size, Statistics storageStatistics){
     this.miss = miss;
     this.hit = hit;
     this.size = size;
-    this.partitionStatistics = partitionStatistics;
+    this.storageStatistics = storageStatistics;
   }
 
 }

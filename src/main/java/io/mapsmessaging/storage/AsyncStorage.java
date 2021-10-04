@@ -123,6 +123,16 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     return scheduler.submit(new KeepOnlyTask<>(storage, listToKeep, completion), FOREGROUND_PRIORITY);
   }
 
+  public Future<Statistics> getStatistics() throws IOException {
+    return getStatistics(null);
+  }
+
+  public Future<Statistics> getStatistics(Completion<Statistics> completion) throws IOException {
+    checkClose();
+    return scheduler.submit(new RetrieveStatistics<>(storage, completion), FOREGROUND_PRIORITY);
+  }
+
+
   protected void checkClose() throws IOException {
     if (closed.get()) {
       throw new IOException("Store has been scheduled to close");

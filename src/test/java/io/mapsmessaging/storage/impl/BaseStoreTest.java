@@ -21,7 +21,10 @@
 package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.AsyncStorage;
+import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.StorageStatistics;
+import io.mapsmessaging.storage.impl.cache.CacheStatistics;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import java.io.IOException;
@@ -218,6 +221,65 @@ public abstract class BaseStoreTest extends BaseTest {
     }
   }
 
+
+  @Test
+  void simpleStatsTest() throws Exception {
+    AsyncStorage<MappedData> storage = null;
+    try {
+      storage = createAsyncStore(testName, false);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      for (int x = 0; x < 1000; x++) {
+        MappedData message = createMessageBuilder(x);
+        storage.add(message, null).get();
+      }
+      Statistics statistics = storage.getStatistics().get();
+      if(statistics instanceof CacheStatistics){
+        statistics = ((CacheStatistics)statistics).getStorageStatistics();
+      }
+      Assertions.assertEquals(1000, ((StorageStatistics)statistics).getWrites());
+      Assertions.assertEquals(0, ((StorageStatistics)statistics).getReads());
+      Assertions.assertEquals(0, ((StorageStatistics)statistics).getDeletes());
+
+      for (int x = 0; x < 1000; x++) {
+        storage.get(x).get();
+      }
+      statistics = storage.getStatistics().get();
+      if(statistics instanceof CacheStatistics){
+        long cacheHit = ((CacheStatistics)statistics).getHit();
+        long cacheMiss = ((CacheStatistics)statistics).getMiss();
+        statistics = ((CacheStatistics)statistics).getStorageStatistics();
+        Assertions.assertEquals(cacheMiss, ((StorageStatistics)statistics).getReads());
+        Assertions.assertEquals(1000, (cacheHit+cacheMiss) );
+      }
+      else{
+        Assertions.assertEquals(1000, ((StorageStatistics)statistics).getReads());
+      }
+      Assertions.assertEquals(0, ((StorageStatistics)statistics).getWrites());
+      Assertions.assertEquals(0, ((StorageStatistics)statistics).getDeletes());
+
+
+      for (int x = 0; x < 1000; x++) {
+        storage.remove(x).get();
+      }
+      statistics = storage.getStatistics().get();
+      if(statistics instanceof CacheStatistics){
+        statistics = ((CacheStatistics)statistics).getStorageStatistics();
+      }
+      Assertions.assertEquals(0, ((StorageStatistics)statistics).getWrites());
+      Assertions.assertEquals(0, ((StorageStatistics)statistics).getReads());
+      Assertions.assertEquals(1000, ((StorageStatistics)statistics).getDeletes());
+
+      Assertions.assertEquals(0, storage.size().get());
+    } finally {
+      if (storage != null) {
+        storage.delete().get();
+      }
+    }
+  }
 
   @Test
   void basicLargeDataUseCaseTest() throws Exception {
