@@ -86,14 +86,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
       if(childFiles != null) {
         boolean hasExpired = false;
         for (String test :childFiles) {
-          if (test.startsWith(PARTITION_FILE_NAME) && test.endsWith("index")){
-            String loadName = test.substring(PARTITION_FILE_NAME.length(), test.length()-"_index".length());
-            IndexStorage<T> indexStorage = new IndexStorage<>(fileName+loadName, storableFactory, sync, 0, itemCount, maxPartitionSize, taskScheduler);
-            partitions.add(indexStorage);
-            if(indexStorage.hasExpired()){
-              hasExpired = true;
-            }
-          }
+          hasExpired = loadStore(test) || hasExpired;
         }
         if(hasExpired){
           expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 5, TimeUnit.SECONDS);
@@ -101,6 +94,16 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
       }
     }
     partitions.sort(Comparator.comparingLong(IndexStorage::getStart));
+  }
+
+  private boolean loadStore(String test) throws IOException {
+    if (test.startsWith(PARTITION_FILE_NAME) && test.endsWith("index")){
+      String loadName = test.substring(PARTITION_FILE_NAME.length(), test.length()-"_index".length());
+      IndexStorage<T> indexStorage = new IndexStorage<>(fileName+loadName, storableFactory, sync, 0, itemCount, maxPartitionSize, taskScheduler);
+      partitions.add(indexStorage);
+      return(indexStorage.hasExpired());
+    }
+    return false;
   }
 
   @Override
