@@ -206,6 +206,9 @@ public class IndexStorage<T extends Storable> {
   }
 
   public IndexRecord add(@NotNull T object) throws IOException {
+    if(indexManager.contains(object.getKey())){
+      throw new IOException("Key already exists");
+    }
     IndexRecord item = dataStorage.add(object);
     indexManager.add(object.getKey(), item);
     return item;

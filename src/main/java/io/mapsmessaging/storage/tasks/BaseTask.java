@@ -60,6 +60,9 @@ public abstract class BaseTask<T extends Storable, V> implements Callable<V> {
         throw exception;
       }
     }
+    if (exception != null) {
+      throw exception;
+    }
     return result;
   }
 
