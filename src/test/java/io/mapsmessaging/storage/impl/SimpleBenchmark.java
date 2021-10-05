@@ -87,7 +87,7 @@ public class SimpleBenchmark extends BaseTest {
           .setName(drive+"FileTest2_"+x)
           .setCache(enableCache)
           .setProperties(properties);
-      storageArray[x] = storageBuilder.buildAsync();
+      storageArray[x] = new AsyncStorage<>(storageBuilder.build());
       id[x] = new AtomicLong(0);
     }
   }

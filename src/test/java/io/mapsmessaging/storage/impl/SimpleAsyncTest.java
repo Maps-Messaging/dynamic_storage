@@ -48,7 +48,7 @@ public class SimpleAsyncTest extends BaseTest {
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);
-    AsyncStorage<MappedData> async =storageBuilder.buildAsync();
+    AsyncStorage<MappedData> async = new AsyncStorage<>(storageBuilder.build());
 
 
     try {
@@ -88,7 +88,7 @@ public class SimpleAsyncTest extends BaseTest {
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);
-    AsyncStorage<MappedData> async =storageBuilder.buildAsync();
+    AsyncStorage<MappedData> async = new AsyncStorage<>(storageBuilder.build());
     AtomicBoolean completed = new AtomicBoolean(false);
 
 
@@ -190,7 +190,7 @@ public class SimpleAsyncTest extends BaseTest {
         .setFactory(getFactory())
         .setName("Test")
         .setProperties(properties);
-    AsyncStorage<MappedData> async =storageBuilder.buildAsync();
+    AsyncStorage<MappedData> async = new AsyncStorage<>(storageBuilder.build());
     try {
       ThreadStateContext context = new ThreadStateContext();
       context.add("domain", "ResourceAccessKey");

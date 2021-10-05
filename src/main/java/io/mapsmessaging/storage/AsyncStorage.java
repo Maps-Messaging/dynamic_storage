@@ -40,7 +40,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   private final PriorityConcurrentTaskScheduler scheduler;
   private final AtomicBoolean closed;
 
-  AsyncStorage(@NotNull Storage<T> storage) {
+  public AsyncStorage(@NotNull Storage<T> storage) {
     this.storage = storage;
     scheduler = new PriorityConcurrentTaskScheduler(storage.getName(), 2);
     closed = new AtomicBoolean(false);

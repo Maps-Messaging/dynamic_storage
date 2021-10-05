@@ -33,7 +33,7 @@ public class FilePerformanceTest extends BaseTest {
         .setFactory(getFactory())
         .setName("test_file"+ File.separator+testName)
         .setProperties(properties);
-    return storageBuilder.buildAsync();
+    return new AsyncStorage<>(storageBuilder.build());
   }
 
   void threadedBasicUseCaseTest() throws Exception {

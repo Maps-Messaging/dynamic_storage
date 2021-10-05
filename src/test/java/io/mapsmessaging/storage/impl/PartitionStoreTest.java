@@ -59,19 +59,7 @@ public class PartitionStoreTest extends BaseStoreTest{
 
   @Override
   public AsyncStorage<MappedData> createAsyncStore(String testName, boolean sync) throws IOException {
-    File file = new File("test_file"+ File.separator);
-    if(!file.exists()) {
-      Files.createDirectory(file.toPath());
-    }
-    Map<String, String> properties = new LinkedHashMap<>();
-    properties.put("Sync", ""+sync);
-    properties.put("MaxPartitionSize", ""+(512L*1024L*1024L)); // set to 5MB data limit
-    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Partition")
-        .setFactory(getFactory())
-        .setName("test_file"+ File.separator+testName)
-        .setProperties(properties);
-    return storageBuilder.buildAsync();
+    return new AsyncStorage<>(createStore(testName, sync));
   }
 
   @Test
@@ -87,7 +75,7 @@ public class PartitionStoreTest extends BaseStoreTest{
         .setFactory(getFactory())
         .setName("test_file"+ File.separator+"testIndexCompaction")
         .setProperties(properties);
-    AsyncStorage<MappedData> storage = storageBuilder.buildAsync();
+    AsyncStorage<MappedData> storage = new AsyncStorage<>(storageBuilder.build());
 
     ThreadStateContext context = new ThreadStateContext();
     context.add("domain", "ResourceAccessKey");

@@ -56,14 +56,6 @@ public class MemoryStoreTest extends BaseStoreTest{
 
   @Override
   public AsyncStorage<MappedData> createAsyncStore(String testName, boolean sync) throws IOException {
-    Map<String, String> properties = new LinkedHashMap<>();
-    properties.put("Sync", ""+sync);
-    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Memory")
-        .setFactory(getFactory())
-        .setCache()
-        .setName(testName)
-        .setProperties(properties);
-    return storageBuilder.buildAsync();
+    return new AsyncStorage<>(createStore(testName, sync));
   }
 }
