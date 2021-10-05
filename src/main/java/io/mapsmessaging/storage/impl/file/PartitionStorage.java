@@ -332,24 +332,21 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
 
   private IndexStorage<T> scanForPartition(long key) throws IOException {
     List<IndexStorage<T>> empty = new ArrayList<>();
-    for(IndexStorage<T> partition:partitions){
-      if(partition.getStart() <= key && key <= partition.getEnd()){
-        if(!empty.isEmpty()){
-          for(IndexStorage<T> remove:empty){
-            partitions.remove(remove);
-            taskScheduler.submit(new DeletePartitionTask<>(remove));
-          }
+    try {
+      for(IndexStorage<T> partition:partitions){
+        if(partition.getStart() <= key && key <= partition.getEnd()){
+          return partition;
         }
-        return partition;
+        if(partition.isEmpty()){
+          empty.add(partition);
+        }
       }
-      if(partition.isEmpty()){
-        empty.add(partition);
-      }
-    }
-    if(!empty.isEmpty()){
-      for(IndexStorage<T> remove:empty){
-        partitions.remove(remove);
-        taskScheduler.submit(new DeletePartitionTask<>(remove));
+    } finally {
+      if(!empty.isEmpty()){
+        for(IndexStorage<T> remove:empty){
+          partitions.remove(remove);
+          taskScheduler.submit(new DeletePartitionTask<>(remove));
+        }
       }
     }
     return null;
