@@ -101,28 +101,36 @@ public class TaskQueue {
 
   public void submit(FileTask<?> raw) throws IOException {
     if(raw.independentTask()){
-      FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
-      Future<?> future = INDEPENDENT_EXECUTOR.submit(task);
-      if(!future.isDone()) {
-        pending.put(task, future);
-        if(future.isDone()){
-          pending.remove(task);
+      submitIndependentTask(raw);
+    }
+    else {
+      submitIndependentTask(raw);
+    }
+  }
+
+  private void submitInternalTask(FileTask<?> raw) throws IOException {
+    waitingScheduler.incrementAndGet();
+    FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
+    if (taskScheduler != null) {
+      SubmitTask submitTask = new SubmitTask(task);
+      INDEPENDENT_EXECUTOR.submit(submitTask);
+    } else {
+      syncTasks.offer(task);
+      if (syncTasks.size() > 10) {
+        while (!syncTasks.isEmpty()) {
+          executeTasks();
         }
       }
     }
-    else {
-      waitingScheduler.incrementAndGet();
-      FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
-      if (taskScheduler != null) {
-        SubmitTask submitTask = new SubmitTask(task);
-        INDEPENDENT_EXECUTOR.submit(submitTask);
-      } else {
-        syncTasks.offer(task);
-        if (syncTasks.size() > 10) {
-          while (!syncTasks.isEmpty()) {
-            executeTasks();
-          }
-        }
+  }
+
+  private void submitIndependentTask(FileTask<?> raw) throws IOException {
+    FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
+    Future<?> future = INDEPENDENT_EXECUTOR.submit(task);
+    if(!future.isDone()) {
+      pending.put(task, future);
+      if(future.isDone()){
+        pending.remove(task);
       }
     }
   }
