@@ -313,6 +313,24 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   }
 
   private @NotNull IndexStorage<T> locateOrCreatePartition(long key) throws IOException {
+    IndexStorage<T> partition = scanForPartition(key);
+    if(partition == null) {
+      String partitionName = fileName + partitionCounter++;
+      long start = 0;
+      if (!partitions.isEmpty()) {
+        start = partitions.get(partitions.size() - 1).getEnd() + 1;
+      }
+      if (key < start || key > (start + itemCount)) {
+        start = key;
+      }
+      partition = new IndexStorage<>(partitionName, storableFactory, sync, start, itemCount, maxPartitionSize, taskScheduler);
+      partitions.add(partition);
+      partitions.sort(Comparator.comparingLong(IndexStorage::getStart));
+    }
+    return partition;
+  }
+
+  private IndexStorage<T> scanForPartition(long key) throws IOException {
     List<IndexStorage<T>> empty = new ArrayList<>();
     for(IndexStorage<T> partition:partitions){
       if(partition.getStart() <= key && key <= partition.getEnd()){
@@ -334,19 +352,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
         taskScheduler.submit(new DeletePartitionTask<>(remove));
       }
     }
-
-    String partitionName = fileName+partitionCounter++;
-    long start = 0;
-    if(!partitions.isEmpty()) {
-      start = partitions.get(partitions.size() - 1).getEnd()+1;
-    }
-    if(key < start || key > (start+itemCount)){
-      start = key;
-    }
-    IndexStorage<T> indexStorage = new IndexStorage<>(partitionName, storableFactory, sync, start, itemCount, maxPartitionSize, taskScheduler);
-    partitions.add(indexStorage);
-    partitions.sort(Comparator.comparingLong(IndexStorage::getStart));
-    return indexStorage;
+    return null;
   }
 
   private void submit(FileTask<?> task) throws IOException {
