@@ -41,6 +41,7 @@ import java.util.List;
 import static java.nio.file.StandardOpenOption.*;
 
 public class IndexStorage<T extends Storable> {
+  private static final int HEADER_SIZE = 32;
 
   private static final double VERSION = 1.0;
   private static final long UNIQUE_ID = 0xf00d0000d00f0000L;
@@ -96,6 +97,8 @@ public class IndexStorage<T extends Storable> {
       closed = true;
       ByteBuffer header = ByteBuffer.allocate(8);
       header.putLong(CLOSE_STATE);
+      header.flip();
+      mapChannel.position(0);
       mapChannel.write(header);
       indexManager.close();
       mapChannel.force(true);
@@ -113,7 +116,7 @@ public class IndexStorage<T extends Storable> {
   }
 
   private void initialise(long start) throws IOException {
-    ByteBuffer headerValidation = ByteBuffer.allocate(32);
+    ByteBuffer headerValidation = ByteBuffer.allocate(HEADER_SIZE);
     headerValidation.putLong(OPEN_STATE);
     headerValidation.putLong(UNIQUE_ID);
     headerValidation.putLong(Double.doubleToLongBits(VERSION));
@@ -126,7 +129,7 @@ public class IndexStorage<T extends Storable> {
   }
 
   private void reload()throws IOException{
-    ByteBuffer headerValidation = ByteBuffer.allocate(32);
+    ByteBuffer headerValidation = ByteBuffer.allocate(HEADER_SIZE);
     mapChannel.read(headerValidation);
     headerValidation.flip();
     requiresValidation = headerValidation.getLong() != CLOSE_STATE;
@@ -235,7 +238,7 @@ public class IndexStorage<T extends Storable> {
   }
 
   public long length() throws IOException{
-    return mapChannel.size();
+    return mapChannel.size() + dataStorage.length();
   }
 
   public long emptySpace() {

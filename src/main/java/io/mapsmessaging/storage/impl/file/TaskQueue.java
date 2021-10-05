@@ -22,12 +22,20 @@ public class TaskQueue {
   private static final long TIMEOUT = 60;
   private static final ScheduledExecutorService SCHEDULER_EXECUTOR = Executors.newScheduledThreadPool(2);
   private static final ExecutorService INDEPENDENT_EXECUTOR = Executors.newSingleThreadExecutor();
+  static{
+    Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
+  }
 
   private final Queue<FileTask<?>> syncTasks;
   private final AtomicLong waitingScheduler;
   private final Map<FileTask<?>,Future<?>> pending;
 
   private ExecutorService taskScheduler;
+
+  public static void shutdown() {
+    SCHEDULER_EXECUTOR.shutdown();
+    INDEPENDENT_EXECUTOR.shutdown();
+  }
 
   public TaskQueue(){
     syncTasks = new LinkedList<>();
@@ -93,7 +101,14 @@ public class TaskQueue {
 
   public void submit(FileTask<?> raw) throws IOException {
     if(raw.independentTask()){
-      INDEPENDENT_EXECUTOR.submit(raw);
+      FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
+      Future<?> future = INDEPENDENT_EXECUTOR.submit(task);
+      if(!future.isDone()) {
+        pending.put(task, future);
+        if(future.isDone()){
+          pending.remove(task);
+        }
+      }
     }
     else {
       waitingScheduler.incrementAndGet();
@@ -129,7 +144,7 @@ public class TaskQueue {
     return !syncTasks.isEmpty();
   }
 
-  private static final class FileWrapperTask<T> implements FileTask<T>{
+  private final class FileWrapperTask<T> implements FileTask<T>{
 
     private final FileTask<T> task;
     private final Map<FileTask<?>,Future<?>> pending;
@@ -163,10 +178,22 @@ public class TaskQueue {
 
     @Override
     public Boolean call()  {
-      pending.put(toSubmit, taskScheduler.submit(toSubmit));
       waitingScheduler.decrementAndGet();
+      Future<?> future = taskScheduler.submit(toSubmit);
+      if(!future.isDone()) {
+        pending.put(toSubmit, future);
+        if(future.isDone()){
+          pending.remove(toSubmit);
+        }
+      }
       return true;
     }
   }
 
+  public static final class ShutdownHandler extends Thread{
+
+    public void run(){
+      TaskQueue.shutdown();
+    }
+  }
 }

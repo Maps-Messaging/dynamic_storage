@@ -38,6 +38,8 @@ import static java.nio.file.StandardOpenOption.*;
 
 public class DataStorage<T extends Storable> implements Closeable {
 
+  private static final int HEADER_SIZE = 24;
+
   private static final double VERSION = 1.0;
   private static final long UNIQUE_ID = 0xf00d0000d00f0000L;
   private static final long OPEN_STATE = 0xEFFFFFFFFFFFFFFFL;
@@ -90,7 +92,9 @@ public class DataStorage<T extends Storable> implements Closeable {
     if (!closed) {
       closed = true;
       ByteBuffer header = ByteBuffer.allocate(8);
+      writeChannel.position(0);
       header.putLong(CLOSE_STATE);
+      header.flip();
       writeChannel.write(header);
 
       writeChannel.force(true);
@@ -101,7 +105,7 @@ public class DataStorage<T extends Storable> implements Closeable {
   }
 
   private void initialise() throws IOException {
-    ByteBuffer headerValidation = ByteBuffer.allocate(24);
+    ByteBuffer headerValidation = ByteBuffer.allocate(HEADER_SIZE);
     headerValidation.putLong(OPEN_STATE);
     headerValidation.putLong(UNIQUE_ID);
     headerValidation.putLong(Double.doubleToLongBits(VERSION));
@@ -111,10 +115,11 @@ public class DataStorage<T extends Storable> implements Closeable {
   }
 
   private void reload() throws IOException {
-    ByteBuffer headerValidation = ByteBuffer.allocate(24);
+    ByteBuffer headerValidation = ByteBuffer.allocate(HEADER_SIZE);
     readChannel.read(headerValidation);
     headerValidation.flip();
     validationRequired = headerValidation.getLong() != CLOSE_STATE;
+
     if (headerValidation.getLong() != UNIQUE_ID) {
       throw new IOException("Unexpected file identifier located");
     }
@@ -197,5 +202,9 @@ public class DataStorage<T extends Storable> implements Closeable {
       obj = objectStorableFactory.unpack(data);
     }
     return obj;
+  }
+
+  public long length() throws IOException {
+    return readChannel.size();
   }
 }

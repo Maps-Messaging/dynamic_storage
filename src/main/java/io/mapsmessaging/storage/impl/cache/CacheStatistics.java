@@ -17,4 +17,9 @@ public class CacheStatistics implements Statistics {
     this.storageStatistics = storageStatistics;
   }
 
+
+  @Override
+  public String toString(){
+    return storageStatistics.toString()+",\tCache Hits:"+hit+",\t Cache Miss:"+miss+",\t Cache Size:"+size;
+  }
 }

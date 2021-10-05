@@ -1,5 +1,7 @@
 package io.mapsmessaging.storage;
 
+import java.util.Date;
+import lombok.Data;
 import lombok.Getter;
 
 public class StorageStatistics implements Statistics {
@@ -55,5 +57,45 @@ public class StorageStatistics implements Statistics {
 
   public long getIops(){
     return reads + writes;
+  }
+
+  @Override
+  public String toString(){
+    Date dt = new Date();
+    StringBuilder sb = new StringBuilder(dt.toString()).append(",\t");
+    sb.append("Reads:");
+    sb.append(reads);
+    sb.append(",\t");
+    sb.append("Writes:");
+    sb.append(writes);
+    sb.append(",\t");
+    sb.append("Deletes:");
+    sb.append(deletes);
+    sb.append(",\t");
+    sb.append("IOPS:");
+    sb.append(getIops());
+    sb.append(",\t");
+    sb.append("Bytes Read:");
+    sb.append(bytesRead);
+    sb.append(",\t");
+    sb.append("Bytes Written:");
+    sb.append(bytesWritten);
+    sb.append(",\t");
+    sb.append("File Size:");
+    sb.append(totalSize);
+    sb.append(",\t");
+    sb.append("Empty Space:");
+    sb.append(totalEmptySpace);
+    sb.append(",\t");
+    sb.append("File Count:");
+    sb.append(partitionCount);
+    sb.append(",\t");
+    sb.append("Read Latency:");
+    sb.append(readLatency);
+    sb.append(",\t");
+    sb.append("Write Latency:");
+    sb.append(writeLatency);
+
+    return sb.toString();
   }
 }

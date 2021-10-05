@@ -94,6 +94,17 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
       }
     }
     partitions.sort(Comparator.comparingLong(IndexStorage::getStart));
+    List<IndexStorage<T>> emptyReloads = new ArrayList<>();
+    for(IndexStorage<T> storage:partitions){
+      if(storage.isEmpty()){
+        emptyReloads.add(storage);
+      }
+    }
+    // OK we have them simply remove them and schedule delete task
+    for(IndexStorage<T> storage:emptyReloads){
+      partitions.remove(storage);
+      submit(new DeletePartitionTask<>(storage));
+    }
   }
 
   private boolean loadStore(String test) throws IOException {
@@ -101,9 +112,17 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
       String loadName = test.substring(PARTITION_FILE_NAME.length(), test.length()-"_index".length());
       IndexStorage<T> indexStorage = new IndexStorage<>(fileName+loadName, storableFactory, sync, 0, itemCount, maxPartitionSize, taskScheduler);
       partitions.add(indexStorage);
+      int partNumber = extractPartitionNumber(loadName);
+      if(partNumber > partitionCounter){
+        partitionCounter = partNumber;
+      }
       return(indexStorage.hasExpired());
     }
     return false;
+  }
+
+  private int extractPartitionNumber(String name){
+    return Integer.parseInt(name.trim());
   }
 
   @Override
@@ -173,6 +192,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     if(object.getExpiry() > 0 && expiryTask == null){
       expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 5, TimeUnit.SECONDS);
     }
+    byteReads.add(IndexRecord.HEADER_SIZE); // We read the header to check for duplicates
     byteWrites.add(indexRecord.getLength());
     writes.increment();
     writeTimes.add((System.currentTimeMillis() - time));
@@ -188,6 +208,8 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
         partitions.remove(partition);
         submit(new DeletePartitionTask<>( partition));
       }
+      byteReads.add(IndexRecord.HEADER_SIZE); // We read it first
+      byteWrites.add(IndexRecord.HEADER_SIZE); // We then write a block of zeros
     }
     return false;
   }
@@ -291,15 +313,35 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   }
 
   private @NotNull IndexStorage<T> locateOrCreatePartition(long key) throws IOException {
+    List<IndexStorage<T>> empty = new ArrayList<>();
     for(IndexStorage<T> partition:partitions){
       if(partition.getStart() <= key && key <= partition.getEnd()){
+        if(!empty.isEmpty()){
+          for(IndexStorage<T> remove:empty){
+            partitions.remove(remove);
+            taskScheduler.submit(new DeletePartitionTask<>(remove));
+          }
+        }
         return partition;
       }
+      if(partition.isEmpty()){
+        empty.add(partition);
+      }
     }
+    if(!empty.isEmpty()){
+      for(IndexStorage<T> remove:empty){
+        partitions.remove(remove);
+        taskScheduler.submit(new DeletePartitionTask<>(remove));
+      }
+    }
+
     String partitionName = fileName+partitionCounter++;
     long start = 0;
     if(!partitions.isEmpty()) {
       start = partitions.get(partitions.size() - 1).getEnd()+1;
+    }
+    if(key < start || key > (start+itemCount)){
+      start = key;
     }
     IndexStorage<T> indexStorage = new IndexStorage<>(partitionName, storableFactory, sync, start, itemCount, maxPartitionSize, taskScheduler);
     partitions.add(indexStorage);
