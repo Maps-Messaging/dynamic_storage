@@ -124,7 +124,7 @@ public class TaskQueue {
     }
   }
 
-  private void submitIndependentTask(FileTask<?> raw) throws IOException {
+  private void submitIndependentTask(FileTask<?> raw) {
     FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
     Future<?> future = INDEPENDENT_EXECUTOR.submit(task);
     if(!future.isDone()) {
