@@ -31,8 +31,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -258,7 +256,7 @@ public abstract class BaseStoreTest extends BaseTest {
       }
       Assertions.assertEquals(0, ((StorageStatistics)statistics).getWrites());
       Assertions.assertEquals(0, ((StorageStatistics)statistics).getDeletes());
-
+      Assertions.assertNotNull(statistics.toString());
 
       for (int x = 0; x < 1000; x++) {
         storage.remove(x).get();
