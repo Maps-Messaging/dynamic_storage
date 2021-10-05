@@ -24,7 +24,6 @@ import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
-import io.mapsmessaging.storage.impl.file.tasks.ValidateIndexAndDataTask;
 import java.nio.file.StandardCopyOption;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -87,7 +86,7 @@ public class IndexStorage<T extends Storable> {
     }
     dataStorage = new DataStorage<>(fileName+"_data", storableFactory, sync, maxPartitionSize);
     if(dataStorage.isValidationRequired() || requiresValidation){
-      scheduler.submit(new ValidateIndexAndDataTask<>(this));
+      // We need to validate the data / index
     }
     closed = false;
   }

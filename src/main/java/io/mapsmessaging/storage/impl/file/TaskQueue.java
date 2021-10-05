@@ -192,6 +192,7 @@ public class TaskQueue {
 
   public static final class ShutdownHandler extends Thread{
 
+    @Override
     public void run(){
       TaskQueue.shutdown();
     }

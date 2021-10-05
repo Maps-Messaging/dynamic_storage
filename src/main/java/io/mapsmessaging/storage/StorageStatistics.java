@@ -1,7 +1,6 @@
 package io.mapsmessaging.storage;
 
 import java.util.Date;
-import lombok.Data;
 import lombok.Getter;
 
 public class StorageStatistics implements Statistics {
