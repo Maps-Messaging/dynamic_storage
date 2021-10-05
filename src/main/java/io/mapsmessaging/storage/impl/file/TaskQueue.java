@@ -104,7 +104,7 @@ public class TaskQueue {
       submitIndependentTask(raw);
     }
     else {
-      submitIndependentTask(raw);
+      submitInternalTask(raw);
     }
   }
 
