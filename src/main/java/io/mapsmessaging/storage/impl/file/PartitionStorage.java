@@ -100,10 +100,15 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
         emptyReloads.add(storage);
       }
     }
-    // OK we have them simply remove them and schedule delete task
-    for(IndexStorage<T> storage:emptyReloads){
-      partitions.remove(storage);
-      submit(new DeletePartitionTask<>(storage));
+    if(partitions.size() > 1) {
+      // OK we have them simply remove them and schedule delete task
+      for (IndexStorage<T> storage : emptyReloads) {
+        partitions.remove(storage);
+        submit(new DeletePartitionTask<>(storage));
+        if(partitions.size() ==1){
+          break;
+        }
+      }
     }
   }
 
