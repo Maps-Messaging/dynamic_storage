@@ -204,7 +204,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     if(partition != null) {
       partition.remove(key);
       deletes.increment();
-      if(partition.isEmpty() && !partitions.isEmpty()){
+      if(partition.isEmpty() && partitions.size() > 1){
         partitions.remove(partition);
         submit(new DeletePartitionTask<>( partition));
       }
