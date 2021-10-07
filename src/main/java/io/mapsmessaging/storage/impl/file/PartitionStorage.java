@@ -1,16 +1,20 @@
 package io.mapsmessaging.storage.impl.file;
 
+import io.mapsmessaging.storage.ExpiredMonitor;
+import io.mapsmessaging.storage.ExpiredStorableHandler;
 import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
 import io.mapsmessaging.storage.impl.file.partition.IndexGet;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
 import io.mapsmessaging.storage.impl.file.tasks.DeletePartitionTask;
 import io.mapsmessaging.storage.impl.file.tasks.FileTask;
-import io.mapsmessaging.storage.impl.file.tasks.IndexExpiryMonitorTask;
+import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.File;
 import java.io.IOException;
@@ -18,28 +22,25 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class PartitionStorage <T extends Storable> implements Storage<T> {
+public class PartitionStorage <T extends Storable> implements Storage<T>, ExpiredMonitor {
 
   private static final String PARTITION_FILE_NAME = "partition_";
 
-
-  private long partitionCounter;
+  private final ExpiredStorableHandler<T> expiredHandler;
   private final TaskQueue taskScheduler;
   private final int itemCount;
   private final long maxPartitionSize;
+  private final ExpireStorableTaskManager<T> expiredMonitor;
+
   private final List<IndexStorage<T>> partitions;
   private final String fileName;
   private final String rootDirectory;
   private final StorableFactory<T> storableFactory;
   private final boolean sync;
-  private boolean shutdown;
-  private Future<?> expiryTask;
 
   private final LongAdder reads;
   private final LongAdder writes;
@@ -51,11 +52,21 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   private final LongAdder byteWrites;
   private final LongAdder byteReads;
 
+  private boolean shutdown;
+  private long partitionCounter;
 
-  public PartitionStorage(String fileName, StorableFactory<T> storableFactory, boolean sync, int itemCount, long maxPartitionSize) throws IOException {
+  public PartitionStorage(
+      String fileName,
+      StorableFactory<T> storableFactory,
+      ExpiredStorableHandler<T> expiredHandler,
+      boolean sync,
+      int itemCount,
+      long maxPartitionSize,
+      int expiredEventPoll) throws IOException {
     partitions = new ArrayList<>();
     taskScheduler = new TaskQueue();
     rootDirectory = fileName;
+    this.expiredHandler = expiredHandler;
     this.itemCount = itemCount;
     this.maxPartitionSize = maxPartitionSize;
     this.fileName = fileName+File.separator+PARTITION_FILE_NAME;
@@ -64,7 +75,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     partitionCounter =0;
     shutdown = false;
     File location = new File(fileName);
-    expiryTask = null;
+    expiredMonitor = new ExpireStorableTaskManager<>(this, taskScheduler, expiredEventPoll);
     if(location.exists()){
       reload(location);
     }
@@ -89,7 +100,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
           hasExpired = loadStore(test) || hasExpired;
         }
         if(hasExpired){
-          expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 5, TimeUnit.SECONDS);
+          expiredMonitor.schedulePoll();
         }
       }
     }
@@ -138,10 +149,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   @Override
   public void shutdown()throws IOException{
     shutdown = true;
-    if(expiryTask != null){
-      expiryTask.cancel(true);
-      expiryTask = null;
-    }
+    expiredMonitor.close();
 
     while(taskScheduler.hasTasks()){
       taskScheduler.executeTasks();
@@ -152,11 +160,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
 
   @Override
   public void close() throws IOException {
-    if(expiryTask != null){
-      expiryTask.cancel(true);
-      expiryTask = null;
-    }
-
+    expiredMonitor.close();
     for(IndexStorage<T> partition:partitions){
       partition.close();
     }
@@ -194,9 +198,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     if(partition.isFull()){
       partition.setEnd(object.getKey());
     }
-    if(object.getExpiry() > 0 && expiryTask == null){
-      expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 5, TimeUnit.SECONDS);
-    }
+    expiredMonitor.added(object);
     byteReads.add(IndexRecord.HEADER_SIZE); // We read the header to check for duplicates
     byteWrites.add(indexRecord.getLength());
     writes.increment();
@@ -273,30 +275,18 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
   }
 
   public void scanForExpired() throws IOException {
-    boolean hasExpired = false;
-    List<IndexStorage<T>> toBeRemoved = new ArrayList<>();
+    List<Long> expiredList = new NaturalOrderedLongList(0, new BitSetFactoryImpl(8192));
     for(IndexStorage<T> partition:partitions){
-      if(partition.scanForExpired()){
-        hasExpired = true;
-      }
-      if(partition.isEmpty() && partitions.size() > 1){
-        toBeRemoved.add(partition);
-      }
+      partition.scanForExpired(expiredList);
     }
-    for(IndexStorage<T> partition:toBeRemoved){
-      partitions.remove(partition);
-      submit(new DeletePartitionTask<>( partition));
-    }
-    if(hasExpired){
-      expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask<>(this), 5, TimeUnit.SECONDS);
-    }
-    else{
-      expiryTask = null;
+    if(!expiredList.isEmpty()){
+      expiredHandler.expired(this, expiredList);
+      expiredMonitor.schedulePoll();
     }
   }
 
   @Override
-  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
+  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep)  {
     for(IndexStorage<T> partition:partitions){
       listToKeep = partition.keepOnly(listToKeep);
     }
@@ -366,7 +356,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T> {
     return taskScheduler.executeTasks();
   }
 
-  public Statistics getStatistics(){
+  public @NotNull Statistics getStatistics(){
     long length;
     try {
       length = length();

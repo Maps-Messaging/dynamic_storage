@@ -20,6 +20,8 @@
 
 package io.mapsmessaging.storage.impl.memory;
 
+import io.mapsmessaging.storage.BaseExpiredHandler;
+import io.mapsmessaging.storage.ExpiredStorableHandler;
 import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
@@ -31,11 +33,13 @@ import java.util.Map;
 
 public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
 
+  private static final int EXPIRED_EVENT_MONITOR_TIME = 1;
+
   public MemoryFactory() {
   }
 
-  public MemoryFactory(Map<String, String> properties, StorableFactory<T> storableFactory) {
-    super(properties, storableFactory);
+  public MemoryFactory(Map<String, String> properties, StorableFactory<T> storableFactory, ExpiredStorableHandler<T> expiredHandler) {
+    super(properties, storableFactory, expiredHandler);
   }
 
   @Override
@@ -45,7 +49,14 @@ public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
 
   @Override
   public Storage<T> create(String name) {
-    return new MemoryStorage<>();
+    if(expiredHandler == null){
+      expiredHandler = new BaseExpiredHandler<>();
+    }
+    int expiredEventPoll = EXPIRED_EVENT_MONITOR_TIME;
+    if(properties.containsKey("ExpiredEventPoll")){
+      expiredEventPoll = Integer.parseInt(properties.get("ExpiredEventPoll"));
+    }
+    return new MemoryStorage<>(expiredHandler, expiredEventPoll);
   }
 
   @Override

@@ -45,7 +45,14 @@ public class JCSCachedStorage<T extends Storable> implements Cache<T> {
 
   @Override
   public T cacheGet(long key) {
-    return cache.get(key);
+    T obj = cache.get(key);
+    if(obj != null){
+      if(obj.getExpiry() < System.currentTimeMillis()){
+        obj = null;
+        cache.remove(key);
+      }
+    }
+    return obj;
   }
 
   @Override

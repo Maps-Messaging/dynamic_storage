@@ -128,7 +128,7 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
     baseStorage.setExecutor(scheduler);
   }
 
-  public Statistics getStatistics(){
+  public @NotNull Statistics getStatistics(){
     return new CacheStatistics(cacheMiss.sumThenReset(), cacheHit.sumThenReset(), cache.size(), baseStorage.getStatistics());
   }
 }

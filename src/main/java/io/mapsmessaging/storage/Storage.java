@@ -30,15 +30,14 @@ import java.util.List;
 
 public interface Storage<T extends Storable> extends Closeable {
 
-  String getName();
-
+  //region Life cycle API
   void delete() throws IOException;
 
-  void add(@NotNull T object) throws IOException;
+  default void shutdown()throws IOException{}
+  //endregion
 
-  boolean remove(long key) throws IOException;
-
-  @Nullable T get(long key) throws IOException;
+  //region Administration API
+  String getName();
 
   long size() throws IOException;
 
@@ -48,17 +47,29 @@ public interface Storage<T extends Storable> extends Closeable {
     return true;
   }
 
+  // Returns a list of events NOT found but was in the to keep list
+  @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException;
+
+  @NotNull Statistics getStatistics();
+  //endregion
+
+  //region Storage access API
+  void add(@NotNull T object) throws IOException;
+
+  boolean remove(long key) throws IOException;
+
+  @Nullable T get(long key) throws IOException;
+
+  //endregion
+
+
+  //region Scheduler control API
   @SuppressWarnings("java:S112")
   default boolean executeTasks() throws Exception {
     return false;
   }
 
-  // Returns a list of events NOT found but was in the to keep list
-  @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException;
 
   void setExecutor(TaskScheduler executor);
-
-  default void shutdown()throws IOException{}
-
-  Statistics getStatistics();
+  //endregion
 }

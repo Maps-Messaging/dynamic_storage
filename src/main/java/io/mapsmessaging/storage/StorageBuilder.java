@@ -34,11 +34,17 @@ public class StorageBuilder<T extends Storable> {
   private String name;
   private Map<String, String> properties;
   private StorableFactory<T> storableFactory;
+  private ExpiredStorableHandler<T> expiredStorableHandler;
 
   private boolean enableWriteThrough = false;
 
   public @NotNull StorageBuilder<T> setName(@NotNull String name) {
     this.name = name;
+    return this;
+  }
+
+  public @NotNull StorageBuilder<T> setExpiredHandler(@NotNull ExpiredStorableHandler<T> expiredStorableHandler) {
+    this.expiredStorableHandler = expiredStorableHandler;
     return this;
   }
 
@@ -102,7 +108,7 @@ public class StorageBuilder<T extends Storable> {
 
 
   public Storage<T> build() throws IOException {
-    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, storableFactory);
+    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, storableFactory, expiredStorableHandler);
     if(storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
       if (baseStore.isCacheable() && cacheName != null) {

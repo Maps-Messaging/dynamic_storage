@@ -20,10 +20,16 @@
 
 package io.mapsmessaging.storage.impl.memory;
 
+import io.mapsmessaging.storage.ExpiredMonitor;
+import io.mapsmessaging.storage.ExpiredStorableHandler;
 import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageStatistics;
+import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
+import io.mapsmessaging.storage.impl.file.TaskQueue;
+import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.util.concurrent.atomic.LongAdder;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +38,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class MemoryStorage<T extends Storable> implements Storage<T> {
+public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMonitor {
 
   private static final AtomicLong counter = new AtomicLong(0);
 
@@ -41,9 +47,16 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
   private final LongAdder reads;
   private final LongAdder writes;
   private final LongAdder deletes;
+  private final ExpiredStorableHandler<T> expiredStorableHandler;
+  private final ExpireStorableTaskManager<T> expireStorableTaskManager;
+  private final TaskQueue taskScheduler;
 
-  public MemoryStorage() {
+
+  public MemoryStorage(@NotNull ExpiredStorableHandler<T> expiredStorableHandler, int expiredEventPoll) {
     memoryMap = new LinkedHashMap<>();
+    this.expiredStorableHandler = expiredStorableHandler;
+    taskScheduler = new TaskQueue();
+    this.expireStorableTaskManager = new ExpireStorableTaskManager<T>(this, taskScheduler, expiredEventPoll);
     name = "memory" + counter.get();
     reads = new LongAdder();
     writes = new LongAdder();
@@ -56,14 +69,24 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public void delete() throws IOException {
+  public void close() throws IOException {
+    while(taskScheduler.hasTasks()){
+      taskScheduler.executeTasks();
+    }
+    taskScheduler.abortAll();
     memoryMap.clear();
+  }
+
+  @Override
+  public void delete() throws IOException {
+    close();
   }
 
   @Override
   public void add(@NotNull T object) throws IOException {
     memoryMap.put(object.getKey(), object);
     writes.increment();
+    expireStorableTaskManager.added(object);
   }
 
   @Override
@@ -76,6 +99,19 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
   public T get(long key) throws IOException {
     reads.increment();
     return memoryMap.get(key);
+  }
+
+  public void scanForExpired() throws IOException {
+    long now = System.currentTimeMillis();
+    List<Long> expired = new NaturalOrderedLongList(0, new BitSetFactoryImpl(8192));
+    for(Map.Entry<Long, T> entry:memoryMap.entrySet()){
+      if(entry.getValue().getExpiry() != 0 && entry.getValue().getExpiry() < now){
+        expired.add(entry.getKey());
+      }
+    }
+    if(!expired.isEmpty()){
+      expiredStorableHandler.expired(this, expired);
+    }
   }
 
   @Override
@@ -111,12 +147,8 @@ public class MemoryStorage<T extends Storable> implements Storage<T> {
     // The memory storage doesn't use the scheduler for any tasks
   }
 
-  public Statistics getStatistics(){
+  public @NotNull Statistics getStatistics(){
     return new StorageStatistics(reads.sumThenReset(), writes.sumThenReset(), deletes.sumThenReset());
-  }
-  @Override
-  public void close() {
-    memoryMap.clear();
   }
 
   @Override

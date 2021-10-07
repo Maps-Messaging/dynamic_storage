@@ -120,7 +120,7 @@ public class IndexManager implements Closeable {
     }
   }
 
-  public boolean scanForExpired() {
+  public void scanForExpired(List<Long> expiredList) {
     if(!expiryIndex.isEmpty()){
       Iterator<Long> expiryIterator = expiryIndex.listIterator();
       long now = System.currentTimeMillis();
@@ -129,8 +129,7 @@ public class IndexManager implements Closeable {
         IndexRecord indexRecord = get(key);
         if(indexRecord != null) {
           if (indexRecord.getExpiry() < now) {
-            delete(key);
-            expiryIterator.remove();
+            expiredList.add(indexRecord.getKey());
           }
         }
         else{
@@ -138,7 +137,6 @@ public class IndexManager implements Closeable {
         }
       }
     }
-    return !expiryIndex.isEmpty();
   }
 
 

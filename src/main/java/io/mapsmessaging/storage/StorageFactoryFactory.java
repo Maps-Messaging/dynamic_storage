@@ -64,7 +64,7 @@ class StorageFactoryFactory {
   @SuppressWarnings("java:S2293")
   @SneakyThrows
   @Nullable
-  <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory) {
+  <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, ExpiredStorableHandler expiredStorableHandler) {
     Optional<Provider<StorageFactory>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.get().getName().equals(name)).findFirst();
     if (first.isPresent()) {
       StorageFactory<?> found = first.get().get();
@@ -72,13 +72,13 @@ class StorageFactoryFactory {
       Constructor<T>[] constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
       Constructor<T> constructor = null;
       for (Constructor<T> cstr : constructors) {
-        if (cstr.getParameters().length == 2) {
+        if (cstr.getParameters().length == 3) {
           constructor = cstr;
           break;
         }
       }
       if (constructor != null) {
-        return (StorageFactory<T>) constructor.newInstance(properties, storableFactory);
+        return (StorageFactory<T>) constructor.newInstance(properties, storableFactory, expiredStorableHandler);
       }
     }
     return null;

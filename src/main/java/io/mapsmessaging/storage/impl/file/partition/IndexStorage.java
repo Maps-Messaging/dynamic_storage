@@ -185,8 +185,8 @@ public class IndexStorage<T extends Storable> {
   }
 
 
-  public boolean scanForExpired() {
-    return indexManager.scanForExpired();
+  public void scanForExpired(List<Long> expiredList) {
+    indexManager.scanForExpired(expiredList);
   }
 
   public long getStart(){

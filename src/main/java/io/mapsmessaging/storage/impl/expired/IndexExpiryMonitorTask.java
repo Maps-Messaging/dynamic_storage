@@ -1,14 +1,17 @@
-package io.mapsmessaging.storage.impl.file.tasks;
+package io.mapsmessaging.storage.impl.expired;
 
+import io.mapsmessaging.storage.ExpiredMonitor;
 import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.file.PartitionStorage;
+import io.mapsmessaging.storage.impl.file.tasks.FileTask;
 import java.io.IOException;
 
-public class IndexExpiryMonitorTask<T extends Storable> implements FileTask<Boolean> {
+public class IndexExpiryMonitorTask implements FileTask<Boolean> {
 
-  private final PartitionStorage<T> storage;
+  private final ExpiredMonitor storage;
 
-  public IndexExpiryMonitorTask(PartitionStorage<T> storage) {
+  public IndexExpiryMonitorTask(ExpiredMonitor storage) {
     this.storage = storage;
   }
 
@@ -25,6 +28,6 @@ public class IndexExpiryMonitorTask<T extends Storable> implements FileTask<Bool
 
   @Override
   public boolean independentTask(){
-    return false;
+    return true;
   }
 }
