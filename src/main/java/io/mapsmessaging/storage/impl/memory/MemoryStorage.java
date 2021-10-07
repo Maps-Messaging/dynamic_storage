@@ -29,6 +29,7 @@ import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.util.concurrent.atomic.LongAdder;
@@ -103,14 +104,16 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
 
   public void scanForExpired() throws IOException {
     long now = System.currentTimeMillis();
-    List<Long> expired = new NaturalOrderedLongList(0, new BitSetFactoryImpl(8192));
-    for(Map.Entry<Long, T> entry:memoryMap.entrySet()){
-      if(entry.getValue().getExpiry() != 0 && entry.getValue().getExpiry() < now){
-        expired.add(entry.getKey());
+    try(BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)) {
+      List<Long> expired = new NaturalOrderedLongList(0, bitSetFactory);
+      for (Map.Entry<Long, T> entry : memoryMap.entrySet()) {
+        if (entry.getValue().getExpiry() != 0 && entry.getValue().getExpiry() < now) {
+          expired.add(entry.getKey());
+        }
       }
-    }
-    if(!expired.isEmpty()){
-      expiredStorableHandler.expired(this, expired);
+      if (!expired.isEmpty()) {
+        expiredStorableHandler.expired(this, expired);
+      }
     }
   }
 

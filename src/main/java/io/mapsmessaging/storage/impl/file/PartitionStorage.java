@@ -14,6 +14,7 @@ import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
 import io.mapsmessaging.storage.impl.file.tasks.DeletePartitionTask;
 import io.mapsmessaging.storage.impl.file.tasks.FileTask;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.File;
@@ -275,13 +276,15 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
   }
 
   public void scanForExpired() throws IOException {
-    List<Long> expiredList = new NaturalOrderedLongList(0, new BitSetFactoryImpl(8192));
-    for(IndexStorage<T> partition:partitions){
-      partition.scanForExpired(expiredList);
-    }
-    if(!expiredList.isEmpty()){
-      expiredHandler.expired(this, expiredList);
-      expiredMonitor.schedulePoll();
+    try(BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)){
+      List<Long> expiredList = new NaturalOrderedLongList(0, bitSetFactory);
+      for(IndexStorage<T> partition:partitions){
+        partition.scanForExpired(expiredList);
+      }
+      if(!expiredList.isEmpty()){
+        expiredHandler.expired(this, expiredList);
+        expiredMonitor.schedulePoll();
+      }
     }
   }
 
