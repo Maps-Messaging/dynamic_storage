@@ -34,7 +34,7 @@ public class StorageBuilder<T extends Storable> {
   private String name;
   private Map<String, String> properties;
   private StorableFactory<T> storableFactory;
-  private ExpiredStorableHandler<T> expiredStorableHandler;
+  private ExpiredStorableHandler expiredStorableHandler;
 
   private boolean enableWriteThrough = false;
 
@@ -43,7 +43,7 @@ public class StorageBuilder<T extends Storable> {
     return this;
   }
 
-  public @NotNull StorageBuilder<T> setExpiredHandler(@NotNull ExpiredStorableHandler<T> expiredStorableHandler) {
+  public @NotNull StorageBuilder<T> setExpiredHandler(@NotNull ExpiredStorableHandler expiredStorableHandler) {
     this.expiredStorableHandler = expiredStorableHandler;
     return this;
   }

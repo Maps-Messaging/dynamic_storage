@@ -49,12 +49,12 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   private final LongAdder reads;
   private final LongAdder writes;
   private final LongAdder deletes;
-  private final ExpiredStorableHandler<T> expiredStorableHandler;
+  private final ExpiredStorableHandler expiredStorableHandler;
   private final ExpireStorableTaskManager<T> expireStorableTaskManager;
   private final TaskQueue taskScheduler;
 
 
-  public MemoryStorage(ExpiredStorableHandler<T> expiredStorableHandler, int expiredEventPoll) {
+  public MemoryStorage(ExpiredStorableHandler expiredStorableHandler, int expiredEventPoll) {
     memoryMap = new LinkedHashMap<>();
     this.expiredStorableHandler = Objects.requireNonNullElseGet(expiredStorableHandler, () -> new BaseExpiredHandler<>(this));
     taskScheduler = new TaskQueue();

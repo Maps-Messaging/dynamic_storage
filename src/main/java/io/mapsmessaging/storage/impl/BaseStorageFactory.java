@@ -31,12 +31,12 @@ public abstract class BaseStorageFactory<T extends Storable> implements StorageF
 
   protected Map<String, String> properties;
   protected StorableFactory<T> storableFactory;
-  protected ExpiredStorableHandler<T> expiredHandler;
+  protected ExpiredStorableHandler expiredHandler;
 
   protected BaseStorageFactory() {
   }
 
-  protected BaseStorageFactory(Map<String, String> properties,StorableFactory<T> storableFactory,  ExpiredStorableHandler<T> expiredHandler) {
+  protected BaseStorageFactory(Map<String, String> properties,StorableFactory<T> storableFactory,  ExpiredStorableHandler expiredHandler) {
     this.properties = properties;
     this.storableFactory = storableFactory;
     this.expiredHandler = expiredHandler;

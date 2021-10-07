@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Queue;
 
 @FunctionalInterface
-public interface ExpiredStorableHandler<T extends Storable> {
+public interface ExpiredStorableHandler {
 
    void expired(Queue<Long>  listOfExpiredEntries) throws IOException;
 

@@ -3,7 +3,7 @@ package io.mapsmessaging.storage;
 import java.io.IOException;
 import java.util.Queue;
 
-public class BaseExpiredHandler<T extends Storable> implements ExpiredStorableHandler<T> {
+public class BaseExpiredHandler<T extends Storable> implements ExpiredStorableHandler {
 
   private final Storage<T> storage;
 

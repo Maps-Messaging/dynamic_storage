@@ -20,7 +20,6 @@
 
 package io.mapsmessaging.storage.impl.file;
 
-import io.mapsmessaging.storage.BaseExpiredHandler;
 import io.mapsmessaging.storage.ExpiredStorableHandler;
 import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
@@ -40,7 +39,7 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
   public PartitionStorageFactory() {
   }
 
-  public PartitionStorageFactory(Map<String, String> properties, StorableFactory<T> storableFactory, ExpiredStorableHandler<T> expiredHandler) {
+  public PartitionStorageFactory(Map<String, String> properties, StorableFactory<T> storableFactory, ExpiredStorableHandler expiredHandler) {
     super(properties, storableFactory, expiredHandler);
   }
 

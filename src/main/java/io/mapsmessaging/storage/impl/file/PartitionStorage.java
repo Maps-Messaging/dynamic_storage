@@ -34,7 +34,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
 
   private static final String PARTITION_FILE_NAME = "partition_";
 
-  private final ExpiredStorableHandler<T> expiredHandler;
+  private final ExpiredStorableHandler expiredHandler;
   private final TaskQueue taskScheduler;
   private final int itemCount;
   private final long maxPartitionSize;
@@ -62,7 +62,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
   public PartitionStorage(
       String fileName,
       StorableFactory<T> storableFactory,
-      ExpiredStorableHandler<T> expiredHandler,
+      ExpiredStorableHandler expiredHandler,
       boolean sync,
       int itemCount,
       long maxPartitionSize,
