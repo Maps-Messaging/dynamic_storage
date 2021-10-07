@@ -181,13 +181,7 @@ public class IndexManager implements Closeable {
     if(key>= start && key <= localEnd  && !closed && key<=end){
       setMapPosition(key);
       item = new IndexRecord(index);
-      if(item.getExpiry() == 0 || item.getExpiry() > System.currentTimeMillis()){
-        item.setKey(key);
-      }
-      else{
-        delete(key); // It has expired, lets simply remove it
-        item = null;
-      }
+      item.setKey(key);
     }
     return item;
   }
