@@ -54,7 +54,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   private final TaskQueue taskScheduler;
 
 
-  public MemoryStorage(@NotNull ExpiredStorableHandler<T> expiredStorableHandler, int expiredEventPoll) {
+  public MemoryStorage(ExpiredStorableHandler<T> expiredStorableHandler, int expiredEventPoll) {
     memoryMap = new LinkedHashMap<>();
     this.expiredStorableHandler = Objects.requireNonNullElseGet(expiredStorableHandler, () -> new BaseExpiredHandler<>(this));
     taskScheduler = new TaskQueue();
