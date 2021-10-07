@@ -72,7 +72,7 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
     if(expiredHandler == null){
       expiredHandler = new BaseExpiredHandler<>();
     }
-    return new PartitionStorage<T>(name, storableFactory, expiredHandler, sync, itemCount, maxPartitionSize, expiredEventPoll);
+    return new PartitionStorage<>(name, storableFactory, expiredHandler, sync, itemCount, maxPartitionSize, expiredEventPoll);
   }
 
   @Override

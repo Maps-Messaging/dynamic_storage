@@ -57,7 +57,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
     memoryMap = new LinkedHashMap<>();
     this.expiredStorableHandler = expiredStorableHandler;
     taskScheduler = new TaskQueue();
-    this.expireStorableTaskManager = new ExpireStorableTaskManager<T>(this, taskScheduler, expiredEventPoll);
+    this.expireStorableTaskManager = new ExpireStorableTaskManager<>(this, taskScheduler, expiredEventPoll);
     name = "memory" + counter.get();
     reads = new LongAdder();
     writes = new LongAdder();

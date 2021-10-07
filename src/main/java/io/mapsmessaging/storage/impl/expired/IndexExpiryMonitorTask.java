@@ -1,9 +1,6 @@
 package io.mapsmessaging.storage.impl.expired;
 
 import io.mapsmessaging.storage.ExpiredMonitor;
-import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.impl.file.PartitionStorage;
 import io.mapsmessaging.storage.impl.file.tasks.FileTask;
 import java.io.IOException;
 
