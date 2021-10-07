@@ -106,6 +106,10 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
       }
     }
     partitions.sort(Comparator.comparingLong(IndexStorage::getStart));
+    scanForEmpty();
+  }
+
+  private void scanForEmpty() throws IOException {
     List<IndexStorage<T>> emptyReloads = new ArrayList<>();
     for(IndexStorage<T> storage:partitions){
       if(storage.isEmpty()){
