@@ -234,7 +234,10 @@ public class IndexStorage<T extends Storable> {
         obj = dataStorage.get(item);
       }
     }
-    return new IndexGet<>(item, obj);
+    if(item != null) {
+      return new IndexGet<>(item, obj);
+    }
+    return null;
   }
 
   public long length() throws IOException{
