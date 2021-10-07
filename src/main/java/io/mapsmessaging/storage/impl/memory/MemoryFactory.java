@@ -49,9 +49,6 @@ public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
 
   @Override
   public Storage<T> create(String name) {
-    if(expiredHandler == null){
-      expiredHandler = new BaseExpiredHandler<>();
-    }
     int expiredEventPoll = EXPIRED_EVENT_MONITOR_TIME;
     if(properties.containsKey("ExpiredEventPoll")){
       expiredEventPoll = Integer.parseInt(properties.get("ExpiredEventPoll"));

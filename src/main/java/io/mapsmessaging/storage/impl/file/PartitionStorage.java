@@ -1,5 +1,6 @@
 package io.mapsmessaging.storage.impl.file;
 
+import io.mapsmessaging.storage.BaseExpiredHandler;
 import io.mapsmessaging.storage.ExpiredMonitor;
 import io.mapsmessaging.storage.ExpiredStorableHandler;
 import io.mapsmessaging.storage.StorableFactory;
@@ -13,7 +14,7 @@ import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
 import io.mapsmessaging.storage.impl.file.tasks.DeletePartitionTask;
 import io.mapsmessaging.storage.impl.file.tasks.FileTask;
-import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
@@ -23,6 +24,8 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.atomic.LongAdder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,7 +70,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
     partitions = new ArrayList<>();
     taskScheduler = new TaskQueue();
     rootDirectory = fileName;
-    this.expiredHandler = expiredHandler;
+    this.expiredHandler = Objects.requireNonNullElseGet(expiredHandler, () -> new BaseExpiredHandler<>(this));
     this.itemCount = itemCount;
     this.maxPartitionSize = maxPartitionSize;
     this.fileName = fileName+File.separator+PARTITION_FILE_NAME;
@@ -281,12 +284,12 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
 
   public void scanForExpired() throws IOException {
     try(BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)){
-      List<Long> expiredList = new NaturalOrderedLongList(0, bitSetFactory);
+      Queue<Long> expiredList = new NaturalOrderedLongQueue(0, bitSetFactory);
       for(IndexStorage<T> partition:partitions){
         partition.scanForExpired(expiredList);
       }
       if(!expiredList.isEmpty()){
-        expiredHandler.expired(this, expiredList);
+        expiredHandler.expired(expiredList);
         expiredMonitor.schedulePoll();
       }
     }

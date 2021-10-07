@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.storage.impl.memory;
 
+import io.mapsmessaging.storage.BaseExpiredHandler;
 import io.mapsmessaging.storage.ExpiredMonitor;
 import io.mapsmessaging.storage.ExpiredStorableHandler;
 import io.mapsmessaging.storage.Statistics;
@@ -28,7 +29,7 @@ import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
-import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
@@ -55,7 +56,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
 
   public MemoryStorage(@NotNull ExpiredStorableHandler<T> expiredStorableHandler, int expiredEventPoll) {
     memoryMap = new LinkedHashMap<>();
-    this.expiredStorableHandler = expiredStorableHandler;
+    this.expiredStorableHandler = Objects.requireNonNullElseGet(expiredStorableHandler, () -> new BaseExpiredHandler<>(this));
     taskScheduler = new TaskQueue();
     this.expireStorableTaskManager = new ExpireStorableTaskManager<>(this, taskScheduler, expiredEventPoll);
     name = "memory" + counter.get();
@@ -105,14 +106,14 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   public void scanForExpired() throws IOException {
     long now = System.currentTimeMillis();
     try(BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)) {
-      List<Long> expired = new NaturalOrderedLongList(0, bitSetFactory);
+      Queue<Long> expired = new NaturalOrderedLongQueue(0, bitSetFactory);
       for (Map.Entry<Long, T> entry : memoryMap.entrySet()) {
         if (entry.getValue().getExpiry() != 0 && entry.getValue().getExpiry() < now) {
           expired.add(entry.getKey());
         }
       }
       if (!expired.isEmpty()) {
-        expiredStorableHandler.expired(this, expired);
+        expiredStorableHandler.expired( expired);
       }
     }
   }

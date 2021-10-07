@@ -1,11 +1,11 @@
 package io.mapsmessaging.storage;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Queue;
 
 @FunctionalInterface
 public interface ExpiredStorableHandler<T extends Storable> {
 
-   void expired(Storage<T> storage, List<Long> listOfExpiredEntries) throws IOException;
+   void expired(Queue<Long>  listOfExpiredEntries) throws IOException;
 
 }

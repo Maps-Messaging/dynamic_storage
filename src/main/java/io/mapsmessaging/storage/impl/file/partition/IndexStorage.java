@@ -25,6 +25,7 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
 import java.nio.file.StandardCopyOption;
+import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -185,7 +186,7 @@ public class IndexStorage<T extends Storable> {
   }
 
 
-  public void scanForExpired(List<Long> expiredList) {
+  public void scanForExpired(Queue<Long> expiredList) {
     indexManager.scanForExpired(expiredList);
   }
 

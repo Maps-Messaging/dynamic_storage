@@ -69,9 +69,6 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
       expiredEventPoll = Integer.parseInt(properties.get("ExpiredEventPoll"));
     }
 
-    if(expiredHandler == null){
-      expiredHandler = new BaseExpiredHandler<>();
-    }
     return new PartitionStorage<>(name, storableFactory, expiredHandler, sync, itemCount, maxPartitionSize, expiredEventPoll);
   }
 

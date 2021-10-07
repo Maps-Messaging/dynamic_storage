@@ -26,6 +26,7 @@ import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.ByteBufferBitSetFactoryImpl;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -120,7 +121,7 @@ public class IndexManager implements Closeable {
     }
   }
 
-  public void scanForExpired(List<Long> expiredList) {
+  public void scanForExpired(Queue<Long> expiredList) {
     if(!expiryIndex.isEmpty()){
       Iterator<Long> expiryIterator = expiryIndex.listIterator();
       long now = System.currentTimeMillis();
