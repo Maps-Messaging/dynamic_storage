@@ -200,6 +200,7 @@ public class IndexManager implements Closeable {
       setMapPosition(key);
       IndexRecord item = new IndexRecord(index);
       if(item.getPosition() != 0) {
+        expiryIndex.remove(key);
         counter.decrement();
         emptySpace.add(item.getLength());
         setMapPosition(key);
