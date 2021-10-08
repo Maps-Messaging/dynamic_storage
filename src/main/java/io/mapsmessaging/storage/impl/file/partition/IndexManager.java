@@ -222,33 +222,39 @@ public class IndexManager implements Closeable {
 
   void walkIndex(){
     List<Long> expired = new ArrayList<>();
-    IndexRecord indexRecord;
     index.position(0);
     int size = (int)(end -start)+1;
     long now = System.currentTimeMillis();
     for(int x=0;x<size;x++){
-      indexRecord = new IndexRecord(index);
-      if(indexRecord.getPosition() != 0){
-        maxKey = x;
-        if(indexRecord.getPosition() > 0){
-          counter.increment();
-          if(indexRecord.getExpiry() != 0) {
-            if (indexRecord.getExpiry() > now) {
-              expiryIndex.add(indexRecord.getKey());
-            } else {
-              expired.add(indexRecord.getKey());
-            }
-          }
-        }
-      }
-      else if(indexRecord.getLength() > 0){
-        emptySpace.add(indexRecord.getLength());
-      }
+      validateIndexRecord(x, new IndexRecord(index), now, expired);
     }
     for(Long key:expired){
       delete(key);
     }
   }
+
+ private void validateIndexRecord(int index, IndexRecord indexRecord, long now, List<Long> expired){
+   if(indexRecord.getPosition() != 0){
+     maxKey = index;
+     if(indexRecord.getPosition() > 0){
+       counter.increment();
+       checkExpiryDetails(indexRecord, now, expired);
+     }
+   }
+   else if(indexRecord.getLength() > 0){
+     emptySpace.add(indexRecord.getLength());
+   }
+ }
+
+ private void checkExpiryDetails(IndexRecord indexRecord, long now, List<Long> expired) {
+   if (indexRecord.getExpiry() != 0) {
+     if (indexRecord.getExpiry() > now) {
+       expiryIndex.add(indexRecord.getKey());
+     } else {
+       expired.add(indexRecord.getKey());
+     }
+   }
+ }
 
   public List<Long> keySet(){
     List<Long> keys = new NaturalOrderedLongList(0, new ByteBufferBitSetFactoryImpl(8192));
