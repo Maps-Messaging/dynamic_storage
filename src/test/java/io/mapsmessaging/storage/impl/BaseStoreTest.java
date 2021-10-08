@@ -173,7 +173,7 @@ public abstract class BaseStoreTest extends BaseTest {
 
       storage.close();
       storage = createStore(testName, false);
-
+      Assertions.assertEquals(999, storage.getLastKey());
       for (int x = 0; x < 1000; x++) {
         MappedData message = storage.get(x);
         validateMessage(message, x);

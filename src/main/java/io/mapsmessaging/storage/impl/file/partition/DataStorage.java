@@ -175,7 +175,9 @@ public class DataStorage<T extends Storable> implements Closeable {
     T obj = null;
     if (item != null) {
       long pos = item.getPosition();
-      obj = reloadMessage(pos);
+      if(pos >= 0) {
+        obj = reloadMessage(pos);
+      }
     }
     return obj;
   }

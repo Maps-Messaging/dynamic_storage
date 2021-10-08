@@ -58,6 +58,7 @@ public class IndexManager implements Closeable {
   private final LongAdder emptySpace;
 
   private final  @Getter  long start;
+  private volatile @Getter long maxKey;
 
   private MappedByteBuffer index;
 
@@ -78,7 +79,7 @@ public class IndexManager implements Closeable {
     counter = new LongAdder();
     emptySpace = new LongAdder();
     expiryIndex = new NaturalOrderedLongList(0, new BitSetFactoryImpl(8192));
-
+    maxKey = 0;
     walkIndex();
   }
 
@@ -199,12 +200,14 @@ public class IndexManager implements Closeable {
     if(key>= start && key <= localEnd && !closed && key <=end){
       setMapPosition(key);
       IndexRecord item = new IndexRecord(index);
-      if(item.getPosition() != 0) {
+      if(item.getPosition() > 0) {
         expiryIndex.remove(key);
         counter.decrement();
         emptySpace.add(item.getLength());
         setMapPosition(key);
-        IndexRecord.clear(index);
+        // Mark it as deleted, so on reload we can get the total length and key
+        IndexRecord indexRecord = new IndexRecord(0, -1, 0, item.getLength());
+        indexRecord.update(index);
         return true;
       }
     }
@@ -226,13 +229,15 @@ public class IndexManager implements Closeable {
     for(int x=0;x<size;x++){
       indexRecord = new IndexRecord(index);
       if(indexRecord.getPosition() != 0){
-        counter.increment();
-        if(indexRecord.getExpiry() != 0){
-          if(indexRecord.getExpiry() > now){
-            expiryIndex.add(indexRecord.getKey());
-          }
-          else{
-            expired.add(indexRecord.getKey());
+        maxKey = x;
+        if(indexRecord.getPosition() > 0){
+          counter.increment();
+          if(indexRecord.getExpiry() != 0) {
+            if (indexRecord.getExpiry() > now) {
+              expiryIndex.add(indexRecord.getKey());
+            } else {
+              expired.add(indexRecord.getKey());
+            }
           }
         }
       }

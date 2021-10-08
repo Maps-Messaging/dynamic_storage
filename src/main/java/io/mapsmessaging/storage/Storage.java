@@ -41,6 +41,8 @@ public interface Storage<T extends Storable> extends Closeable {
 
   long size() throws IOException;
 
+  long getLastKey();
+
   boolean isEmpty();
 
   default boolean isCacheable(){

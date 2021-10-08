@@ -91,6 +91,11 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   }
 
   @Override
+  public long getLastKey() {
+    return baseStorage.getLastKey();
+  }
+
+  @Override
   public boolean isEmpty() {
     return baseStorage.isEmpty();
   }

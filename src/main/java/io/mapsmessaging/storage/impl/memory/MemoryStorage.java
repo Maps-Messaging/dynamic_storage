@@ -124,6 +124,14 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   }
 
   @Override
+  public long getLastKey() {
+    if(!memoryMap.isEmpty()){
+      return memoryMap.keySet().stream().max(Long::compare).get();
+    }
+    return 0;
+  }
+
+  @Override
   public boolean isEmpty() {
     return memoryMap.isEmpty();
   }

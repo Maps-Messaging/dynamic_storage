@@ -199,6 +199,14 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
   }
 
   @Override
+  public long getLastKey(){
+    if(!partitions.isEmpty()){
+      return (partitions.get(partitions.size()-1).getLastKey());
+    }
+    return 0;
+  }
+
+  @Override
   public void add(@NotNull T object) throws IOException {
     long time = System.currentTimeMillis();
     IndexStorage<T> partition = locateOrCreatePartition(object.getKey());

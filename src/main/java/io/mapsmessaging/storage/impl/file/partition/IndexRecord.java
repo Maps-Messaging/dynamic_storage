@@ -24,17 +24,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 public class IndexRecord {
   private static final long INTEGER_MASK = 0x7FFF_FFFF;
 
   public static final int HEADER_SIZE = 24;
-  private static final byte[] RESET_HEADER;
-  static{
-    RESET_HEADER = new byte[HEADER_SIZE];
-    Arrays.fill(RESET_HEADER, (byte)0);
-  }
 
   @Getter private final long expiry;     // Expiry of this entry in milliseconds
   @Getter private final long position;   // Position within the log file or the index file
@@ -71,13 +65,8 @@ public class IndexRecord {
 
   public void update(ByteBuffer buffer){
     long tmp2 = ((locationId & INTEGER_MASK) << 32) | (length & INTEGER_MASK);
-
     buffer.putLong(position);
     buffer.putLong(expiry);
     buffer.putLong(tmp2);
-  }
-
-  public static void clear(ByteBuffer buffer){
-    buffer.put(RESET_HEADER);
   }
 }

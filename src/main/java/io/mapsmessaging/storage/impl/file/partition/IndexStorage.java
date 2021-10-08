@@ -185,6 +185,9 @@ public class IndexStorage<T extends Storable> {
     return !indexManager.getExpiryIndex().isEmpty();
   }
 
+  public long getLastKey(){
+    return getStart() + indexManager.getMaxKey();
+  }
 
   public void scanForExpired(Queue<Long> expiredList) {
     indexManager.scanForExpired(expiredList);
