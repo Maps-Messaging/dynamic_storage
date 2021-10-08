@@ -62,7 +62,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     checkClose();
     closed.set(true);
     storage.shutdown();
-    return scheduler.submit(new CloseTask<T>(storage, completion), FOREGROUND_PRIORITY);
+    return scheduler.submit(new CloseTask<>(storage, completion), FOREGROUND_PRIORITY);
   }
 
   public final Future<Boolean> delete() throws IOException {
@@ -73,7 +73,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     checkClose();
     closed.set(true);
     storage.shutdown();
-    return scheduler.submit(new DeleteTask<T>(storage, completion), FOREGROUND_PRIORITY);
+    return scheduler.submit(new DeleteTask<>(storage, completion), FOREGROUND_PRIORITY);
   }
 
   public final Future<T> add(@NotNull T toStore) throws IOException {
@@ -108,6 +108,11 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     return scheduler.submit(new SizeTask<>(storage), FOREGROUND_PRIORITY);
   }
 
+  public Future<Long> getLastKey() throws IOException {
+    checkClose();
+    return scheduler.submit(new LastKeyTask<>(storage), FOREGROUND_PRIORITY);
+  }
+
   public Future<Boolean> isEmpty() throws IOException {
     checkClose();
     return scheduler.submit(new IsEmptyTask<>(storage), FOREGROUND_PRIORITY);
@@ -129,7 +134,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
 
   public Future<Statistics> getStatistics(Completion<Statistics> completion) throws IOException {
     checkClose();
-    return scheduler.submit(new RetrieveStatistics<>(storage, completion), FOREGROUND_PRIORITY);
+    return scheduler.submit(new RetrieveStatisticsTask<>(storage, completion), FOREGROUND_PRIORITY);
   }
 
 

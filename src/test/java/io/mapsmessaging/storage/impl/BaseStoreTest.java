@@ -198,6 +198,7 @@ public abstract class BaseStoreTest extends BaseTest {
       ThreadLocalContext.set(context);
       // Remove any before we start
 
+      Assertions.assertEquals(0, storage.getLastKey().get());
       int counter = -10000;
       for (int x = 0; x < 100000; x++) {
         MappedData message = createMessageBuilder(x);
@@ -207,10 +208,12 @@ public abstract class BaseStoreTest extends BaseTest {
           storage.remove(counter).get();
         }
       }
+      Assertions.assertEquals(99999, storage.getLastKey().get());
       for (int x = counter; x < 100000; x++) {
         storage.remove(x).get();
       }
       Assertions.assertEquals(0, storage.size().get());
+      Assertions.assertEquals(99999, storage.getLastKey().get());
     } finally {
       if (storage != null) {
         storage.delete().get();

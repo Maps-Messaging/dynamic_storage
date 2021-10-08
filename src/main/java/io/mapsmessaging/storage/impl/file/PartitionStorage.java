@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.atomic.LongAdder;
+
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -58,6 +60,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
 
   private boolean shutdown;
   private long partitionCounter;
+  private transient long lastKeyStored;
 
   public PartitionStorage(
       String fileName,
@@ -93,6 +96,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
     deletes = new LongAdder();
     byteWrites = new LongAdder();
     byteReads = new LongAdder();
+    lastKeyStored = reloadLastKeyStore();
   }
 
   private void reload(File location) throws IOException {
@@ -198,8 +202,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
     }
   }
 
-  @Override
-  public long getLastKey(){
+  private long reloadLastKeyStore(){
     if(!partitions.isEmpty()){
       return (partitions.get(partitions.size()-1).getLastKey());
     }
@@ -219,6 +222,9 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
     byteWrites.add(indexRecord.getLength());
     writes.increment();
     writeTimes.add((System.currentTimeMillis() - time));
+    if(lastKeyStored < object.getKey()){
+      lastKeyStored = object.getKey();
+    }
   }
 
   @Override
@@ -263,6 +269,11 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
       size += partition.size();
     }
     return size;
+  }
+
+  @Override
+  public long getLastKey() {
+    return lastKeyStored;
   }
 
   public long length() throws IOException {

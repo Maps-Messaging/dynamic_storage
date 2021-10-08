@@ -5,10 +5,10 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import org.jetbrains.annotations.NotNull;
 
-public class RetrieveStatistics<T extends Storable> extends BaseTask<T, Statistics> {
+public class RetrieveStatisticsTask<T extends Storable> extends BaseTask<T, Statistics> {
 
 
-  public RetrieveStatistics(@NotNull Storage<T> storage, Completion<Statistics> completion) {
+  public RetrieveStatisticsTask(@NotNull Storage<T> storage, Completion<Statistics> completion) {
     super(storage, completion);
   }
 

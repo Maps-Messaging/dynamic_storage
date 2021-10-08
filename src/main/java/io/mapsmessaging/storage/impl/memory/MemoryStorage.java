@@ -52,7 +52,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   private final ExpiredStorableHandler expiredStorableHandler;
   private final ExpireStorableTaskManager<T> expireStorableTaskManager;
   private final TaskQueue taskScheduler;
-
+  private transient long lastKeyStored;
 
   public MemoryStorage(ExpiredStorableHandler expiredStorableHandler, int expiredEventPoll) {
     memoryMap = new LinkedHashMap<>();
@@ -63,6 +63,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
     reads = new LongAdder();
     writes = new LongAdder();
     deletes = new LongAdder();
+    lastKeyStored = 0;
   }
 
   @Override
@@ -89,6 +90,9 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
     memoryMap.put(object.getKey(), object);
     writes.increment();
     expireStorableTaskManager.added(object);
+    if(lastKeyStored < object.getKey()){
+      lastKeyStored = object.getKey();
+    }
   }
 
   @Override
@@ -125,11 +129,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
 
   @Override
   public long getLastKey() {
-    Optional<Long> max = memoryMap.keySet().stream().max(Long::compare);
-    if(max.isPresent()){
-      return max.get();
-    }
-    return 0;
+    return lastKeyStored;
   }
 
   @Override
