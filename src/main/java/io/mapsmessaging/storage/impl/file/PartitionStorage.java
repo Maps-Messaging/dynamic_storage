@@ -28,7 +28,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.atomic.LongAdder;
 
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,7 +59,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
 
   private boolean shutdown;
   private long partitionCounter;
-  private transient long lastKeyStored;
+  private long lastKeyStored;
 
   public PartitionStorage(
       String fileName,

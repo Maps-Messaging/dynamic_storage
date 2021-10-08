@@ -52,7 +52,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   private final ExpiredStorableHandler expiredStorableHandler;
   private final ExpireStorableTaskManager<T> expireStorableTaskManager;
   private final TaskQueue taskScheduler;
-  private transient long lastKeyStored;
+  private long lastKeyStored;
 
   public MemoryStorage(ExpiredStorableHandler expiredStorableHandler, int expiredEventPoll) {
     memoryMap = new LinkedHashMap<>();
