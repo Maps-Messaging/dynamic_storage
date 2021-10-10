@@ -87,6 +87,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
     }
     else{
       location.mkdir();
+      locateOrCreatePartition(0); // Force the creation of the key file
     }
     reads = new LongAdder();
     writes = new LongAdder();
