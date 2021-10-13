@@ -100,15 +100,12 @@ public class IndexManager implements Closeable {
     channel.write(header);
     header.flip();
     int totalSize = itemSize * IndexRecord.HEADER_SIZE;
+    byte[] buf = new byte[totalSize];
+    ByteBuffer bb = ByteBuffer.wrap(buf);
+    channel.write(bb);
     index = channel.map(MapMode.READ_WRITE, position+HEADER_SIZE, totalSize);
     index.load(); // Ensure the file contents are loaded
-    IndexRecord empty = new IndexRecord();
-    for(int x=0;x<itemSize;x++){
-      empty.update(index); // fill with 0's
-    }
-    index.force(); // ensure the disk / memory are in sync
     expiryIndex = new NaturalOrderedLongList(0, new BitSetFactoryImpl(8192));
-
     closed = false;
   }
 
