@@ -100,9 +100,13 @@ public class IndexManager implements Closeable {
     channel.write(header);
     header.flip();
     int totalSize = itemSize * IndexRecord.HEADER_SIZE;
-    byte[] buf = new byte[totalSize];
-    ByteBuffer bb = ByteBuffer.wrap(buf);
-    channel.write(bb);
+    // This block basically moves to the end of the file -1
+    // and writes 1 byte. For a sparse file it will preallocate the file and zero fill for us at no cost
+    // for file systems with NO sparse support it will be zero filled and will take some time
+    ByteBuffer sparseAllocate = ByteBuffer.allocate(1);
+    channel.position(position+HEADER_SIZE + totalSize-1);
+    channel.write(sparseAllocate);
+    channel.position(position); // Move back
     index = channel.map(MapMode.READ_WRITE, position+HEADER_SIZE, totalSize);
     index.load(); // Ensure the file contents are loaded
     expiryIndex = new NaturalOrderedLongList(0, new BitSetFactoryImpl(8192));

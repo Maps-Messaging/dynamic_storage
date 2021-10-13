@@ -72,6 +72,18 @@ public class FileCreationBenchmark {
   @BenchmarkMode({Mode.Throughput})
   @Fork(value = 1, warmups = 2)
   @Threads(1)
+  public void byteFillDirectAlgorithm() throws IOException {
+    StandardOpenOption[] writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE};
+    try(FileChannel mapChannel = (FileChannel) Files.newByteChannel(file.toPath(), writeOptions)){
+      mapChannel.write(ByteBuffer.allocateDirect(BUF_SIZE));
+    }
+    Files.deleteIfExists(file.toPath());
+  }
+
+  @Benchmark
+  @BenchmarkMode({Mode.Throughput})
+  @Fork(value = 1, warmups = 2)
+  @Threads(1)
   public void setPosition() throws IOException {
     StandardOpenOption[] writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE};
     try(FileChannel mapChannel = (FileChannel) Files.newByteChannel(file.toPath(), writeOptions)){
