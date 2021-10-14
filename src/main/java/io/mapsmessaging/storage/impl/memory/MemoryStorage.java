@@ -34,6 +34,7 @@ import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -51,8 +52,10 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   private final LongAdder deletes;
   private final ExpiredStorableHandler expiredStorableHandler;
   private final ExpireStorableTaskManager<T> expireStorableTaskManager;
-  private final TaskQueue taskScheduler;
+  private final @Getter TaskQueue taskScheduler;
+
   private long lastKeyStored;
+  private long lastAccess;
 
   public MemoryStorage(ExpiredStorableHandler expiredStorableHandler, int expiredEventPoll) {
     memoryMap = new LinkedHashMap<>();
@@ -64,6 +67,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
     writes = new LongAdder();
     deletes = new LongAdder();
     lastKeyStored = 0;
+    lastAccess = System.currentTimeMillis();
   }
 
   @Override
@@ -93,16 +97,19 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
     if(lastKeyStored < object.getKey()){
       lastKeyStored = object.getKey();
     }
+    lastAccess = System.currentTimeMillis();
   }
 
   @Override
   public boolean remove(long key) throws IOException {
+    lastAccess = System.currentTimeMillis();
     deletes.increment();
     return memoryMap.remove(key) != null;
   }
 
   @Override
   public T get(long key) throws IOException {
+    lastAccess = System.currentTimeMillis();
     reads.increment();
     return memoryMap.get(key);
   }
@@ -124,12 +131,18 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
 
   @Override
   public long size() throws IOException {
+    lastAccess = System.currentTimeMillis();
     return memoryMap.size();
   }
 
   @Override
   public long getLastKey() {
     return lastKeyStored;
+  }
+
+  @Override
+  public long getLastAccess() {
+    return lastAccess;
   }
 
   @Override

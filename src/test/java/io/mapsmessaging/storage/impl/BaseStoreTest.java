@@ -126,7 +126,37 @@ public abstract class BaseStoreTest extends BaseTest {
     }
   }
 
-
+  @Test
+  void basicPauseResume()throws IOException {
+    Storage<MappedData> storage = null;
+    try {
+      storage = createStore(testName, false);
+      if(storage.supportPause()) {
+        ThreadStateContext context = new ThreadStateContext();
+        context.add("domain", "ResourceAccessKey");
+        ThreadLocalContext.set(context);
+        for (int x = 0; x < 1000; x++) {
+          storage.add(createMessageBuilder(x));
+        }
+        Assertions.assertEquals(1000, storage.size());
+        storage.pause();
+        Assertions.assertEquals(1000, storage.size());
+        storage.resume();
+        Assertions.assertEquals(1000, storage.size());
+        for (int x = 0; x < 1000; x++) {
+          MappedData message = storage.get(x);
+          validateMessage(message, x);
+          storage.remove(x);
+          Assertions.assertNotNull(message);
+        }
+        Assertions.assertTrue(storage.isEmpty());
+      }
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+    }
+  }
 
   @Test
   void basicExpiryTest() throws IOException, InterruptedException {

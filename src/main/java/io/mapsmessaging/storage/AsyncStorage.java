@@ -22,6 +22,8 @@ package io.mapsmessaging.storage;
 
 import io.mapsmessaging.storage.tasks.*;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,17 +36,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AsyncStorage<T extends Storable> implements Closeable {
 
+  private static final int BACKGROUND_PRIORITY = 0;
   private static final int FOREGROUND_PRIORITY = 1;
 
   private final Storage<T> storage;
   private final PriorityConcurrentTaskScheduler scheduler;
   private final AtomicBoolean closed;
 
+  private ScheduledFuture<?> autoPauseFuture;
+
   public AsyncStorage(@NotNull Storage<T> storage) {
     this.storage = storage;
     scheduler = new PriorityConcurrentTaskScheduler(storage.getName(), 2);
     closed = new AtomicBoolean(false);
     storage.setExecutor(scheduler);
+    autoPauseFuture = null;
   }
 
   @SneakyThrows
@@ -60,9 +66,17 @@ public class AsyncStorage<T extends Storable> implements Closeable {
 
   public final Future<Boolean> close(Completion<Boolean> completion) throws IOException {
     checkClose();
+    if(autoPauseFuture != null){
+      autoPauseFuture.cancel(false);
+    }
     closed.set(true);
     storage.shutdown();
     return scheduler.submit(new CloseTask<>(storage, completion), FOREGROUND_PRIORITY);
+  }
+
+  public void enableAutoPause(long idleTime){
+    AutoPauseTask autoPauseTask = new AutoPauseTask(this, idleTime);
+    autoPauseFuture = storage.getTaskScheduler().scheduleAtFixedRate(autoPauseTask, idleTime, TimeUnit.MILLISECONDS);
   }
 
   public final Future<Boolean> delete() throws IOException {
@@ -71,6 +85,9 @@ public class AsyncStorage<T extends Storable> implements Closeable {
 
   public final Future<Boolean> delete(Completion<Boolean> completion) throws IOException {
     checkClose();
+    if(autoPauseFuture != null){
+      autoPauseFuture.cancel(false);
+    }
     closed.set(true);
     storage.shutdown();
     return scheduler.submit(new DeleteTask<>(storage, completion), FOREGROUND_PRIORITY);
@@ -113,8 +130,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     return scheduler.submit(new LastKeyTask<>(storage), FOREGROUND_PRIORITY);
   }
 
-  public Future<Boolean> isEmpty() throws IOException {
-    checkClose();
+  public Future<Boolean> isEmpty() {
     return scheduler.submit(new IsEmptyTask<>(storage), FOREGROUND_PRIORITY);
   }
 
@@ -128,15 +144,22 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     return scheduler.submit(new KeepOnlyTask<>(storage, listToKeep, completion), FOREGROUND_PRIORITY);
   }
 
-  public Future<Statistics> getStatistics() throws IOException {
+  public Future<Statistics> getStatistics() {
     return getStatistics(null);
   }
 
-  public Future<Statistics> getStatistics(Completion<Statistics> completion) throws IOException {
-    checkClose();
+  public Future<Statistics> getStatistics(Completion<Statistics> completion) {
     return scheduler.submit(new RetrieveStatisticsTask<>(storage, completion), FOREGROUND_PRIORITY);
   }
 
+  public Future<Void> pause() throws IOException {
+    checkClose();
+    return scheduler.submit(new PauseTask<>(storage), BACKGROUND_PRIORITY);
+  }
+
+  public long getLastAccess(){
+    return storage.getLastAccess();
+  }
 
   protected void checkClose() throws IOException {
     if (closed.get()) {

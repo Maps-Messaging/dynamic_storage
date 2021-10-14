@@ -48,48 +48,46 @@ public class IndexStorage<T extends Storable> {
   private static final long OPEN_STATE = 0xEFFFFFFFFFFFFFFFL;
   private static final long CLOSE_STATE = 0x0000000000000000L;
 
-  private IndexManager indexManager;
-  private FileChannel mapChannel;
-
+  private final long maxPartitionSize;
   private final int itemCount;
   private final boolean sync;
   private final String fileName;
-  private final DataStorage<T> dataStorage;
-
+  private final StorableFactory<T> storableFactory;
   private final TaskQueue scheduler;
+
+  private IndexManager indexManager;
+  private DataStorage<T> dataStorage;
+  private FileChannel mapChannel;
+
   private volatile boolean closed;
+  private volatile boolean paused;
   private boolean requiresValidation;
 
-  public IndexStorage(String fileName, StorableFactory<T> storableFactory, boolean sync, long start, int itemCount, long maxPartitionSize, TaskQueue taskScheduler) throws IOException {
-    this.fileName = fileName+"_index";
+  public IndexStorage(String name, StorableFactory<T> storableFactory, boolean sync, long start, int itemCount, long maxPartitionSize, TaskQueue taskScheduler) throws IOException {
+    this.fileName = name+"_index";
     File file = new File(this.fileName);
     scheduler = taskScheduler;
     this.sync = sync;
     this.itemCount = itemCount;
+    this.maxPartitionSize = maxPartitionSize;
+    this.storableFactory = storableFactory;
     long length = 0;
     if (file.exists()) {
       length = file.length();
     }
-    StandardOpenOption[] writeOptions;
-    if (sync) {
-      writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE, DSYNC};
-    }
-    else{
-      writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE};
-    }
-
-    mapChannel = (FileChannel) Files.newByteChannel(file.toPath(), writeOptions);
+    mapChannel = openChannel(file);
     if(length != 0){
-      reload();
+      indexManager = reload();
     }
     else{
-      initialise(start);
+      indexManager = initialise(start);
     }
     dataStorage = new DataStorage<>(fileName+"_data", storableFactory, sync, maxPartitionSize);
     if(dataStorage.isValidationRequired() || requiresValidation){
       // We need to validate the data / index
     }
     closed = false;
+    paused = false;
   }
 
   public void close() throws IOException {
@@ -115,7 +113,28 @@ public class IndexStorage<T extends Storable> {
     Files.delete(path.toPath());
   }
 
-  private void initialise(long start) throws IOException {
+  public void pause() throws IOException{
+    if(!paused){
+      paused = true;
+      indexManager.pause();
+      mapChannel.force(true);
+
+      mapChannel.close();
+      dataStorage.close();
+    }
+  }
+
+  public void resume() throws IOException{
+    if(paused){
+      paused = false;
+      File file = new File(this.fileName);
+      mapChannel = openChannel(file);
+      indexManager.resume(mapChannel);
+      dataStorage = new DataStorage<>(fileName+"_data", storableFactory, sync, maxPartitionSize);
+    }
+  }
+
+  private IndexManager initialise(long start) throws IOException {
     ByteBuffer headerValidation = ByteBuffer.allocate(HEADER_SIZE);
     headerValidation.putLong(OPEN_STATE);
     headerValidation.putLong(UNIQUE_ID);
@@ -123,12 +142,13 @@ public class IndexStorage<T extends Storable> {
     headerValidation.putLong(itemCount);
     headerValidation.flip();
     mapChannel.write(headerValidation);
-    indexManager = new IndexManager(start, itemCount, mapChannel);
+    IndexManager idx = new IndexManager(start, itemCount, mapChannel);
     mapChannel.force(false);
     requiresValidation = false;
+    return idx;
   }
 
-  private void reload()throws IOException{
+  private IndexManager reload()throws IOException{
     ByteBuffer headerValidation = ByteBuffer.allocate(HEADER_SIZE);
     mapChannel.read(headerValidation);
     headerValidation.flip();
@@ -142,13 +162,14 @@ public class IndexStorage<T extends Storable> {
     if(headerValidation.getLong() != itemCount){
       throw new IOException("Unexpected item count");
     }
-    indexManager = new IndexManager(mapChannel);
+    IndexManager idx = new IndexManager(mapChannel);
 
     headerValidation.flip();
     headerValidation.putLong(0,OPEN_STATE);
     mapChannel.position(0);
     mapChannel.write(headerValidation);
     mapChannel.force(false);
+    return idx;
   }
 
   public void compact() throws IOException {
@@ -168,17 +189,11 @@ public class IndexStorage<T extends Storable> {
       indexManager.close();
       mapChannel.force(true);
       mapChannel.close();
+
       Files.copy(tmpIndex.toPath(), currentIndex.toPath(), StandardCopyOption.REPLACE_EXISTING);
       Files.deleteIfExists(tmpIndex.toPath());
-      StandardOpenOption[] writeOptions;
-      if (sync) {
-        writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE, DSYNC};
-      }
-      else{
-        writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE};
-      }
-      mapChannel = (FileChannel) Files.newByteChannel(currentIndex.toPath(), writeOptions);
-      reload();
+      mapChannel = openChannel(currentIndex);
+      indexManager = reload();
     }
   }
   public boolean hasExpired() {
@@ -274,5 +289,16 @@ public class IndexStorage<T extends Storable> {
       return listToKeep;
     }
     return new ArrayList<>();
+  }
+
+  private FileChannel openChannel(File file) throws IOException {
+    StandardOpenOption[] writeOptions;
+    if (sync) {
+      writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE, DSYNC};
+    }
+    else{
+      writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE};
+    }
+    return (FileChannel) Files.newByteChannel(file.toPath(), writeOptions);
   }
 }

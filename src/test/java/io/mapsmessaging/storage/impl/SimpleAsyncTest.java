@@ -77,6 +77,47 @@ public class SimpleAsyncTest extends BaseTest {
 
   }
 
+  @Test
+  void simpleAutoPauseTest() throws IOException, ExecutionException, InterruptedException {
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("Sync", "false");
+    properties.put("basePath", "./test.db");
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder.setStorageType("Partition")
+        .setFactory(getFactory())
+        .setName("Test")
+        .setProperties(properties);
+    AsyncStorage<MappedData> async = new AsyncStorage<>(storageBuilder.build());
+    async.enableAutoPause(1000); // Enable auto pause after 2 seconds
+
+    try {
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      for (int x = 0; x < 10; x++) {
+        MappedData message = createMessageBuilder(x);
+        Assertions.assertNotNull(async.add(message, null).get());
+        Thread.sleep(2000); // Exceed the pause time
+      }
+      Assertions.assertEquals(10, async.size().get());
+
+      for (int x = 0; x < 10; x++) {
+        MappedData message = async.get(x, null).get();
+        validateMessage(message, x);
+        Thread.sleep(2000); // Exceed the pause time
+        async.remove(x, null);
+        Assertions.assertNotNull(message);
+        Thread.sleep(2000); // Exceed the pause time
+      }
+      Assertions.assertTrue(async.isEmpty().get());
+    } finally {
+      async.delete(null).get();
+    }
+
+  }
+
 
   @Test
   void runSimpleAsyncCompletionStore() throws IOException, ExecutionException, InterruptedException {

@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -98,6 +99,12 @@ public class TaskQueue {
     FileWrapperTask<V> task = new FileWrapperTask<>(raw, pending);
     return SCHEDULER_EXECUTOR.schedule (task, startIn, timeUnit);
   }
+
+  public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long startIn, TimeUnit timeUnit){
+    return SCHEDULER_EXECUTOR.scheduleAtFixedRate (command, startIn, startIn, timeUnit);
+  }
+
+
 
   public void submit(FileTask<?> raw) throws IOException {
     if(raw.independentTask()){

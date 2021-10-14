@@ -14,12 +14,32 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
   private final TaskQueue taskScheduler;
   private final int poll;
   private Future<?> expiryTask;
+  private boolean paused;
 
-  public ExpireStorableTaskManager(ExpiredMonitor storage, TaskQueue taskScheduler, int poll){
+  public ExpireStorableTaskManager(ExpiredMonitor storage, TaskQueue taskScheduler, int poll) {
     this.storage = storage;
     this.taskScheduler = taskScheduler;
     this.poll = poll;
+    paused = false;
     expiryTask = null;
+  }
+
+  public void pause() {
+    if (!paused) {
+      paused = true;
+      if (expiryTask != null) {
+        expiryTask.cancel(false);
+      }
+    }
+  }
+
+  public void resume(){
+    if (paused) {
+      paused = false;
+      if (expiryTask != null) {
+        schedulePoll();
+      }
+    }
   }
 
   @Override

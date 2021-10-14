@@ -24,6 +24,7 @@ import io.mapsmessaging.storage.LayeredStorage;
 import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.tasks.Completion;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import org.jetbrains.annotations.NotNull;
@@ -65,6 +66,21 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   }
 
   @Override
+  public boolean supportPause(){
+    return baseStorage.supportPause();
+  }
+
+  @Override
+  public void pause() throws IOException {
+    baseStorage.pause();
+  }
+
+  @Override
+  public void resume() throws IOException {
+    baseStorage.resume();
+  }
+
+  @Override
   public void add(@NotNull T object,  Completion<T> completion) throws IOException{
     cache.cachePut(object);
     if(enableWriteThrough && completion != null ){
@@ -96,8 +112,18 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   }
 
   @Override
+  public long getLastAccess() {
+    return baseStorage.getLastAccess();
+  }
+
+  @Override
   public boolean isEmpty() {
     return baseStorage.isEmpty();
+  }
+
+  @Override
+  public TaskQueue getTaskScheduler() {
+    return baseStorage.getTaskScheduler();
   }
 
   @Override
@@ -123,6 +149,7 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
       }
     }
     else{
+      baseStorage.updateLastAccess();
       cacheHit.increment();
     }
     return obj;

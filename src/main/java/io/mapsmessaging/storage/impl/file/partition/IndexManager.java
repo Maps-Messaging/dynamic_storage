@@ -49,6 +49,8 @@ public class IndexManager implements Closeable {
 
   private final @Getter List<Long> expiryIndex;
   private volatile boolean closed;
+  private volatile boolean paused;
+
   private final FileChannel channel;
   private final long position;
   private final long localEnd;
@@ -80,6 +82,7 @@ public class IndexManager implements Closeable {
     emptySpace = new LongAdder();
     expiryIndex = new NaturalOrderedLongList(0, new BitSetFactoryImpl(8192));
     maxKey = 0;
+    paused = false;
     walkIndex();
   }
 
@@ -120,6 +123,24 @@ public class IndexManager implements Closeable {
       index.force();
       MappedBufferHelper.closeDirectBuffer(index);
       index = null; // ensure NPE rather than a full-blown JVM crash!!!
+    }
+  }
+
+  public void pause(){
+    if(!paused){
+      paused = true;
+      index.force();
+      MappedBufferHelper.closeDirectBuffer(index);
+      index = null; // ensure NPE rather than a full-blown JVM crash!!!
+    }
+  }
+
+  public void resume(FileChannel channel) throws IOException {
+    if(paused){
+      paused = false;
+      int totalSize = (int)((end-start)+1) * IndexRecord.HEADER_SIZE;
+      index = channel.map(MapMode.READ_WRITE, position+HEADER_SIZE, totalSize);
+      index.load(); // Ensure the file contents are loaded
     }
   }
 

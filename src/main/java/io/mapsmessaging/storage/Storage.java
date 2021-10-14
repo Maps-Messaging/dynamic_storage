@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.storage;
 
+import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +44,20 @@ public interface Storage<T extends Storable> extends Closeable {
 
   long getLastKey();
 
+  long getLastAccess();
+  default void updateLastAccess(){};
+
   boolean isEmpty();
+
+  TaskQueue getTaskScheduler();
+
+  //<editor-fold desc="API for pause/resume operations. If supported the pause will close all file descriptors but maintain the inmemory state of the store">
+  default boolean supportPause(){
+    return false;
+  }
+  default void pause()throws IOException{}
+  default void resume()throws IOException{}
+  //</editor-fold>
 
   default boolean isCacheable(){
     return true;
