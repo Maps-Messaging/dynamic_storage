@@ -51,7 +51,7 @@ public class WeakReferenceCacheStorage<T extends Storable> implements Cache<T> {
   @Override
   public T cacheGet(long key) {
     T obj = weakMap.get(key);
-    if(obj != null && obj.getExpiry() < System.currentTimeMillis()){
+    if(obj != null && obj.getExpiry() != 0 && obj.getExpiry() < System.currentTimeMillis()){
       obj = null;
       weakMap.remove(key);
     }
