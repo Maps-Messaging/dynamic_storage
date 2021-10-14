@@ -100,6 +100,7 @@ public class TaskQueue {
     return SCHEDULER_EXECUTOR.schedule (task, startIn, timeUnit);
   }
 
+  @SuppressWarnings("java:S1452") // This is the return type we get from the scheduler, we have no control over it
   public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long startIn, TimeUnit timeUnit){
     return SCHEDULER_EXECUTOR.scheduleAtFixedRate (command, startIn, startIn, timeUnit);
   }

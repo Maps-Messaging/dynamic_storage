@@ -45,7 +45,7 @@ public interface Storage<T extends Storable> extends Closeable {
   long getLastKey();
 
   long getLastAccess();
-  default void updateLastAccess(){};
+  default void updateLastAccess(){}
 
   boolean isEmpty();
 

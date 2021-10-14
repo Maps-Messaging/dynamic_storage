@@ -20,7 +20,8 @@ public class AutoPauseTask implements Runnable {
       try {
         storage.pause();
       } catch (IOException e) {
-        e.printStackTrace();
+        // Log required here
+
       }
     }
   }

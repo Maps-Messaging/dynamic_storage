@@ -158,10 +158,12 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
     }
   }
 
+  @Override
   public boolean supportPause(){
     return true;
   }
 
+  @Override
   public void pause() throws IOException{
     if(!paused){
       paused = true;
@@ -172,6 +174,7 @@ public class PartitionStorage <T extends Storable> implements Storage<T>, Expire
     }
   }
 
+  @Override
   public void resume() throws IOException{
     if(paused){
       paused = false;
