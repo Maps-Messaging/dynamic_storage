@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,6 +22,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   private final Storage<T> secondary;
   private final long scanInterval;
   private final long migrationTime;
+  private final LongAdder migratedEvents;
 
   private ScheduledFuture<?> scanner;
 
@@ -32,6 +34,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
     lastKey = secondary.getLastKey();
     this.migrationTime =migrationTime;
     this.scanInterval = scanInterval;
+    migratedEvents = new LongAdder();
   }
 
   @Override
@@ -94,7 +97,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   @Override
   public @NotNull Statistics getStatistics() {
-    return new MemoryTierStatistics(primary.getStatistics(), secondary.getStatistics());
+    return new MemoryTierStatistics(primary.getStatistics(), secondary.getStatistics(), migratedEvents.sumThenReset());
   }
 
   @Override
@@ -143,6 +146,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
       if (check != null && check.getLastAccess() < test) {
         secondary.add(check.getStorable());
         primary.remove(key);
+        migratedEvents.increment();
       }
     }
   }
