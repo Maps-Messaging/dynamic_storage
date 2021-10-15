@@ -15,6 +15,8 @@ import java.util.Map;
 public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T> {
 
   private static final long MIGRATION_TIME = 60_000;
+  private static final long SCAN_INTERVAL = 10_000;
+
   private final PartitionStorageFactory<T> partitionStorageFactory;
   private final MemoryFactory<ObjectMonitor<T>> memoryFactory;
 
@@ -45,7 +47,7 @@ public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T>
       migrationTime = Long.parseLong(properties.get("MigrationPeriod"));
     }
 
-    long scanInterval = MIGRATION_TIME;
+    long scanInterval = SCAN_INTERVAL;
     if (properties.containsKey("ScanInterval")) {
       scanInterval = Long.parseLong(properties.get("ScanInterval"));
     }
