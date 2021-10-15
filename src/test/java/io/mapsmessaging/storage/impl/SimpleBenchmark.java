@@ -21,8 +21,8 @@
 package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.AsyncStorage;
-import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.storage.tasks.Completion;
 import java.io.File;
@@ -61,9 +61,11 @@ public class SimpleBenchmark extends BaseTest {
   public String drive = "m:\\jmh\\";
 
   private static final int STORE_SIZE = 100;
-  static{
-    System.setProperty("PoolDepth", ""+STORE_SIZE*2);
+
+  static {
+    System.setProperty("PoolDepth", "" + STORE_SIZE * 2);
   }
+
   Queue<Long>[] queue = new Queue[STORE_SIZE];
   AsyncStorage<BufferedData>[] storageArray = new AsyncStorage[STORE_SIZE];
   AtomicLong[] id = new AtomicLong[STORE_SIZE];
@@ -72,19 +74,19 @@ public class SimpleBenchmark extends BaseTest {
 
   @Setup
   public void createState() throws IOException {
-    System.err.println("Creating new stores :: ReadWriteQueues:"+readWriteQueues+" Sync:"+enableSync+" Cache:"+enableCache+" Drive:"+drive);
-    for(int x=0;x<storageArray.length;x++) {
+    System.err.println("Creating new stores :: ReadWriteQueues:" + readWriteQueues + " Sync:" + enableSync + " Cache:" + enableCache + " Drive:" + drive);
+    for (int x = 0; x < storageArray.length; x++) {
       queue[x] = new ConcurrentLinkedDeque<>();
-      File store = new File(drive+"FileTest2_"+x);
+      File store = new File(drive + "FileTest2_" + x);
       if (store.exists()) {
         Files.delete(store.toPath());
       }
       Map<String, String> properties = new LinkedHashMap<>();
-      properties.put("Sync", ""+enableSync);
+      properties.put("Sync", "" + enableSync);
       StorageBuilder<BufferedData> storageBuilder = new StorageBuilder<>();
       storageBuilder.setStorageType("SeekableChannel")
           .setFactory(new DataStorableFactory())
-          .setName(drive+"FileTest2_"+x)
+          .setName(drive + "FileTest2_" + x)
           .setCache(enableCache)
           .setProperties(properties);
       storageArray[x] = new AsyncStorage<>(storageBuilder.build());
@@ -105,9 +107,9 @@ public class SimpleBenchmark extends BaseTest {
   @Fork(value = 1, warmups = 2)
   @Threads(2000)
   public void performTasks() throws IOException, ExecutionException, InterruptedException {
-    int idx = (int)(indexer.incrementAndGet() % STORE_SIZE);
+    int idx = (int) (indexer.incrementAndGet() % STORE_SIZE);
     Long test = queue[idx].poll();
-    while(test != null){
+    while (test != null) {
       Future<BufferedData> future = storageArray[idx].get(test, new GetCompletion(storageArray[idx]));
       future.get();
       test = queue[idx].poll();
@@ -118,17 +120,18 @@ public class SimpleBenchmark extends BaseTest {
     queue[idx].offer(key);
   }
 
-   static final class GetCompletion implements Completion<BufferedData> {
+  static final class GetCompletion implements Completion<BufferedData> {
 
     private final AsyncStorage<BufferedData> storage;
 
-    GetCompletion(AsyncStorage<BufferedData> storage){
+    GetCompletion(AsyncStorage<BufferedData> storage) {
       this.storage = storage;
     }
+
     @Override
     public void onCompletion(BufferedData result) {
       try {
-        if(result == null){
+        if (result == null) {
           System.err.println("Data discrepancy");
           System.exit(1);
         }
@@ -158,11 +161,11 @@ public class SimpleBenchmark extends BaseTest {
     }
   }
 
-  static class BufferedData implements Storable{
+  static class BufferedData implements Storable {
 
     private final MappedData data;
 
-    public BufferedData(MappedData data){
+    public BufferedData(MappedData data) {
       this.data = data;
     }
 

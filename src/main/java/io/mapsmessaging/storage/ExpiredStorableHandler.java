@@ -6,6 +6,6 @@ import java.util.Queue;
 @FunctionalInterface
 public interface ExpiredStorableHandler {
 
-   void expired(Queue<Long>  listOfExpiredEntries) throws IOException;
+  void expired(Queue<Long> listOfExpiredEntries) throws IOException;
 
 }

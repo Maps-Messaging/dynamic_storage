@@ -36,44 +36,42 @@ import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class PartitionStoreTest extends BaseStoreTest{
+public class PartitionStoreTest extends BaseStoreTest {
 
-  @Override
-  public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
-    File file = new File("test_file"+ File.separator);
-    if(!file.exists()) {
+  static Storage<MappedData> build(String testName, boolean sync) throws IOException {
+    File file = new File("test_file" + File.separator);
+    if (!file.exists()) {
       Files.createDirectory(file.toPath());
     }
     Map<String, String> properties = new LinkedHashMap<>();
-    properties.put("Sync", ""+sync);
-    properties.put("MaxPartitionSize", ""+(512L*1024L*1024L)); // set to 5MB data limit
+    properties.put("Sync", "" + sync);
+    properties.put("MaxPartitionSize", "" + (512L * 1024L * 1024L)); // set to 5MB data limit
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
-        .setName("test_file"+ File.separator+testName)
+        .setName("test_file" + File.separator + testName)
         .setProperties(properties);
 
     return storageBuilder.build();
   }
 
-
   @Override
-  public AsyncStorage<MappedData> createAsyncStore(String testName, boolean sync) throws IOException {
-    return new AsyncStorage<>(createStore(testName, sync));
+  public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
+    return build(testName, sync);
   }
 
   @Test
   public void testIndexCompaction() throws IOException, ExecutionException, InterruptedException {
-    File file = new File("test_file"+ File.separator+"testIndexCompaction");
+    File file = new File("test_file" + File.separator + "testIndexCompaction");
     Files.deleteIfExists(file.toPath());
 
     Map<String, String> properties = new LinkedHashMap<>();
-    properties.put("Sync", ""+false);
-    properties.put("MaxPartitionSize", ""+(1024L*1024L)); // set to 1MB data limit // force the index
+    properties.put("Sync", "" + false);
+    properties.put("MaxPartitionSize", "" + (1024L * 1024L)); // set to 1MB data limit // force the index
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
-        .setName("test_file"+ File.separator+"testIndexCompaction")
+        .setName("test_file" + File.separator + "testIndexCompaction")
         .setProperties(properties);
     AsyncStorage<MappedData> storage = new AsyncStorage<>(storageBuilder.build());
 
@@ -88,8 +86,8 @@ public class PartitionStoreTest extends BaseStoreTest{
         storage.add(message, null).get();
       }
       // We should have compacted the index and have multiple indexes now
-      Statistics statistics=storage.getStatistics().get();
-      Assertions.assertEquals(3, ((StorageStatistics)statistics).getPartitionCount());
+      Statistics statistics = storage.getStatistics().get();
+      Assertions.assertEquals(3, ((StorageStatistics) statistics).getPartitionCount());
     } finally {
       storage.delete().get();
     }

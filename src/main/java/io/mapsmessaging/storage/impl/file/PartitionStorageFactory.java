@@ -21,17 +21,17 @@
 package io.mapsmessaging.storage.impl.file;
 
 import io.mapsmessaging.storage.ExpiredStorableHandler;
-import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class PartitionStorageFactory<T extends Storable> extends BaseStorageFactory<T> {
+
   private static final int ITEM_COUNT = 524288;
   private static final long MAXIMUM_DATA_SIZE = (1L << 32); //4GB by default
   private static final int EXPIRED_EVENT_MONITOR_TIME = 1;
@@ -55,16 +55,16 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
       sync = Boolean.parseBoolean(properties.get("Sync"));
     }
     int itemCount = ITEM_COUNT;
-    if(properties.containsKey("ItemCount")){
+    if (properties.containsKey("ItemCount")) {
       itemCount = Integer.parseInt(properties.get("ItemCount"));
     }
     long maxPartitionSize = MAXIMUM_DATA_SIZE;
-    if(properties.containsKey("MaxPartitionSize")){
+    if (properties.containsKey("MaxPartitionSize")) {
       maxPartitionSize = Long.parseLong(properties.get("MaxPartitionSize"));
     }
 
     int expiredEventPoll = EXPIRED_EVENT_MONITOR_TIME;
-    if(properties.containsKey("ExpiredEventPoll")){
+    if (properties.containsKey("ExpiredEventPoll")) {
       expiredEventPoll = Integer.parseInt(properties.get("ExpiredEventPoll"));
     }
 

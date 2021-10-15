@@ -20,7 +20,6 @@
 
 package io.mapsmessaging.storage.impl;
 
-import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
 import java.io.IOException;
@@ -28,7 +27,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-public class MemoryStoreTest extends BaseStoreTest{
+public class MemoryStoreTest extends BaseStoreTest {
+
+  @Override
+  public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
+    return build(testName, sync);
+  }
 
   @Test
   @Override
@@ -36,10 +40,9 @@ public class MemoryStoreTest extends BaseStoreTest{
 
   }
 
-  @Override
-  public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
+  public static Storage<MappedData> build(String testName, boolean sync) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();
-    properties.put("Sync", ""+sync);
+    properties.put("Sync", "" + sync);
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Memory")
         .setFactory(getFactory())
@@ -49,8 +52,4 @@ public class MemoryStoreTest extends BaseStoreTest{
     return storageBuilder.build();
   }
 
-  @Override
-  public AsyncStorage<MappedData> createAsyncStore(String testName, boolean sync) throws IOException {
-    return new AsyncStorage<>(createStore(testName, sync));
-  }
 }

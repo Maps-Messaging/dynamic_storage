@@ -19,12 +19,12 @@ public class IndexExpiryMonitorTask implements FileTask<Boolean> {
   }
 
   @Override
-  public boolean canCancel(){
+  public boolean canCancel() {
     return true;
   }
 
   @Override
-  public boolean independentTask(){
+  public boolean independentTask() {
     return true;
   }
 }

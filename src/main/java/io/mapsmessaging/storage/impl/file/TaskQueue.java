@@ -23,13 +23,14 @@ public class TaskQueue {
   private static final long TIMEOUT = 60;
   private static final ScheduledExecutorService SCHEDULER_EXECUTOR = Executors.newScheduledThreadPool(2);
   private static final ExecutorService INDEPENDENT_EXECUTOR = Executors.newSingleThreadExecutor();
-  static{
+
+  static {
     Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
   }
 
   private final Queue<FileTask<?>> syncTasks;
   private final AtomicLong waitingScheduler;
-  private final Map<FileTask<?>,Future<?>> pending;
+  private final Map<FileTask<?>, Future<?>> pending;
 
   private ExecutorService taskScheduler;
 
@@ -38,7 +39,7 @@ public class TaskQueue {
     INDEPENDENT_EXECUTOR.shutdown();
   }
 
-  public TaskQueue(){
+  public TaskQueue() {
     syncTasks = new LinkedList<>();
     pending = new ConcurrentHashMap<>();
     waitingScheduler = new AtomicLong(0);
@@ -46,7 +47,7 @@ public class TaskQueue {
 
   public void abortAll() throws IOException {
     long timeout = System.currentTimeMillis() + 1000;
-    while(waitingScheduler.get() != 0 && timeout>System.currentTimeMillis()){
+    while (waitingScheduler.get() != 0 && timeout > System.currentTimeMillis()) {
       LockSupport.parkNanos(10000000);
     }
     syncTasks.clear();
@@ -55,7 +56,7 @@ public class TaskQueue {
 
   private void clearQueue() throws IOException {
     IOException raised = null;
-    for(Map.Entry<FileTask<?>,Future<?>> entry: pending.entrySet()){
+    for (Map.Entry<FileTask<?>, Future<?>> entry : pending.entrySet()) {
       try {
         processOutstandingTask(entry.getKey(), entry.getValue());
       } catch (IOException e) {
@@ -63,13 +64,13 @@ public class TaskQueue {
       }
     }
     pending.clear();
-    if(raised != null){
+    if (raised != null) {
       throw raised;
     }
   }
 
-  private void processOutstandingTask(FileTask<?> task,Future<?> future ) throws IOException {
-    if(!future.isDone()) {
+  private void processOutstandingTask(FileTask<?> task, Future<?> future) throws IOException {
+    if (!future.isDone()) {
       if (task.canCancel()) {
         future.cancel(true);
       } else {
@@ -84,34 +85,33 @@ public class TaskQueue {
       }
     }
   }
-  public boolean isEmpty(){
+
+  public boolean isEmpty() {
     return pending.isEmpty();
   }
 
-  public void setTaskScheduler(@NotNull ExecutorService scheduler){
+  public void setTaskScheduler(@NotNull ExecutorService scheduler) {
     taskScheduler = scheduler;
-    while(!syncTasks.isEmpty()){
+    while (!syncTasks.isEmpty()) {
       taskScheduler.submit(syncTasks.poll());
     }
   }
 
-  public <V> Future<V> schedule(FileTask<V> raw, long startIn, TimeUnit timeUnit){
+  public <V> Future<V> schedule(FileTask<V> raw, long startIn, TimeUnit timeUnit) {
     FileWrapperTask<V> task = new FileWrapperTask<>(raw, pending);
-    return SCHEDULER_EXECUTOR.schedule (task, startIn, timeUnit);
+    return SCHEDULER_EXECUTOR.schedule(task, startIn, timeUnit);
   }
 
   @SuppressWarnings("java:S1452") // This is the return type we get from the scheduler, we have no control over it
-  public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long startIn, TimeUnit timeUnit){
-    return SCHEDULER_EXECUTOR.scheduleAtFixedRate (command, startIn, startIn, timeUnit);
+  public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long startIn, TimeUnit timeUnit) {
+    return SCHEDULER_EXECUTOR.scheduleAtFixedRate(command, startIn, startIn, timeUnit);
   }
 
 
-
   public void submit(FileTask<?> raw) throws IOException {
-    if(raw.independentTask()){
+    if (raw.independentTask()) {
       submitIndependentTask(raw);
-    }
-    else {
+    } else {
       submitInternalTask(raw);
     }
   }
@@ -135,9 +135,9 @@ public class TaskQueue {
   private void submitIndependentTask(FileTask<?> raw) {
     FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
     Future<?> future = INDEPENDENT_EXECUTOR.submit(task);
-    if(!future.isDone()) {
+    if (!future.isDone()) {
       pending.put(task, future);
-      if(future.isDone()){
+      if (future.isDone()) {
         pending.remove(task);
       }
     }
@@ -146,7 +146,7 @@ public class TaskQueue {
   @SuppressWarnings("java:S112")
   public boolean executeTasks() throws IOException {
     FileTask<?> task = syncTasks.poll();
-    if(task != null){
+    if (task != null) {
       try {
         task.call();
       } catch (Exception e) {
@@ -156,22 +156,22 @@ public class TaskQueue {
     return hasTasks();
   }
 
-  public boolean hasTasks(){
+  public boolean hasTasks() {
     return !syncTasks.isEmpty();
   }
 
-  private final class FileWrapperTask<T> implements FileTask<T>{
+  private final class FileWrapperTask<T> implements FileTask<T> {
 
     private final FileTask<T> task;
-    private final Map<FileTask<?>,Future<?>> pending;
+    private final Map<FileTask<?>, Future<?>> pending;
 
-    public FileWrapperTask(FileTask<T> task,Map<FileTask<?>,Future<?>> pending){
+    public FileWrapperTask(FileTask<T> task, Map<FileTask<?>, Future<?>> pending) {
       this.task = task;
       this.pending = pending;
     }
 
     @Override
-    public boolean canCancel(){
+    public boolean canCancel() {
       return task.canCancel();
     }
 
@@ -185,20 +185,21 @@ public class TaskQueue {
     }
   }
 
-  private final class SubmitTask implements FileTask<Boolean>{
+  private final class SubmitTask implements FileTask<Boolean> {
 
     private final FileTask<?> toSubmit;
-    public SubmitTask(FileTask<?> toSubmit){
+
+    public SubmitTask(FileTask<?> toSubmit) {
       this.toSubmit = toSubmit;
     }
 
     @Override
-    public Boolean call()  {
+    public Boolean call() {
       waitingScheduler.decrementAndGet();
       Future<?> future = taskScheduler.submit(toSubmit);
-      if(!future.isDone()) {
+      if (!future.isDone()) {
         pending.put(toSubmit, future);
-        if(future.isDone()){
+        if (future.isDone()) {
           pending.remove(toSubmit);
         }
       }
@@ -206,10 +207,10 @@ public class TaskQueue {
     }
   }
 
-  public static final class ShutdownHandler extends Thread{
+  public static final class ShutdownHandler extends Thread {
 
     @Override
-    public void run(){
+    public void run() {
       TaskQueue.shutdown();
     }
   }

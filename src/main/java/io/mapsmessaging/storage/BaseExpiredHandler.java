@@ -7,12 +7,13 @@ public class BaseExpiredHandler<T extends Storable> implements ExpiredStorableHa
 
   private final Storage<T> storage;
 
-  public BaseExpiredHandler(Storage<T> storage){
-    this.storage= storage;
+  public BaseExpiredHandler(Storage<T> storage) {
+    this.storage = storage;
   }
+
   @Override
   public void expired(Queue<Long> listOfExpiredEntries) throws IOException {
-    for(Long remove:listOfExpiredEntries){
+    for (Long remove : listOfExpiredEntries) {
       storage.remove(remove);
     }
   }

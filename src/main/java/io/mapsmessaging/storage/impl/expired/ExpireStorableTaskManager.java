@@ -33,7 +33,7 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
     }
   }
 
-  public void resume(){
+  public void resume() {
     if (paused) {
       paused = false;
       if (expiryTask != null) {
@@ -44,18 +44,18 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
 
   @Override
   public void close() throws IOException {
-    if(expiryTask != null){
+    if (expiryTask != null) {
       expiryTask.cancel(true);
       expiryTask = null;
     }
   }
 
-  public void schedulePoll(){
+  public void schedulePoll() {
     expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask(storage), poll, TimeUnit.SECONDS);
   }
 
-  public void added(T object){
-    if(object.getExpiry() > 0 && expiryTask == null){
+  public void added(T object) {
+    if (object.getExpiry() > 0 && expiryTask == null) {
       schedulePoll();
     }
 

@@ -27,12 +27,11 @@ import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.tasks.Completion;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.LongAdder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
 
@@ -41,7 +40,7 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   private final Storage<T> baseStorage;
 
   private final LongAdder cacheMiss = new LongAdder();
-  private final LongAdder cacheHit =new LongAdder();
+  private final LongAdder cacheHit = new LongAdder();
 
   public CacheLayer(boolean enableWriteThrough, @NotNull Cache<T> cache, @NotNull Storage<T> baseStorage) {
     this.baseStorage = baseStorage;
@@ -56,7 +55,7 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
 
   @Override
   public String getName() {
-      return baseStorage.getName();
+    return baseStorage.getName();
   }
 
   @Override
@@ -66,7 +65,7 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   }
 
   @Override
-  public boolean supportPause(){
+  public boolean supportPause() {
     return baseStorage.supportPause();
   }
 
@@ -81,9 +80,9 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   }
 
   @Override
-  public void add(@NotNull T object,  Completion<T> completion) throws IOException{
+  public void add(@NotNull T object, Completion<T> completion) throws IOException {
     cache.cachePut(object);
-    if(enableWriteThrough && completion != null ){
+    if (enableWriteThrough && completion != null) {
       completion.onCompletion(object);
     }
     baseStorage.add(object);
@@ -147,8 +146,7 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
       if (obj != null) {
         cache.cachePut(obj);
       }
-    }
-    else{
+    } else {
       baseStorage.updateLastAccess();
       cacheHit.increment();
     }
@@ -156,11 +154,16 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   }
 
   @Override
+  public @NotNull List<Long> getKeys() {
+    return baseStorage.getKeys();
+  }
+
+  @Override
   public void setExecutor(TaskScheduler scheduler) {
     baseStorage.setExecutor(scheduler);
   }
 
-  public @NotNull Statistics getStatistics(){
+  public @NotNull Statistics getStatistics() {
     return new CacheStatistics(cacheMiss.sumThenReset(), cacheHit.sumThenReset(), cache.size(), baseStorage.getStatistics());
   }
 }

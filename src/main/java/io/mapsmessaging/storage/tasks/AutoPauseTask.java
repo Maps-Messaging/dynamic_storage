@@ -8,15 +8,15 @@ public class AutoPauseTask implements Runnable {
   private final AsyncStorage<?> storage;
   private final long pauseTimeout;
 
-  public AutoPauseTask(AsyncStorage<?> storage, long pauseTimeout){
+  public AutoPauseTask(AsyncStorage<?> storage, long pauseTimeout) {
     this.storage = storage;
     this.pauseTimeout = pauseTimeout;
   }
 
   @Override
-  public void run()  {
+  public void run() {
     long lastAccess = System.currentTimeMillis() - storage.getLastAccess();
-    if(lastAccess > pauseTimeout) {
+    if (lastAccess > pauseTimeout) {
       try {
         storage.pause();
       } catch (IOException e) {

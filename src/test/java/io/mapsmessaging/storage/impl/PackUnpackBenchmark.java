@@ -21,7 +21,6 @@
 package io.mapsmessaging.storage.impl;
 
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -56,7 +55,7 @@ public class PackUnpackBenchmark {
     tmp[3] = (byte) ((val >>> 24) & 0xFF);
     tmp[2] = (byte) ((val >>> 16) & 0xFF);
     tmp[1] = (byte) ((val >>> 8) & 0xFF);
-    tmp[0] = (byte) ((val ) & 0xFF);
+    tmp[0] = (byte) ((val) & 0xFF);
     return tmp;
   }
 
@@ -64,7 +63,7 @@ public class PackUnpackBenchmark {
   @BenchmarkMode({Mode.Throughput})
   @Fork(value = 1, warmups = 2)
   @Threads(12)
-  public void existingAlgorithm(Blackhole blackhole)  {
+  public void existingAlgorithm(Blackhole blackhole) {
     blackhole.consume(toByteArray(counter.incrementAndGet(), 8));
   }
 
@@ -72,7 +71,7 @@ public class PackUnpackBenchmark {
   @BenchmarkMode({Mode.Throughput})
   @Fork(value = 1, warmups = 2)
   @Threads(12)
-  public void unwoundAlgorithm(Blackhole blackhole)  {
+  public void unwoundAlgorithm(Blackhole blackhole) {
     blackhole.consume(toByteArrayFromLong(counter.incrementAndGet()));
   }
 
@@ -80,7 +79,7 @@ public class PackUnpackBenchmark {
   @BenchmarkMode({Mode.Throughput})
   @Fork(value = 1, warmups = 2)
   @Threads(12)
-  public void unsafeByteBuffer(Blackhole blackhole)  {
+  public void unsafeByteBuffer(Blackhole blackhole) {
     ByteBuffer bb = ByteBuffer.allocate(16);
     bb.putLong(counter.incrementAndGet());
     blackhole.consume(bb);

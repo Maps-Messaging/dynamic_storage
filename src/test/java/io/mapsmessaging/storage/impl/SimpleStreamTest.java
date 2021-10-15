@@ -76,7 +76,7 @@ public class SimpleStreamTest {
   }
 
   @Test
-  public void testByteBuffer() throws Exception{
+  public void testByteBuffer() throws Exception {
     ByteBuffer buffer = ByteBuffer.allocate(1024);
     BufferObjectWriter bow = new BufferObjectWriter(buffer);
     populateStream(bow);
@@ -91,7 +91,7 @@ public class SimpleStreamTest {
     populateStream(rafow);
     randomAccessFile.seek(0);
 
-    byte[] buffer = new byte[(int)randomAccessFile.length()];
+    byte[] buffer = new byte[(int) randomAccessFile.length()];
     randomAccessFile.read(buffer);
 
     ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buffer);
@@ -171,7 +171,7 @@ public class SimpleStreamTest {
     Assertions.assertNull(sor.readByteArray());
     Assertions.assertEquals(0, sor.readByteArray().length);
     byte[] tmp = sor.readByteArray();
-    for(int x=0;x<tmp.length;x++){
+    for (int x = 0; x < tmp.length; x++) {
       Assertions.assertEquals(byteArray[x], tmp[x]);
     }
   }

@@ -20,8 +20,8 @@
 
 package io.mapsmessaging.storage.impl;
 
-import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
 import io.mapsmessaging.storage.impl.streams.BufferObjectWriter;
 import io.mapsmessaging.storage.impl.streams.ObjectReader;
@@ -36,12 +36,24 @@ import lombok.Setter;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 
 public class BaseTest {
+
   private static final int BUFFER_SIZE = 1024;
-  static{
+
+  static {
     System.setProperty("PoolDepth", "64");
   }
+
+  protected String testName;
+
+  @BeforeEach
+  public void beforeEachTest(final TestInfo testInfo) {
+    testName = testInfo.getDisplayName();
+  }
+
 
   private static final byte CHAR = 1;
   private static final byte BYTE = 2;
@@ -52,16 +64,17 @@ public class BaseTest {
   private static final byte DOUBLE = 7;
   private static final byte STRING = 8;
 
-  private static final byte CHAR_ARRAY=11;
-  private static final byte BYTE_ARRAY=12;
-  private static final byte SHORT_ARRAY=13;
-  private static final byte INT_ARRAY=14;
-  private static final byte LONG_ARRAY=15;
-  private static final byte FLOAT_ARRAY=16;
-  private static final byte DOUBLE_ARRAY=17;
-  private static final byte STRING_ARRAY=18;
+  private static final byte CHAR_ARRAY = 11;
+  private static final byte BYTE_ARRAY = 12;
+  private static final byte SHORT_ARRAY = 13;
+  private static final byte INT_ARRAY = 14;
+  private static final byte LONG_ARRAY = 15;
+  private static final byte FLOAT_ARRAY = 16;
+  private static final byte DOUBLE_ARRAY = 17;
+  private static final byte STRING_ARRAY = 18;
 
   private static final Map<String, Object> dataMapValues;
+
   static {
     dataMapValues = new LinkedHashMap<>();
     dataMapValues.put("low_long", Long.MIN_VALUE);
@@ -92,8 +105,8 @@ public class BaseTest {
     dataMapValues.put("high_char", Character.MAX_VALUE);
 
     dataMapValues.put("byte_array", new byte[]{0x4, 0x66, 0xe});
-    dataMapValues.put("char_array", new char[]{'f', 'f', '3','5','7'});
-    dataMapValues.put("short_array", new short[]{32,321,543,543});
+    dataMapValues.put("char_array", new char[]{'f', 'f', '3', '5', '7'});
+    dataMapValues.put("short_array", new short[]{32, 321, 543, 543});
     dataMapValues.put("int_array", new int[]{423289048, 423782787, 342131212, 42343423});
     dataMapValues.put("long_array", new long[]{4232890472382789L, 42378278907L, 3421312312L, 423423423L});
     dataMapValues.put("float_array", new float[]{21.45f, 543.67f, 76.5f});
@@ -130,40 +143,32 @@ public class BaseTest {
   protected void validateEntry(Map<String, Object> dataMap, String key, Object value) {
     Object entry = dataMap.get(key);
     Assertions.assertNotNull(entry, "Entry test for " + key + " should not be empty");
-    if(value instanceof byte[]) {
-      Assertions.assertArrayEquals((byte[])entry, (byte[])value);
-    }
-    else if(value instanceof char[]) {
-      Assertions.assertArrayEquals((char[])entry, (char[])value);
-    }
-    else if(value instanceof short[]) {
-      Assertions.assertArrayEquals((short[])entry, (short[])value);
-    }
-    else if(value instanceof int[]) {
-      Assertions.assertArrayEquals((int[])entry, (int[])value);
-    }
-    else if(value instanceof long[]) {
-      Assertions.assertArrayEquals((long[])entry, (long[])value);
-    }
-    else if(value instanceof float[]) {
-      Assertions.assertArrayEquals((float[])entry, (float[])value);
-    }
-    else if(value instanceof double[]) {
-      Assertions.assertArrayEquals((double[])entry, (double[])value);
-    }
-    else if(value instanceof String[]) {
-      Assertions.assertArrayEquals((String[])entry, (String[])value);
-    }
-    else {
+    if (value instanceof byte[]) {
+      Assertions.assertArrayEquals((byte[]) entry, (byte[]) value);
+    } else if (value instanceof char[]) {
+      Assertions.assertArrayEquals((char[]) entry, (char[]) value);
+    } else if (value instanceof short[]) {
+      Assertions.assertArrayEquals((short[]) entry, (short[]) value);
+    } else if (value instanceof int[]) {
+      Assertions.assertArrayEquals((int[]) entry, (int[]) value);
+    } else if (value instanceof long[]) {
+      Assertions.assertArrayEquals((long[]) entry, (long[]) value);
+    } else if (value instanceof float[]) {
+      Assertions.assertArrayEquals((float[]) entry, (float[]) value);
+    } else if (value instanceof double[]) {
+      Assertions.assertArrayEquals((double[]) entry, (double[]) value);
+    } else if (value instanceof String[]) {
+      Assertions.assertArrayEquals((String[]) entry, (String[]) value);
+    } else {
       Assertions.assertEquals(value, entry);
     }
   }
 
-  static byte[] build(){
+  static byte[] build() {
     Random rdm = new Random(System.nanoTime());
     byte[] buf = new byte[BUFFER_SIZE];
-    for(int x=0;x<BUFFER_SIZE;x++){
-      buf[x] = (byte)(rdm.nextInt() % 0xff);
+    for (int x = 0; x < BUFFER_SIZE; x++) {
+      buf[x] = (byte) (rdm.nextInt() % 0xff);
     }
     return buf;
   }
@@ -172,12 +177,22 @@ public class BaseTest {
 
   @ToString
   public static final class MappedData implements Storable {
-    @Getter @Setter long key;
-    @Getter @Setter Map<String, Object> map;
-    @Getter @Setter ByteBuffer data;
-    @Getter @Setter long expiry = 0;
 
-    public MappedData(){}
+    @Getter
+    @Setter
+    long key;
+    @Getter
+    @Setter
+    Map<String, Object> map;
+    @Getter
+    @Setter
+    ByteBuffer data;
+    @Getter
+    @Setter
+    long expiry = 0;
+
+    public MappedData() {
+    }
 
     public MappedData(@NotNull ByteBuffer[] buffers) throws IOException {
       BufferObjectReader bor = new BufferObjectReader(buffers[0]);
@@ -194,10 +209,10 @@ public class BaseTest {
     void readMap(@NotNull ObjectReader objectReader) throws IOException {
       map = new LinkedHashMap<>();
       int size = objectReader.readInt();
-      for(int x=0;x<size;x++){
+      for (int x = 0; x < size; x++) {
         String key = objectReader.readString();
         byte type = objectReader.readByte();
-        switch (type){
+        switch (type) {
           case CHAR:
             map.put(key, objectReader.readChar());
             break;
@@ -256,72 +271,57 @@ public class BaseTest {
 
     void writeMap(@NotNull ObjectWriter objectWriter) throws IOException {
       objectWriter.write(map.size());
-      for(String key:map.keySet()){
+      for (String key : map.keySet()) {
         objectWriter.write(key);
         Object obj = map.get(key);
-        if(obj instanceof Byte){
+        if (obj instanceof Byte) {
           objectWriter.write(BYTE);
-          objectWriter.write((byte)obj);
-        }
-        else if(obj instanceof Character){
+          objectWriter.write((byte) obj);
+        } else if (obj instanceof Character) {
           objectWriter.write(CHAR);
-          objectWriter.write((Character)obj);
-        }
-        else if(obj instanceof Short){
+          objectWriter.write((Character) obj);
+        } else if (obj instanceof Short) {
           objectWriter.write(SHORT);
-          objectWriter.write((Short)obj);
-        }
-        else if(obj instanceof Integer){
+          objectWriter.write((Short) obj);
+        } else if (obj instanceof Integer) {
           objectWriter.write(INT);
-          objectWriter.write((Integer)obj);
-        }
-        else if(obj instanceof Long){
+          objectWriter.write((Integer) obj);
+        } else if (obj instanceof Long) {
           objectWriter.write(LONG);
-          objectWriter.write((Long)obj);
-        }
-        else if(obj instanceof Float){
+          objectWriter.write((Long) obj);
+        } else if (obj instanceof Float) {
           objectWriter.write(FLOAT);
-          objectWriter.write((Float)obj);
-        }
-        else if(obj instanceof Double){
+          objectWriter.write((Float) obj);
+        } else if (obj instanceof Double) {
           objectWriter.write(DOUBLE);
-          objectWriter.write((Double)obj);
-        }
-        else if(obj instanceof String){
+          objectWriter.write((Double) obj);
+        } else if (obj instanceof String) {
           objectWriter.write(STRING);
-          objectWriter.write((String)obj);
-        }
-        else if(obj instanceof char[]){
+          objectWriter.write((String) obj);
+        } else if (obj instanceof char[]) {
           objectWriter.write(CHAR_ARRAY);
-          objectWriter.write((char[])obj);
-        }
-        else if(obj instanceof byte[]){
+          objectWriter.write((char[]) obj);
+        } else if (obj instanceof byte[]) {
           objectWriter.write(BYTE_ARRAY);
-          objectWriter.write((byte[])obj);
-        }
-        else if(obj instanceof short[]){
+          objectWriter.write((byte[]) obj);
+        } else if (obj instanceof short[]) {
           objectWriter.write(SHORT_ARRAY);
-          objectWriter.write((short[])obj);
-        }
-        else if(obj instanceof int[]){
+          objectWriter.write((short[]) obj);
+        } else if (obj instanceof int[]) {
           objectWriter.write(INT_ARRAY);
-          objectWriter.write((int[])obj);
-        }
-        else if(obj instanceof long[]){
+          objectWriter.write((int[]) obj);
+        } else if (obj instanceof long[]) {
           objectWriter.write(LONG_ARRAY);
-          objectWriter.write((long[])obj);
-        }
-        else if(obj instanceof float[]){
+          objectWriter.write((long[]) obj);
+        } else if (obj instanceof float[]) {
           objectWriter.write(FLOAT_ARRAY);
-          objectWriter.write((float[])obj);
-        }
-        else if(obj instanceof double[]){
+          objectWriter.write((float[]) obj);
+        } else if (obj instanceof double[]) {
           objectWriter.write(DOUBLE_ARRAY);
-          objectWriter.write((double[])obj);
-        }
-        else if(obj instanceof String[]){
+          objectWriter.write((double[]) obj);
+        } else if (obj instanceof String[]) {
           objectWriter.write(STRING_ARRAY);
-          objectWriter.write((String[])obj);
+          objectWriter.write((String[]) obj);
         }
       }
     }
@@ -344,7 +344,7 @@ public class BaseTest {
     }
   }
 
-  public StorableFactory<MappedData> getFactory(){
+  public static StorableFactory<MappedData> getFactory() {
     return new MappedDataStorableFactory();
   }
 

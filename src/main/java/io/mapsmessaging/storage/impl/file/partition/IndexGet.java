@@ -5,10 +5,12 @@ import lombok.Getter;
 
 public class IndexGet<T extends Storable> {
 
-  private final @Getter IndexRecord indexRecord;
-  private final @Getter T object;
+  private final @Getter
+  IndexRecord indexRecord;
+  private final @Getter
+  T object;
 
-  public IndexGet(IndexRecord indexRecord, T object){
+  public IndexGet(IndexRecord indexRecord, T object) {
     this.indexRecord = indexRecord;
     this.object = object;
   }

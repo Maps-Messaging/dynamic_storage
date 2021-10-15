@@ -36,10 +36,9 @@ public class AddTask<T extends Storable> extends BaseTask<T, T> {
 
   @Override
   public T execute() throws Exception {
-    if(storage instanceof LayeredStorage){
-      ((LayeredStorage<T>)storage).add(toStore, completion);
-    }
-    else {
+    if (storage instanceof LayeredStorage) {
+      ((LayeredStorage<T>) storage).add(toStore, completion);
+    } else {
       storage.add(toStore);
     }
     return toStore;

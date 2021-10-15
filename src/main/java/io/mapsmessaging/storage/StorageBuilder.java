@@ -20,12 +20,11 @@
 
 package io.mapsmessaging.storage;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class StorageBuilder<T extends Storable> {
 
@@ -64,18 +63,18 @@ public class StorageBuilder<T extends Storable> {
   }
 
   public @NotNull StorageBuilder<T> setStorageType(@NotNull String storeType) throws IOException {
-    if(this.storeType != null){
+    if (this.storeType != null) {
       throw new IOException("Store type already defined");
     }
     List<String> known = StorageFactoryFactory.getInstance().getKnownStorages();
-    for(String type:known){
-      if(storeType.equals(type)){
+    for (String type : known) {
+      if (storeType.equals(type)) {
         this.storeType = type;
         break;
       }
     }
-    if(this.storeType == null){
-      throw new IOException("No known storage type defined "+storeType);
+    if (this.storeType == null) {
+      throw new IOException("No known storage type defined " + storeType);
     }
     return this;
   }
@@ -84,24 +83,23 @@ public class StorageBuilder<T extends Storable> {
     return setCache(null);
   }
 
-  public  @NotNull StorageBuilder<T> setCache(@Nullable String cacheName) throws IOException {
-    if(this.cacheName != null){
+  public @NotNull StorageBuilder<T> setCache(@Nullable String cacheName) throws IOException {
+    if (this.cacheName != null) {
       throw new IOException("Cache already specified");
     }
-    if(cacheName == null){
+    if (cacheName == null) {
       this.cacheName = "WeakReference";
-    }
-    else{
+    } else {
       List<String> layered = StorageFactoryFactory.getInstance().getKnownLayers();
-      for(String layer:layered){
-        if(cacheName.equals(layer)){
+      for (String layer : layered) {
+        if (cacheName.equals(layer)) {
           this.cacheName = cacheName;
           break;
         }
       }
     }
-    if( this.cacheName == null){
-      throw new IOException("No such cache implementation found "+cacheName);
+    if (this.cacheName == null) {
+      throw new IOException("No such cache implementation found " + cacheName);
     }
     return this;
   }
@@ -109,24 +107,23 @@ public class StorageBuilder<T extends Storable> {
 
   public Storage<T> build() throws IOException {
     StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, storableFactory, expiredStorableHandler);
-    if(storeFactory != null) {
+    if (storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
       if (baseStore.isCacheable() && cacheName != null) {
         baseStore = StorageFactoryFactory.getInstance().createCache(cacheName, enableWriteThrough, baseStore);
       }
       return baseStore;
-    }
-    else{
+    } else {
       throw new IOException("Unable to construct new store");
     }
   }
 
-  public static List<String> getKnownStorages(){
+  public static List<String> getKnownStorages() {
     return StorageFactoryFactory.getInstance().getKnownStorages();
   }
 
 
-  public static List<String> getKnownLayers(){
+  public static List<String> getKnownLayers() {
     return StorageFactoryFactory.getInstance().getKnownLayers();
   }
 

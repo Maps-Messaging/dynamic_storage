@@ -20,23 +20,17 @@
 
 package io.mapsmessaging.storage.impl;
 
-import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
-import io.mapsmessaging.storage.impl.cache.Cache;
-import io.mapsmessaging.storage.impl.cache.CacheLayer;
-import io.mapsmessaging.storage.impl.cache.weak.WeakReferenceCacheStorage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class WeakReferenceTest extends BaseLayeredTest{
+public class WeakReferenceTest extends BaseLayeredTest {
 
-
-  @Override
-  public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
+  public static Storage<MappedData> build(String testName, boolean sync) throws IOException {
     File file = new File("test_file" + File.separator);
     if (!file.exists()) {
       Files.createDirectory(file.toPath());
@@ -53,9 +47,8 @@ public class WeakReferenceTest extends BaseLayeredTest{
     return storageBuilder.build();
   }
 
-
   @Override
-  public AsyncStorage<MappedData> createAsyncStore(String testName, boolean sync) throws IOException {
-    return new AsyncStorage<>(createStore(testName, sync));
+  public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
+    return build(testName, sync);
   }
 }

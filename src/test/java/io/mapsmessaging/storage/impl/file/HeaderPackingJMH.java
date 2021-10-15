@@ -51,17 +51,17 @@ public class HeaderPackingJMH {
   }
 
 
-  public void readIntToLong(Blackhole blackhole, ByteBuffer buffer){
+  public void readIntToLong(Blackhole blackhole, ByteBuffer buffer) {
     long tmp1 = buffer.getLong();
     long tmp2 = buffer.getLong();
 
     blackhole.consume(tmp1 >> 32);
-    blackhole.consume (tmp1 & 0xFFFFFFFFL);
-    blackhole.consume (tmp2 >> 32);
-    blackhole.consume (tmp2 & 0xFFFFFFFFL);
+    blackhole.consume(tmp1 & 0xFFFFFFFFL);
+    blackhole.consume(tmp2 >> 32);
+    blackhole.consume(tmp2 & 0xFFFFFFFFL);
   }
 
-  public void writeIntToLong(long locationId, long position, long expiry, long length, ByteBuffer buffer){
+  public void writeIntToLong(long locationId, long position, long expiry, long length, ByteBuffer buffer) {
     long tmp1 = locationId & 0xEFFFFFFFL << 32;
     tmp1 = tmp1 | (position & 0xFFFFFFFFL);
 
@@ -72,28 +72,28 @@ public class HeaderPackingJMH {
     buffer.putLong(tmp2);
   }
 
-  public void readInt(Blackhole blackhole, ByteBuffer buffer){
-    blackhole.consume( buffer.getInt());
-    blackhole.consume( buffer.getInt());
-    blackhole.consume( buffer.getInt());
-    blackhole.consume( buffer.getInt());
+  public void readInt(Blackhole blackhole, ByteBuffer buffer) {
+    blackhole.consume(buffer.getInt());
+    blackhole.consume(buffer.getInt());
+    blackhole.consume(buffer.getInt());
+    blackhole.consume(buffer.getInt());
   }
 
-  public void writeInt(long locationId, long position, long expiry, long length, ByteBuffer buffer){
-    buffer.putInt((int) (locationId&0xffffffffL));
-    buffer.putInt((int) (position&0xffffffffL));
-    buffer.putInt((int) (expiry&0xffffffffL));
-    buffer.putInt((int) (length&0xffffffffL));
+  public void writeInt(long locationId, long position, long expiry, long length, ByteBuffer buffer) {
+    buffer.putInt((int) (locationId & 0xffffffffL));
+    buffer.putInt((int) (position & 0xffffffffL));
+    buffer.putInt((int) (expiry & 0xffffffffL));
+    buffer.putInt((int) (length & 0xffffffffL));
   }
 
-  public void readLong(Blackhole blackhole, ByteBuffer buffer){
-    blackhole.consume( buffer.getLong());
-    blackhole.consume( buffer.getLong());
-    blackhole.consume( buffer.getLong());
-    blackhole.consume( buffer.getLong());
+  public void readLong(Blackhole blackhole, ByteBuffer buffer) {
+    blackhole.consume(buffer.getLong());
+    blackhole.consume(buffer.getLong());
+    blackhole.consume(buffer.getLong());
+    blackhole.consume(buffer.getLong());
   }
 
-  public void writeLong(long locationId, long position, long expiry, long length, ByteBuffer buffer){
+  public void writeLong(long locationId, long position, long expiry, long length, ByteBuffer buffer) {
     buffer.putLong(locationId);
     buffer.putLong(position);
     buffer.putLong(expiry);

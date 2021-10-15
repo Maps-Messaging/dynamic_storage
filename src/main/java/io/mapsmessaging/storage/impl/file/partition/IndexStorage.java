@@ -20,27 +20,32 @@
 
 package io.mapsmessaging.storage.impl.file.partition;
 
-import io.mapsmessaging.storage.StorableFactory;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.DSYNC;
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.SPARSE;
+import static java.nio.file.StandardOpenOption.WRITE;
+
 import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
-import java.nio.file.StandardCopyOption;
-import java.util.Queue;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.nio.file.StandardOpenOption.*;
+import java.util.Queue;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class IndexStorage<T extends Storable> {
+
   private static final int HEADER_SIZE = 32;
 
   private static final double VERSION = 1.0;
@@ -64,7 +69,7 @@ public class IndexStorage<T extends Storable> {
   private boolean requiresValidation;
 
   public IndexStorage(String name, StorableFactory<T> storableFactory, boolean sync, long start, int itemCount, long maxPartitionSize, TaskQueue taskScheduler) throws IOException {
-    this.fileName = name+"_index";
+    this.fileName = name + "_index";
     File file = new File(this.fileName);
     scheduler = taskScheduler;
     this.sync = sync;
@@ -76,14 +81,13 @@ public class IndexStorage<T extends Storable> {
       length = file.length();
     }
     mapChannel = openChannel(file);
-    if(length != 0){
+    if (length != 0) {
       indexManager = reload();
-    }
-    else{
+    } else {
       indexManager = initialise(start);
     }
-    dataStorage = new DataStorage<>(fileName+"_data", storableFactory, sync, maxPartitionSize);
-    if(dataStorage.isValidationRequired() || requiresValidation){
+    dataStorage = new DataStorage<>(fileName + "_data", storableFactory, sync, maxPartitionSize);
+    if (dataStorage.isValidationRequired() || requiresValidation) {
       // We need to validate the data / index
     }
     closed = false;
@@ -91,7 +95,7 @@ public class IndexStorage<T extends Storable> {
   }
 
   public void close() throws IOException {
-    if(!closed) {
+    if (!closed) {
       closed = true;
       ByteBuffer header = ByteBuffer.allocate(8);
       header.putLong(CLOSE_STATE);
@@ -113,8 +117,8 @@ public class IndexStorage<T extends Storable> {
     Files.delete(path.toPath());
   }
 
-  public void pause() throws IOException{
-    if(!paused){
+  public void pause() throws IOException {
+    if (!paused) {
       paused = true;
       indexManager.pause();
       mapChannel.force(true);
@@ -124,13 +128,13 @@ public class IndexStorage<T extends Storable> {
     }
   }
 
-  public void resume() throws IOException{
-    if(paused){
+  public void resume() throws IOException {
+    if (paused) {
       paused = false;
       File file = new File(this.fileName);
       mapChannel = openChannel(file);
       indexManager.resume(mapChannel);
-      dataStorage = new DataStorage<>(fileName+"_data", storableFactory, sync, maxPartitionSize);
+      dataStorage = new DataStorage<>(fileName + "_data", storableFactory, sync, maxPartitionSize);
     }
   }
 
@@ -148,24 +152,24 @@ public class IndexStorage<T extends Storable> {
     return idx;
   }
 
-  private IndexManager reload()throws IOException{
+  private IndexManager reload() throws IOException {
     ByteBuffer headerValidation = ByteBuffer.allocate(HEADER_SIZE);
     mapChannel.read(headerValidation);
     headerValidation.flip();
     requiresValidation = headerValidation.getLong() != CLOSE_STATE;
-    if(headerValidation.getLong() != UNIQUE_ID){
+    if (headerValidation.getLong() != UNIQUE_ID) {
       throw new IOException("Unexpected file identifier located");
     }
-    if(Double.longBitsToDouble(headerValidation.getLong()) != VERSION){
+    if (Double.longBitsToDouble(headerValidation.getLong()) != VERSION) {
       throw new IOException("Unexpected file version");
     }
-    if(headerValidation.getLong() != itemCount){
+    if (headerValidation.getLong() != itemCount) {
       throw new IOException("Unexpected item count");
     }
     IndexManager idx = new IndexManager(mapChannel);
 
     headerValidation.flip();
-    headerValidation.putLong(0,OPEN_STATE);
+    headerValidation.putLong(0, OPEN_STATE);
     mapChannel.position(0);
     mapChannel.write(headerValidation);
     mapChannel.force(false);
@@ -174,13 +178,13 @@ public class IndexStorage<T extends Storable> {
 
   public void compact() throws IOException {
     long size = ((indexManager.getEnd() - indexManager.getStart() + 1) * IndexRecord.HEADER_SIZE) + 24 + 16;
-    if(size < mapChannel.size()){
+    if (size < mapChannel.size()) {
       File currentIndex = new File(fileName);
-      File tmpIndex = new File(fileName+"_tmp");
-      try (FileChannel tmp = (FileChannel) Files.newByteChannel(tmpIndex.toPath(), CREATE_NEW, WRITE)){
+      File tmpIndex = new File(fileName + "_tmp");
+      try (FileChannel tmp = (FileChannel) Files.newByteChannel(tmpIndex.toPath(), CREATE_NEW, WRITE)) {
         mapChannel.position(0);
         long moved = tmp.transferFrom(mapChannel, 0, size);
-        if(moved != size){
+        if (moved != size) {
           Files.deleteIfExists(tmpIndex.toPath());
           throw new IOException("Unable to compact index");
         }
@@ -196,11 +200,16 @@ public class IndexStorage<T extends Storable> {
       indexManager = reload();
     }
   }
+
   public boolean hasExpired() {
     return !indexManager.getExpiryIndex().isEmpty();
   }
 
-  public long getLastKey(){
+  public List<Long> getKeys() {
+    return indexManager.keySet();
+  }
+
+  public long getLastKey() {
     return getStart() + indexManager.getMaxKey();
   }
 
@@ -208,11 +217,11 @@ public class IndexStorage<T extends Storable> {
     indexManager.scanForExpired(expiredList);
   }
 
-  public long getStart(){
+  public long getStart() {
     return indexManager.getStart();
   }
 
-  public long getEnd(){
+  public long getEnd() {
     return indexManager.getEnd();
   }
 
@@ -227,7 +236,7 @@ public class IndexStorage<T extends Storable> {
   }
 
   public IndexRecord add(@NotNull T object) throws IOException {
-    if(indexManager.contains(object.getKey())){
+    if (indexManager.contains(object.getKey())) {
       throw new IOException("Key already exists");
     }
     IndexRecord item = dataStorage.add(object);
@@ -235,11 +244,11 @@ public class IndexStorage<T extends Storable> {
     return item;
   }
 
-  public boolean isFull(){
+  public boolean isFull() {
     return dataStorage.isFull();
   }
 
-  public boolean remove(long key){
+  public boolean remove(long key) {
     return indexManager.delete(key);
   }
 
@@ -248,17 +257,17 @@ public class IndexStorage<T extends Storable> {
     IndexRecord item = null;
     if (key >= 0) {
       item = indexManager.get(key);
-      if(item != null){
+      if (item != null) {
         obj = dataStorage.get(item);
       }
     }
-    if(item != null) {
+    if (item != null) {
       return new IndexGet<>(item, obj);
     }
     return null;
   }
 
-  public long length() throws IOException{
+  public long length() throws IOException {
     return mapChannel.size() + dataStorage.length();
   }
 
@@ -295,8 +304,7 @@ public class IndexStorage<T extends Storable> {
     StandardOpenOption[] writeOptions;
     if (sync) {
       writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE, DSYNC};
-    }
-    else{
+    } else {
       writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE};
     }
     return (FileChannel) Files.newByteChannel(file.toPath(), writeOptions);

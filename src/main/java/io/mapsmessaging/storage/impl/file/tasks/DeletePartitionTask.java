@@ -3,7 +3,7 @@ package io.mapsmessaging.storage.impl.file.tasks;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
 
-public class DeletePartitionTask <T extends Storable> implements FileTask<Boolean> {
+public class DeletePartitionTask<T extends Storable> implements FileTask<Boolean> {
 
   private final IndexStorage<T> partitionToDelete;
 
@@ -18,12 +18,12 @@ public class DeletePartitionTask <T extends Storable> implements FileTask<Boolea
   }
 
   @Override
-  public boolean canCancel(){
+  public boolean canCancel() {
     return false;
   }
 
   @Override
-  public boolean independentTask(){
+  public boolean independentTask() {
     return true;
   }
 }

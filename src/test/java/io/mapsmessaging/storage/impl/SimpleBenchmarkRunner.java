@@ -31,12 +31,11 @@ public class SimpleBenchmarkRunner {
   private static final int THREAD_COUNT = 10;
 
 
-
   public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
     SimpleBenchmark benchmark = new SimpleBenchmark();
     benchmark.createState();
     CountDownLatch countDownLatch = new CountDownLatch(THREAD_COUNT);
-    for(int x=0;x<THREAD_COUNT;x++){
+    for (int x = 0; x < THREAD_COUNT; x++) {
       Runner r = new Runner(benchmark, countDownLatch);
       Thread t = new Thread(r);
       t.start();
@@ -45,10 +44,12 @@ public class SimpleBenchmarkRunner {
     benchmark.cleanUp();
   }
 
-  public static class Runner implements Runnable{
+  public static class Runner implements Runnable {
+
     private final CountDownLatch countDownLatch;
     private final SimpleBenchmark simpleBenchmark;
-    public Runner(SimpleBenchmark simpleBenchmark, CountDownLatch countDownLatch){
+
+    public Runner(SimpleBenchmark simpleBenchmark, CountDownLatch countDownLatch) {
       this.simpleBenchmark = simpleBenchmark;
       this.countDownLatch = countDownLatch;
     }
@@ -57,7 +58,7 @@ public class SimpleBenchmarkRunner {
     @Override
     public void run() {
       try {
-        for(int x=0;x<LOOP_COUNT;x++){
+        for (int x = 0; x < LOOP_COUNT; x++) {
           simpleBenchmark.performTasks();
         }
       } finally {

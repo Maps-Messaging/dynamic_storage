@@ -13,7 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.Test;
 
 public class FilePerformanceTest extends BaseTest {
 
@@ -21,17 +20,17 @@ public class FilePerformanceTest extends BaseTest {
   private static final long BUFFER_SIZE = 1024 * 1024;
 
   public AsyncStorage<MappedData> createAsyncStore(String testName, boolean sync) throws IOException {
-    File file = new File("test_file"+ File.separator);
-    if(!file.exists()) {
+    File file = new File("test_file" + File.separator);
+    if (!file.exists()) {
       Files.createDirectory(file.toPath());
     }
     Map<String, String> properties = new LinkedHashMap<>();
-    properties.put("Sync", ""+sync);
-    properties.put("MaxPartitionSize", ""+(4L*1024L*1024L*1024L)); // set to 4GB data limit
+    properties.put("Sync", "" + sync);
+    properties.put("MaxPartitionSize", "" + (4L * 1024L * 1024L * 1024L)); // set to 4GB data limit
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
-        .setName("test_file"+ File.separator+testName)
+        .setName("test_file" + File.separator + testName)
         .setProperties(properties);
     return new AsyncStorage<>(storageBuilder.build());
   }
@@ -74,11 +73,11 @@ public class FilePerformanceTest extends BaseTest {
 
       time = System.currentTimeMillis();
       storage.close();
-      long closeTime =  (System.currentTimeMillis() - time);
+      long closeTime = (System.currentTimeMillis() - time);
 
       time = System.currentTimeMillis();
       storage = createAsyncStore("threadedBasicUseCaseTest", false);
-      long reOpenTime =  (System.currentTimeMillis() - time);
+      long reOpenTime = (System.currentTimeMillis() - time);
 
       stats = new Thread(new StatisticsMonitor(storage));
       stats.setDaemon(true);
@@ -97,7 +96,7 @@ public class FilePerformanceTest extends BaseTest {
       for (Thread readerThread : readerThreads) {
         readerThread.join();
       }
-      long reReadTime =  (System.currentTimeMillis() - time);
+      long reReadTime = (System.currentTimeMillis() - time);
 
       lastRemovedKey.set(0);
       Thread[] trimmerThreads = new Thread[10];
@@ -113,16 +112,16 @@ public class FilePerformanceTest extends BaseTest {
       for (Thread trimmerThread : trimmerThreads) {
         trimmerThread.join();
       }
-      long removeTime =  (System.currentTimeMillis() - time);
+      long removeTime = (System.currentTimeMillis() - time);
 
-      long totalSize = EVENTS_TO_PUBLISH *  BUFFER_SIZE;
+      long totalSize = EVENTS_TO_PUBLISH * BUFFER_SIZE;
       String size = convertToUnits(totalSize);
-      System.err.println("Time to write "+size + writeTime + " ms");
-      System.err.println("Time to read "+size  +readTime+ " ms");
-      System.err.println("Time to close "+size  + closeTime+ " ms");
-      System.err.println("Time to open "+size + reOpenTime + " ms");
-      System.err.println("Time to reread "+size  + reReadTime + " ms");
-      System.err.println("Time to remove "+size  +removeTime + " ms");
+      System.err.println("Time to write " + size + writeTime + " ms");
+      System.err.println("Time to read " + size + readTime + " ms");
+      System.err.println("Time to close " + size + closeTime + " ms");
+      System.err.println("Time to open " + size + reOpenTime + " ms");
+      System.err.println("Time to reread " + size + reReadTime + " ms");
+      System.err.println("Time to remove " + size + removeTime + " ms");
 
 
     } finally {
@@ -134,24 +133,21 @@ public class FilePerformanceTest extends BaseTest {
     }
   }
 
-  private String convertToUnits(long value){
-    if(value > (1024L * 1024L * 1024L * 1024L)){
-      float t = value/(1024F * 1024F * 1024F * 1024F);
-      return ""+t+" TB\t";
+  private String convertToUnits(long value) {
+    if (value > (1024L * 1024L * 1024L * 1024L)) {
+      float t = value / (1024F * 1024F * 1024F * 1024F);
+      return "" + t + " TB\t";
+    } else if (value > (1024L * 1024L * 1024L)) {
+      float t = value / (1024F * 1024F * 1024F);
+      return "" + t + " GB\t";
+    } else if (value > (1024L * 1024L)) {
+      float t = value / (1024F * 1024F);
+      return "" + t + " MB\t";
+    } else if (value > (1024L)) {
+      float t = value / (1024F);
+      return "" + t + " KB\t";
     }
-    else if(value > (1024L * 1024L * 1024L)){
-      float t = value/(1024F * 1024F * 1024F);
-      return ""+t+" GB\t";
-    }
-    else if(value > (1024L * 1024L)){
-      float t = value/(1024F * 1024F);
-      return ""+t+" MB\t";
-    }
-    else if(value > (1024L )){
-      float t = value/(1024F);
-      return ""+t+" KB\t";
-    }
-    return ""+value+" Bytes\t";
+    return "" + value + " Bytes\t";
   }
 
   private class Writer implements Runnable {
@@ -165,7 +161,7 @@ public class FilePerformanceTest extends BaseTest {
       this.storage = storage;
       this.eventsToPublish = eventsToPublish;
       this.currentKey = currentKey;
-      bb = ByteBuffer.allocate((int)BUFFER_SIZE);
+      bb = ByteBuffer.allocate((int) BUFFER_SIZE);
       for (int x = 0; x < (BUFFER_SIZE) / 8; x++) {
         bb.putLong(x);
       }
@@ -242,7 +238,7 @@ public class FilePerformanceTest extends BaseTest {
     @SneakyThrows
     @Override
     public void run() {
-      while(true){
+      while (true) {
         Thread.sleep(1000);
         Statistics statistics = storage.getStatistics().get();
         System.err.println(statistics);

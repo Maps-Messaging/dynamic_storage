@@ -22,3 +22,4 @@
 #
 io.mapsmessaging.storage.impl.memory.MemoryFactory
 io.mapsmessaging.storage.impl.file.PartitionStorageFactory
+io.mapsmessaging.storage.impl.tier.memory.MemoryTierFactory

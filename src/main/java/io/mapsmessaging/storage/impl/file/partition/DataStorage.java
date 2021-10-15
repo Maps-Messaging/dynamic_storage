@@ -20,12 +20,14 @@
 
 package io.mapsmessaging.storage.impl.file.partition;
 
-import io.mapsmessaging.storage.StorableFactory;
-import io.mapsmessaging.storage.Storable;
-import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.DSYNC;
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.SPARSE;
+import static java.nio.file.StandardOpenOption.WRITE;
 
+import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.StorableFactory;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -33,8 +35,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-
-import static java.nio.file.StandardOpenOption.*;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class DataStorage<T extends Storable> implements Closeable {
 
@@ -53,8 +56,10 @@ public class DataStorage<T extends Storable> implements Closeable {
   private final ByteBuffer lengthBuffer;
 
   private volatile boolean closed;
-  private @Getter boolean validationRequired;
-  private @Getter boolean full;
+  private @Getter
+  boolean validationRequired;
+  private @Getter
+  boolean full;
 
   public DataStorage(String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
     objectStorableFactory = storableFactory;
@@ -166,7 +171,7 @@ public class DataStorage<T extends Storable> implements Closeable {
     long fileLength = writeChannel.size();
     long length = fileLength - eof;
     full = fileLength > maxPartitionSize;
-    IndexRecord item = new IndexRecord(0, eof, object.getExpiry(), (int)length);
+    IndexRecord item = new IndexRecord(0, eof, object.getExpiry(), (int) length);
     item.setKey(object.getKey());
     return item;
   }
@@ -175,7 +180,7 @@ public class DataStorage<T extends Storable> implements Closeable {
     T obj = null;
     if (item != null) {
       long pos = item.getPosition();
-      if(pos >= 0) {
+      if (pos >= 0) {
         obj = reloadMessage(pos);
       }
     }

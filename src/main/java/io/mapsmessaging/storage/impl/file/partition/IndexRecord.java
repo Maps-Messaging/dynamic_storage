@@ -20,33 +20,39 @@
 
 package io.mapsmessaging.storage.impl.file.partition;
 
+import java.nio.ByteBuffer;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.nio.ByteBuffer;
-
 public class IndexRecord {
+
   private static final long INTEGER_MASK = 0x7FFF_FFFF;
 
   public static final int HEADER_SIZE = 24;
 
-  @Getter private final long expiry;     // Expiry of this entry in milliseconds
-  @Getter private final long position;   // Position within the log file or the index file
+  @Getter
+  private final long expiry;     // Expiry of this entry in milliseconds
+  @Getter
+  private final long position;   // Position within the log file or the index file
 
-  @Getter private final int locationId; // If 0 then located within the index file, else is the unique ID of the data file
-  @Getter private final int length;     // The number of bytes that the record consumes
+  @Getter
+  private final int locationId; // If 0 then located within the index file, else is the unique ID of the data file
+  @Getter
+  private final int length;     // The number of bytes that the record consumes
 
-  @Getter @Setter private long key;      // The key, this is calculated and is NOT stored in the header!
+  @Getter
+  @Setter
+  private long key;      // The key, this is calculated and is NOT stored in the header!
 
-  IndexRecord(){
+  IndexRecord() {
     position = 0;
-    expiry =0;
+    expiry = 0;
 
     locationId = 0;
     length = 0;
   }
 
-  public IndexRecord(int locationId, long position, long expiry, int length){
+  public IndexRecord(int locationId, long position, long expiry, int length) {
     this.position = position;
     this.expiry = expiry;
 
@@ -54,16 +60,16 @@ public class IndexRecord {
     this.length = length;
   }
 
-  public IndexRecord(ByteBuffer buffer){
+  public IndexRecord(ByteBuffer buffer) {
     position = buffer.getLong();
     expiry = buffer.getLong();
     long tmp2 = buffer.getLong();
 
-    locationId = (int)(tmp2 >> 32);
+    locationId = (int) (tmp2 >> 32);
     length = (int) (tmp2 & INTEGER_MASK);
   }
 
-  public void update(ByteBuffer buffer){
+  public void update(ByteBuffer buffer) {
     long tmp2 = ((locationId & INTEGER_MASK) << 32) | (length & INTEGER_MASK);
     buffer.putLong(position);
     buffer.putLong(expiry);
