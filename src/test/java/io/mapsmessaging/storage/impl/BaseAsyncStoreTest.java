@@ -4,6 +4,7 @@ import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.impl.cache.CacheStatistics;
+import io.mapsmessaging.storage.impl.tier.memory.MemoryTierStatistics;
 import io.mapsmessaging.storage.tasks.Completion;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
@@ -265,6 +266,9 @@ public abstract class BaseAsyncStoreTest extends BaseTest {
       if (statistics instanceof CacheStatistics) {
         statistics = ((CacheStatistics) statistics).getStorageStatistics();
       }
+      if(statistics instanceof MemoryTierStatistics){
+        statistics = ((MemoryTierStatistics)statistics).getMemoryStatistics();
+      }
       Assertions.assertEquals(1000, ((StorageStatistics) statistics).getWrites());
       Assertions.assertEquals(0, ((StorageStatistics) statistics).getReads());
       Assertions.assertEquals(0, ((StorageStatistics) statistics).getDeletes());
@@ -277,9 +281,15 @@ public abstract class BaseAsyncStoreTest extends BaseTest {
         long cacheHit = ((CacheStatistics) statistics).getHit();
         long cacheMiss = ((CacheStatistics) statistics).getMiss();
         statistics = ((CacheStatistics) statistics).getStorageStatistics();
+        if(statistics instanceof MemoryTierStatistics){
+          statistics = ((MemoryTierStatistics)statistics).getMemoryStatistics();
+        }
         Assertions.assertEquals(cacheMiss, ((StorageStatistics) statistics).getReads());
         Assertions.assertEquals(1000, (cacheHit + cacheMiss));
       } else {
+        if(statistics instanceof MemoryTierStatistics){
+          statistics = ((MemoryTierStatistics)statistics).getMemoryStatistics();
+        }
         Assertions.assertEquals(1000, ((StorageStatistics) statistics).getReads());
       }
       Assertions.assertEquals(0, ((StorageStatistics) statistics).getWrites());
@@ -292,6 +302,9 @@ public abstract class BaseAsyncStoreTest extends BaseTest {
       statistics = storage.getStatistics().get();
       if (statistics instanceof CacheStatistics) {
         statistics = ((CacheStatistics) statistics).getStorageStatistics();
+      }
+      if(statistics instanceof MemoryTierStatistics){
+        statistics = ((MemoryTierStatistics)statistics).getMemoryStatistics();
       }
       Assertions.assertEquals(0, ((StorageStatistics) statistics).getWrites());
       Assertions.assertEquals(0, ((StorageStatistics) statistics).getReads());
