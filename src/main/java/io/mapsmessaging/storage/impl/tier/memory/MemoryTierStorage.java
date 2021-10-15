@@ -3,7 +3,6 @@ package io.mapsmessaging.storage.impl.tier.memory;
 import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.tier.memory.tasks.TierMigrationTask;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
@@ -95,20 +94,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   @Override
   public @NotNull Statistics getStatistics() {
-    StorageStatistics stats1 = (StorageStatistics) primary.getStatistics();
-    StorageStatistics stats2 = (StorageStatistics) secondary.getStatistics();
-    return new StorageStatistics(
-        stats1.getReads() + stats2.getReads(),
-        stats1.getWrites() + stats2.getWrites(),
-        stats1.getDeletes() + stats2.getDeletes(),
-        stats2.getBytesRead(),
-        stats2.getBytesWritten(),
-        stats2.getReadLatency(),
-        stats2.getWriteLatency(),
-        stats2.getTotalSize(),
-        stats2.getTotalEmptySpace(),
-        stats2.getPartitionCount()
-    );
+    return new MemoryTierStatistics(primary.getStatistics(), secondary.getStatistics());
   }
 
   @Override
