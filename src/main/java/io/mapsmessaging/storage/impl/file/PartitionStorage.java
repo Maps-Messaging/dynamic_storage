@@ -72,9 +72,10 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
       boolean sync,
       int itemCount,
       long maxPartitionSize,
-      int expiredEventPoll) throws IOException {
+      int expiredEventPoll,
+      TaskQueue taskQueue) throws IOException {
     partitions = new ArrayList<>();
-    taskScheduler = new TaskQueue();
+    taskScheduler = taskQueue;
     rootDirectory = fileName;
     this.expiredHandler = Objects.requireNonNullElseGet(expiredHandler, () -> new BaseExpiredHandler<>(this));
     this.itemCount = itemCount;

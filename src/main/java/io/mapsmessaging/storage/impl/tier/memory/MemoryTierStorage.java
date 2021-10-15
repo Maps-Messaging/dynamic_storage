@@ -132,11 +132,9 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   @Override
   public void setExecutor(TaskScheduler executor) {
-    primary.setExecutor(executor);
     secondary.setExecutor(executor);
-    scanner = primary.getTaskScheduler().scheduleAtFixedRate(new TierMigrationTask(this), scanInterval, TimeUnit.MILLISECONDS);
+    scanner = secondary.getTaskScheduler().scheduleAtFixedRate(new TierMigrationTask(this), scanInterval, TimeUnit.MILLISECONDS);
   }
-
 
   @SneakyThrows
   public void scan() {

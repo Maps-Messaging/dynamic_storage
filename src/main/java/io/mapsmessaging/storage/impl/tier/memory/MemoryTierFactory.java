@@ -49,7 +49,10 @@ public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T>
     if (properties.containsKey("ScanInterval")) {
       scanInterval = Long.parseLong(properties.get("ScanInterval"));
     }
-    return new MemoryTierStorage<>(memoryFactory.create(name), partitionStorageFactory.create(name), scanInterval, migrationTime);
+    Storage<ObjectMonitor<T>> memoryStorage = memoryFactory.create(name);
+    Storage<T> fileStorage = partitionStorageFactory.create(name, memoryStorage.getTaskScheduler());
+
+    return new MemoryTierStorage<>(memoryStorage, fileStorage, scanInterval, migrationTime);
   }
 
   @Override

@@ -50,6 +50,10 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
 
   @Override
   public Storage<T> create(String name) throws IOException {
+    return create(name, new TaskQueue());
+  }
+
+  public Storage<T> create(String name, TaskQueue taskQueue) throws IOException {
     boolean sync = false;
     if (properties.containsKey("Sync")) {
       sync = Boolean.parseBoolean(properties.get("Sync"));
@@ -68,7 +72,7 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
       expiredEventPoll = Integer.parseInt(properties.get("ExpiredEventPoll"));
     }
 
-    return new PartitionStorage<>(name, storableFactory, expiredHandler, sync, itemCount, maxPartitionSize, expiredEventPoll);
+    return new PartitionStorage<>(name, storableFactory, expiredHandler, sync, itemCount, maxPartitionSize, expiredEventPoll, taskQueue);
   }
 
   @Override
