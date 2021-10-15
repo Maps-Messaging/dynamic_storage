@@ -34,6 +34,7 @@ public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T>
     return "MemoryTier";
   }
 
+  @SuppressWarnings("java:S2095") // The allocation of both stores is required and can not be closed in a "finally" clause here, else bad things will happen
   @Override
   public Storage<T> create(String name) throws IOException {
     if (memoryFactory == null || partitionStorageFactory == null) {
