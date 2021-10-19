@@ -20,8 +20,11 @@
 
 package io.mapsmessaging.storage;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.impl.cache.Cache;
 import io.mapsmessaging.storage.impl.cache.CacheLayer;
+import io.mapsmessaging.storage.logging.StorageLogMessages;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -36,6 +39,8 @@ import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("java:S3740") // This is not how ServiceLoaders work, we can not get a generic load
 class StorageFactoryFactory {
+
+  private static final Logger logger = LoggerFactory.getLogger(StorageFactoryFactory.class);
 
   private static final StorageFactoryFactory instance = new StorageFactoryFactory();
   private final ServiceLoader<StorageFactory> storageFactories;
@@ -70,6 +75,7 @@ class StorageFactoryFactory {
       ExpiredStorableHandler expiredStorableHandler) {
     Optional<Provider<StorageFactory>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.get().getName().equals(name)).findFirst();
     if (first.isPresent()) {
+      logger.log(StorageLogMessages.FOUND_FACTORY, first.get().getClass().getName());
       StorageFactory<?> found = first.get().get();
       Class<T> clazz = (Class<T>) found.getClass();
       Constructor<T>[] constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
@@ -77,13 +83,22 @@ class StorageFactoryFactory {
       for (Constructor<T> cstr : constructors) {
         if (cstr.getParameters().length == 3) {
           constructor = cstr;
+          logger.log(StorageLogMessages.FOUND_CONSTRUCTOR, name);
           break;
         }
       }
       if (constructor != null) {
         return (StorageFactory<T>) constructor.newInstance(properties, storableFactory, expiredStorableHandler);
       }
+      else{
+        logger.log(StorageLogMessages.NO_CONSTRUCTOR_FOUND, name);
+
+      }
     }
+    else {
+      logger.log(StorageLogMessages.NO_MATCHING_FACTORY, name);
+    }
+
     return null;
   }
 
@@ -92,21 +107,26 @@ class StorageFactoryFactory {
   @NotNull <T extends Storable> CacheLayer<T> createCache(@NotNull String name, boolean enableWriteThrough, @NotNull Storage<T> baseStore) {
     Optional<Provider<Cache>> first = caches.stream().filter(layer -> layer.get().getName().equals(name)).findFirst();
     if (first.isPresent()) {
+      logger.log(StorageLogMessages.FOUND_CACHE_FACTORY, name);
       Cache<?> found = first.get().get();
       Class<T> clazz = (Class<T>) found.getClass();
       Constructor<T>[] constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
       Constructor<T> constructor = null;
       for (Constructor<T> cstr : constructors) {
         if (cstr.getParameters().length == 1) {
+          logger.log(StorageLogMessages.FOUND_CACHE_CONSTRUCTOR, name);
           constructor = cstr;
           break;
         }
       }
       if (constructor != null) {
         Cache<T> cache = (Cache<T>) constructor.newInstance(baseStore.getName());
+        logger.log(StorageLogMessages.CREATED_NEW_CACHE_INSTANCE, name);
         return new CacheLayer<T>(enableWriteThrough, cache, baseStore);
       }
     }
+    logger.log(StorageLogMessages.NO_CACHE_FOUND, name);
+
     throw new IOException("Unknown layered storage declared");
   }
 

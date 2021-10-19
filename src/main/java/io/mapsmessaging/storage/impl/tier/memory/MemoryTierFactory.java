@@ -16,6 +16,7 @@ public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T>
 
   private static final long MIGRATION_TIME = 60_000;
   private static final long SCAN_INTERVAL = 10_000;
+  private static final long TIER_1_SIZE = 0;
 
   private final PartitionStorageFactory<T> partitionStorageFactory;
   private final MemoryFactory<ObjectMonitor<T>> memoryFactory;
@@ -51,10 +52,16 @@ public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T>
     if (properties.containsKey("ScanInterval")) {
       scanInterval = Long.parseLong(properties.get("ScanInterval"));
     }
+
+    long maximumCount = TIER_1_SIZE;
+    if (properties.containsKey("Tier1Size")) {
+      maximumCount = Long.parseLong(properties.get("Tier1Size"));
+    }
+
     Storage<ObjectMonitor<T>> memoryStorage = memoryFactory.create(name);
     Storage<T> fileStorage = partitionStorageFactory.create(name, memoryStorage.getTaskScheduler());
 
-    return new MemoryTierStorage<>(memoryStorage, fileStorage, scanInterval, migrationTime);
+    return new MemoryTierStorage<>(memoryStorage, fileStorage, scanInterval, migrationTime, maximumCount);
   }
 
   @Override

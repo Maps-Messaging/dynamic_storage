@@ -23,8 +23,4 @@ public class IndexExpiryMonitorTask implements FileTask<Boolean> {
     return true;
   }
 
-  @Override
-  public boolean independentTask() {
-    return true;
-  }
 }

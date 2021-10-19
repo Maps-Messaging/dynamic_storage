@@ -48,9 +48,7 @@ public abstract class BaseStoreTest extends BaseTest {
       // Remove any before we start
 
       for (int x = 0; x < 10; x++) {
-        MappedData message = createMessageBuilder(x);
-        validateMessage(message, x);
-        storage.add(message);
+        storage.add(createMessageBuilder(x));
       }
       Assertions.assertEquals(10, storage.size());
 

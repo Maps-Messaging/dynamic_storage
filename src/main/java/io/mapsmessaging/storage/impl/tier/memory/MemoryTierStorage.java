@@ -6,9 +6,11 @@ import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.tier.memory.tasks.TierMigrationTask;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.IOException;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
@@ -22,18 +24,23 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   private final Storage<T> secondary;
   private final long scanInterval;
   private final long migrationTime;
+  private final long memorySize;
+  private final Queue<Long> memoryList;
   private final LongAdder migratedEvents;
 
   private ScheduledFuture<?> scanner;
 
   private long lastKey;
 
-  public MemoryTierStorage(Storage<ObjectMonitor<T>> primary, Storage<T> secondary, long scanInterval, long migrationTime) {
+  public MemoryTierStorage(Storage<ObjectMonitor<T>> primary, Storage<T> secondary, long scanInterval, long migrationTime, long memorySize) {
     this.primary = primary;
     this.secondary = secondary;
-    lastKey = secondary.getLastKey();
+    this.memorySize = memorySize;
     this.migrationTime =migrationTime;
     this.scanInterval = scanInterval;
+
+    memoryList = new NaturalOrderedLongQueue();
+    lastKey = secondary.getLastKey();
     migratedEvents = new LongAdder();
   }
 
@@ -104,10 +111,26 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   public void add(@NotNull T object) throws IOException {
     lastKey = object.getKey();
     primary.add(new ObjectMonitor<>(object));
+
+    // Push from primary to secondary once the limit has been reached
+    if(memorySize > 0){
+      memoryList.offer(object.getKey());
+      while(memoryList.size() > memorySize) {
+        Long key = memoryList.poll();
+        if (key != null && key != -1) {
+          ObjectMonitor<T> oldest = primary.get(key);
+          if (oldest != null) {
+            secondary.add(oldest.getStorable());
+            primary.remove(key);
+          }
+        }
+      }
+    }
   }
 
   @Override
   public boolean remove(long key) throws IOException {
+    memoryList.remove(key);
     return primary.remove(key) || secondary.remove(key);
 
   }
@@ -144,6 +167,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
       if (check != null && check.getLastAccess() < test) {
         secondary.add(check.getStorable());
         primary.remove(key);
+        memoryList.remove(key);
         migratedEvents.increment();
       }
     }

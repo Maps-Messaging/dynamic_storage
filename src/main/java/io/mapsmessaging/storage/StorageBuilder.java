@@ -20,13 +20,19 @@
 
 package io.mapsmessaging.storage;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.storage.logging.StorageLogMessages;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ToString
 public class StorageBuilder<T extends Storable> {
+  private final Logger logger = LoggerFactory.getLogger(StorageBuilder.class);
 
   private String storeType;
   private String cacheName;
@@ -64,6 +70,7 @@ public class StorageBuilder<T extends Storable> {
 
   public @NotNull StorageBuilder<T> setStorageType(@NotNull String storeType) throws IOException {
     if (this.storeType != null) {
+      logger.log(StorageLogMessages.STORAGE_ALREADY_CONFIGURED);
       throw new IOException("Store type already defined");
     }
     List<String> known = StorageFactoryFactory.getInstance().getKnownStorages();
@@ -74,6 +81,7 @@ public class StorageBuilder<T extends Storable> {
       }
     }
     if (this.storeType == null) {
+      logger.log(StorageLogMessages.NO_SUCH_STORAGE_FOUND, storeType);
       throw new IOException("No known storage type defined " + storeType);
     }
     return this;
@@ -85,10 +93,12 @@ public class StorageBuilder<T extends Storable> {
 
   public @NotNull StorageBuilder<T> setCache(@Nullable String cacheName) throws IOException {
     if (this.cacheName != null) {
+      logger.log(StorageLogMessages.CACHE_ALREADY_CONFIGURED);
       throw new IOException("Cache already specified");
     }
     if (cacheName == null) {
       this.cacheName = "WeakReference";
+      logger.log(StorageLogMessages.DEFAULTING_CACHE, this.cacheName);
     } else {
       List<String> layered = StorageFactoryFactory.getInstance().getKnownLayers();
       for (String layer : layered) {
@@ -99,6 +109,7 @@ public class StorageBuilder<T extends Storable> {
       }
     }
     if (this.cacheName == null) {
+      logger.log(StorageLogMessages.NO_SUCH_CACHE_FOUND, cacheName);
       throw new IOException("No such cache implementation found " + cacheName);
     }
     return this;
@@ -112,8 +123,10 @@ public class StorageBuilder<T extends Storable> {
       if (baseStore.isCacheable() && cacheName != null) {
         baseStore = StorageFactoryFactory.getInstance().createCache(cacheName, enableWriteThrough, baseStore);
       }
+      logger.log(StorageLogMessages.BUILT_STORAGE, this);
       return baseStore;
     } else {
+      logger.log(StorageLogMessages.NO_STORAGE_FACTORY_FOUND);
       throw new IOException("Unable to construct new store");
     }
   }

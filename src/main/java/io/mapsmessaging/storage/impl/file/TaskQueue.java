@@ -1,6 +1,7 @@
 package io.mapsmessaging.storage.impl.file;
 
 import io.mapsmessaging.storage.impl.file.tasks.FileTask;
+import io.mapsmessaging.storage.impl.file.tasks.IndependentTask;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Map;
@@ -22,7 +23,6 @@ public class TaskQueue {
 
   private static final long TIMEOUT = 60;
   private static final ScheduledExecutorService SCHEDULER_EXECUTOR = Executors.newScheduledThreadPool(2);
-  private static final ExecutorService INDEPENDENT_EXECUTOR = Executors.newSingleThreadExecutor();
 
   static {
     Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
@@ -36,7 +36,6 @@ public class TaskQueue {
 
   public static void shutdown() {
     SCHEDULER_EXECUTOR.shutdown();
-    INDEPENDENT_EXECUTOR.shutdown();
   }
 
   public TaskQueue() {
@@ -109,7 +108,7 @@ public class TaskQueue {
 
 
   public void submit(FileTask<?> raw) throws IOException {
-    if (raw.independentTask()) {
+    if (raw instanceof IndependentTask) {
       submitIndependentTask(raw);
     } else {
       submitInternalTask(raw);
@@ -121,7 +120,7 @@ public class TaskQueue {
     FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
     if (taskScheduler != null) {
       SubmitTask submitTask = new SubmitTask(task);
-      INDEPENDENT_EXECUTOR.submit(submitTask);
+      SCHEDULER_EXECUTOR.submit(submitTask);
     } else {
       syncTasks.offer(task);
       if (syncTasks.size() > 10) {
@@ -134,7 +133,7 @@ public class TaskQueue {
 
   private void submitIndependentTask(FileTask<?> raw) {
     FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
-    Future<?> future = INDEPENDENT_EXECUTOR.submit(task);
+    Future<?> future = SCHEDULER_EXECUTOR.submit(task);
     if (!future.isDone()) {
       pending.put(task, future);
       if (future.isDone()) {
