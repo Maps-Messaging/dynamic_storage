@@ -20,6 +20,9 @@
 
 package io.mapsmessaging.storage;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.storage.logging.StorageLogMessages;
 import io.mapsmessaging.storage.tasks.AddTask;
 import io.mapsmessaging.storage.tasks.AutoPauseTask;
 import io.mapsmessaging.storage.tasks.CloseTask;
@@ -47,6 +50,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class AsyncStorage<T extends Storable> implements Closeable {
 
+  private final Logger logger;
+
   private static final int BACKGROUND_PRIORITY = 0;
   private static final int FOREGROUND_PRIORITY = 1;
 
@@ -62,6 +67,8 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     closed = new AtomicBoolean(false);
     storage.setExecutor(scheduler);
     autoPauseFuture = null;
+    logger = LoggerFactory.getLogger("AsyncStorage - "+storage.getName());
+    logger.log(StorageLogMessages.ASYNC_STORAGE_CREATED, storage.getName());
   }
 
   @SneakyThrows
@@ -70,7 +77,9 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     Future<Boolean> future = close(null);
     try {
       future.get();
+      logger.log(StorageLogMessages.ASYNC_CLOSE_COMPLETED);
     } catch (ExecutionException e) {
+      logger.log(StorageLogMessages.ASYNC_CLOSE_FAILED, e);
       throw new IOException(e);
     }
   }
@@ -80,12 +89,14 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     if (autoPauseFuture != null) {
       autoPauseFuture.cancel(false);
     }
+    logger.log(StorageLogMessages.ASYNC_CLOSE_REQUESTED);
     closed.set(true);
     storage.shutdown();
     return scheduler.submit(new CloseTask<>(storage, completion), FOREGROUND_PRIORITY);
   }
 
   public void enableAutoPause(long idleTime) {
+    logger.log(StorageLogMessages.ASYNC_ENABLE_AUTO_PAUSE);
     AutoPauseTask autoPauseTask = new AutoPauseTask(this, idleTime);
     autoPauseFuture = storage.getTaskScheduler().scheduleAtFixedRate(autoPauseTask, idleTime, TimeUnit.MILLISECONDS);
   }
@@ -99,6 +110,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     if (autoPauseFuture != null) {
       autoPauseFuture.cancel(false);
     }
+    logger.log(StorageLogMessages.ASYNC_DELETE_REQUESTED);
     closed.set(true);
     storage.shutdown();
     return scheduler.submit(new DeleteTask<>(storage, completion), FOREGROUND_PRIORITY);
@@ -110,6 +122,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
 
   public Future<T> add(@NotNull T toStore, Completion<T> completion) throws IOException {
     checkClose();
+    logger.log(StorageLogMessages.ASYNC_ADD_REQUESTED, toStore.getKey());
     return scheduler.submit(new AddTask<>(storage, toStore, completion), FOREGROUND_PRIORITY);
   }
 
@@ -119,6 +132,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
 
   public Future<Boolean> remove(long key, Completion<Boolean> completion) throws IOException {
     checkClose();
+    logger.log(StorageLogMessages.ASYNC_REMOVE_REQUESTED, key);
     return scheduler.submit(new RemoveTask<>(storage, key, completion), FOREGROUND_PRIORITY);
   }
 
@@ -128,20 +142,24 @@ public class AsyncStorage<T extends Storable> implements Closeable {
 
   public Future<T> get(long key, Completion<T> completion) throws IOException {
     checkClose();
+    logger.log(StorageLogMessages.ASYNC_GET_REQUESTED, key);
     return scheduler.submit(new GetTask<>(storage, key, completion), FOREGROUND_PRIORITY);
   }
 
   public Future<Long> size() throws IOException {
     checkClose();
+    logger.log(StorageLogMessages.ASYNC_SIZE_REQUESTED);
     return scheduler.submit(new SizeTask<>(storage), FOREGROUND_PRIORITY);
   }
 
   public Future<Long> getLastKey() throws IOException {
     checkClose();
+    logger.log(StorageLogMessages.ASYNC_LAST_KEY_REQUESTED);
     return scheduler.submit(new LastKeyTask<>(storage), FOREGROUND_PRIORITY);
   }
 
   public Future<Boolean> isEmpty() {
+    logger.log(StorageLogMessages.ASYNC_IS_EMPTY_REQUESTED);
     return scheduler.submit(new IsEmptyTask<>(storage), FOREGROUND_PRIORITY);
   }
 
@@ -160,11 +178,13 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   }
 
   public Future<Statistics> getStatistics(Completion<Statistics> completion) {
+    logger.log(StorageLogMessages.ASYNC_STATISTICS_REQUESTED);
     return scheduler.submit(new RetrieveStatisticsTask<>(storage, completion), FOREGROUND_PRIORITY);
   }
 
   public Future<Void> pause() throws IOException {
     checkClose();
+    logger.log(StorageLogMessages.ASYNC_PAUSE_REQUESTED);
     return scheduler.submit(new PauseTask<>(storage), BACKGROUND_PRIORITY);
   }
 
@@ -174,7 +194,9 @@ public class AsyncStorage<T extends Storable> implements Closeable {
 
   protected void checkClose() throws IOException {
     if (closed.get()) {
+      logger.log(StorageLogMessages.ASYNC_REQUEST_ON_CLOSED_STORE);
       throw new IOException("Store has been scheduled to close");
     }
   }
+
 }
