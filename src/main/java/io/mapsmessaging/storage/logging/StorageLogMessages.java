@@ -45,7 +45,7 @@ public enum StorageLogMessages implements LogMessage {
   STORAGE_ALREADY_CONFIGURED(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "The storage type has already been configured"),
   NO_SUCH_STORAGE_FOUND(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "No such Storage implementation found {}"),
   NO_STORAGE_FACTORY_FOUND(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "The storage factory for the type can not be found"),
-  BUILT_STORAGE(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "Successfully built the storage layer {}"),
+  BUILT_STORAGE(LEVEL.INFO, STORAGE_CATEGORY.FACTORY, "Successfully built the storage layer {}"),
 
   CACHE_ALREADY_CONFIGURED(LEVEL.WARN, STORAGE_CATEGORY.FACTORY, "The cache has already been configured"),
   NO_SUCH_CACHE_FOUND(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "No such cache implementation found {}"),
