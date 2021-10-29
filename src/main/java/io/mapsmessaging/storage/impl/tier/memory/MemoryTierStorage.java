@@ -14,6 +14,7 @@ import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,8 +23,8 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   private final Storage<ObjectMonitor<T>> primary;
   private final Storage<T> secondary;
-  private final long scanInterval;
-  private final long migrationTime;
+  private final @Getter long scanInterval;
+  private final @Getter long migrationTime;
   private final long memorySize;
   private final Queue<Long> memoryList;
   private final LongAdder migratedEvents;

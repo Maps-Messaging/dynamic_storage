@@ -22,6 +22,7 @@ package io.mapsmessaging.storage;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.storage.impl.tier.memory.MemoryTierStorage;
 import io.mapsmessaging.storage.logging.StorageLogMessages;
 import io.mapsmessaging.storage.tasks.AddTask;
 import io.mapsmessaging.storage.tasks.AutoPauseTask;
@@ -97,6 +98,12 @@ public class AsyncStorage<T extends Storable> implements Closeable {
 
   public void enableAutoPause(long idleTime) {
     logger.log(StorageLogMessages.ASYNC_ENABLE_AUTO_PAUSE);
+    if(storage instanceof MemoryTierStorage){
+      long migrationTime = ((MemoryTierStorage<T>)storage).getMigrationTime();
+      if(migrationTime > idleTime){ // We would pause the file store before migrating from memory to file
+        idleTime = (long)(migrationTime * 1.5f);
+      }
+    }
     AutoPauseTask autoPauseTask = new AutoPauseTask(this, idleTime);
     autoPauseFuture = storage.getTaskScheduler().scheduleAtFixedRate(autoPauseTask, idleTime, TimeUnit.MILLISECONDS);
   }
