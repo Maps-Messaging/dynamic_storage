@@ -117,6 +117,7 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     if (autoPauseFuture != null) {
       autoPauseFuture.cancel(false);
     }
+    storage.getTaskScheduler().purge();
     logger.log(StorageLogMessages.ASYNC_DELETE_REQUESTED);
     closed.set(true);
     storage.shutdown();

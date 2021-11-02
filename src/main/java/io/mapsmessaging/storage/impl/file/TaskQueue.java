@@ -11,8 +11,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 public class TaskQueue {
 
   private static final long TIMEOUT = 60;
-  private static final ScheduledExecutorService SCHEDULER_EXECUTOR = Executors.newScheduledThreadPool(2);
+  private static final ScheduledThreadPoolExecutor SCHEDULER_EXECUTOR = (ScheduledThreadPoolExecutor)Executors.newScheduledThreadPool(2);
 
   static {
     Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
@@ -157,6 +157,10 @@ public class TaskQueue {
 
   public boolean hasTasks() {
     return !syncTasks.isEmpty();
+  }
+
+  public void purge() {
+    SCHEDULER_EXECUTOR.purge();
   }
 
   private final class FileWrapperTask<T> implements FileTask<T> {
