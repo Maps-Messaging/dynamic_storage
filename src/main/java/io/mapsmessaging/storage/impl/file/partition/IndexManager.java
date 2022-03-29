@@ -33,7 +33,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -44,27 +46,28 @@ public class IndexManager implements Closeable {
   private static final int HEADER_SIZE = 16;
 
 
-  private final @Getter
-  List<Long> expiryIndex;
-  private volatile boolean closed;
-  private volatile boolean paused;
+  private final @Getter List<Long> expiryIndex;
 
   private final FileChannel channel;
   private final long position;
   private final long localEnd;
-  private long end;
 
   private final LongAdder counter;
   private final LongAdder emptySpace;
+  private final @Getter long start;
 
-  private final @Getter
-  long start;
-  private volatile @Getter
-  long maxKey;
-
+  private @Getter long end;
   private MappedByteBuffer index;
 
+  private volatile long maxKey;
+  private volatile boolean closed;
+  private volatile boolean paused;
+
+  private volatile AtomicBoolean loaded;
+
+
   public IndexManager(FileChannel channel) throws IOException {
+    loaded = new AtomicBoolean(false);
     this.channel = channel;
     position = channel.position();
     ByteBuffer header = ByteBuffer.allocate(HEADER_SIZE);
@@ -75,18 +78,17 @@ public class IndexManager implements Closeable {
     localEnd = end;
 
     int totalSize = (int) ((end - start) + 1) * IndexRecord.HEADER_SIZE;
-    index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
-    index.load(); // Ensure the file contents are loaded
     closed = false;
     counter = new LongAdder();
     emptySpace = new LongAdder();
     expiryIndex = new NaturalOrderedLongList();
     maxKey = 0;
     paused = false;
-    walkIndex();
+    loadMap(totalSize, true);
   }
 
   public IndexManager(long start, int itemSize, FileChannel channel) throws IOException {
+    loaded = new AtomicBoolean(false);
     this.channel = channel;
     position = channel.position();
     this.start = start;
@@ -110,15 +112,15 @@ public class IndexManager implements Closeable {
     channel.position(position + HEADER_SIZE + totalSize - 1);
     channel.write(sparseAllocate);
     channel.position(position); // Move back
-    index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
-    index.load(); // Ensure the file contents are loaded
     expiryIndex = new NaturalOrderedLongList();
     closed = false;
+    loadMap(totalSize, false);
   }
 
   @Override
   public void close() throws IOException {
     if (!closed) {
+      waitForLoad();
       closed = true;
       index.force();
       MappedBufferHelper.closeDirectBuffer(index);
@@ -128,6 +130,7 @@ public class IndexManager implements Closeable {
 
   public void pause() {
     if (!paused) {
+      waitForLoad();
       paused = true;
       index.force();
       MappedBufferHelper.closeDirectBuffer(index);
@@ -137,6 +140,7 @@ public class IndexManager implements Closeable {
 
   public void resume(FileChannel channel) throws IOException {
     if (paused) {
+      waitForLoad();
       paused = false;
       int totalSize = (int) ((end - start) + 1) * IndexRecord.HEADER_SIZE;
       index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
@@ -144,8 +148,14 @@ public class IndexManager implements Closeable {
     }
   }
 
+  public long getMaxKey(){
+    waitForLoad();
+    return maxKey;
+  }
+
   public void scanForExpired(Queue<Long> expiredList) {
     if (!expiryIndex.isEmpty()) {
+      waitForLoad();
       Iterator<Long> expiryIterator = expiryIndex.listIterator();
       long now = System.currentTimeMillis();
       while (expiryIterator.hasNext()) {
@@ -162,12 +172,8 @@ public class IndexManager implements Closeable {
     }
   }
 
-
-  public long getEnd() {
-    return end;
-  }
-
   public void setEnd(long key) throws IOException {
+    waitForLoad();
     end = key;
     channel.position(position + 8);
     ByteBuffer header = ByteBuffer.allocate(8);
@@ -218,8 +224,12 @@ public class IndexManager implements Closeable {
   }
 
   public boolean delete(long key) {
+    return delete(key, false);
+  }
+
+  boolean delete(long key, boolean override) {
     if (key >= start && key <= localEnd && !closed && key <= end) {
-      setMapPosition(key);
+      setMapPosition(key, override);
       IndexRecord item = new IndexRecord(index);
       if (item.getPosition() > 0) {
         expiryIndex.remove(key);
@@ -234,14 +244,17 @@ public class IndexManager implements Closeable {
     }
     return false;
   }
-
   void setMapPosition(long key) {
+    setMapPosition(key, false);
+  }
+  void setMapPosition(long key, boolean override) {
+    if(!override)waitForLoad();
     int adjusted = (int) (key - start);
     int pos = adjusted * IndexRecord.HEADER_SIZE;
     index.position(pos);
   }
 
-  void walkIndex() {
+  List<Long> walkIndex() {
     List<Long> expired = new ArrayList<>();
     index.position(0);
     int size = (int) (end - start) + 1;
@@ -249,9 +262,7 @@ public class IndexManager implements Closeable {
     for (int x = 0; x < size; x++) {
       validateIndexRecord(x, new IndexRecord(index), now, expired);
     }
-    for (Long key : expired) {
-      delete(key);
-    }
+    return expired;
   }
 
   private void validateIndexRecord(int index, IndexRecord indexRecord, long now, List<Long> expired) {
@@ -288,6 +299,33 @@ public class IndexManager implements Closeable {
 
   public Iterator<IndexRecord> getIterator() {
     return new HeaderIterator();
+  }
+
+  private void waitForLoad(){
+    while(!loaded.get()){
+      LockSupport.parkNanos(10000);
+    }
+  }
+
+  private void loadMap(int totalSize, boolean walkIndex) throws IOException {
+    index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
+    Thread offLoad = new Thread(() -> {
+      long time = System.currentTimeMillis();
+      try {
+        index.load(); // Ensure the file contents are loaded
+        if(walkIndex) {
+          List<Long> expired = walkIndex();
+          for (Long key : expired) {
+            delete(key, true);
+          }
+        }
+      } finally {
+        loaded.set(true); // pass any exception to another call
+        time = System.currentTimeMillis() - time;
+        System.err.println("Time to load:"+time);
+      }
+    });
+    offLoad.start();
   }
 
   public class HeaderIterator implements Iterator<IndexRecord> {
