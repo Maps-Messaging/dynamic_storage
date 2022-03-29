@@ -41,7 +41,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
     this.scanInterval = scanInterval;
 
     memoryList = new NaturalOrderedLongQueue();
-    lastKey = secondary.getLastKey();
+    lastKey = -2;
     migratedEvents = new LongAdder();
   }
 
@@ -78,6 +78,9 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   @Override
   public long getLastKey() {
+    if(lastKey == -2){
+      lastKey = secondary.getLastKey();
+    }
     return lastKey;
   }
 
