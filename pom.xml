@@ -6,7 +6,7 @@
 
   <groupId>io.mapsmessaging</groupId>
   <artifactId>DynamicStorage</artifactId>
-  <version>2.1.16</version>
+  <version>2.2.0</version>
   <packaging>jar</packaging>
 
   <properties>
@@ -73,7 +73,7 @@
           <target>13</target>
         </configuration>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.8.1</version>
+        <version>3.10.1</version>
       </plugin>
 
       <!-- Setup code coverage by jacoco for our tests -->
@@ -153,7 +153,7 @@
           </execution>
         </executions>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.3.1</version>
+        <version>3.3.2</version>
       </plugin>
     </plugins>
   </build>
@@ -179,27 +179,27 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Simple_Logging</artifactId>
-      <version>1.0.3</version>
+      <version>2.0.2</version>
     </dependency>
     <!-- Naturally order long collection -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Naturally_Ordered_Long_Collections</artifactId>
-      <version>1.0.3</version>
+      <version>1.0.4</version>
     </dependency>
 
     <!-- Non Blocking Task Queue module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Non_Block_Task_Scheduler</artifactId>
-      <version>2.0.3</version>
+      <version>2.1.0</version>
     </dependency>
 
     <!-- Add annotations for not null -->
     <dependency>
       <artifactId>annotations</artifactId>
       <groupId>org.jetbrains</groupId>
-      <version>22.0.0</version>
+      <version>23.0.0</version>
     </dependency>
 
     <dependency>
@@ -218,14 +218,14 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-jcs3-core</artifactId>
-      <version>3.0</version>
+      <version>3.1</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-s3 -->
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.12.98</version>
+      <version>1.12.177</version>
     </dependency>
 
 
@@ -234,13 +234,13 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
-      <version>5.8.1</version>
+      <version>5.8.2</version>
     </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
-      <version>5.8.1</version>
+      <version>5.8.2</version>
       <scope>test</scope>
     </dependency>
 
@@ -249,14 +249,14 @@
       <artifactId>jmh-core</artifactId>
       <groupId>org.openjdk.jmh</groupId>
       <scope>test</scope>
-      <version>1.33</version>
+      <version>1.34</version>
     </dependency>
 
     <dependency>
       <artifactId>jmh-generator-annprocess</artifactId>
       <groupId>org.openjdk.jmh</groupId>
       <scope>test</scope>
-      <version>1.33</version>
+      <version>1.34</version>
     </dependency>
   </dependencies>
 </project>
