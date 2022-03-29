@@ -45,11 +45,14 @@ class StorageFactoryFactory {
   private static final StorageFactoryFactory instance = new StorageFactoryFactory();
   private final ServiceLoader<StorageFactory> storageFactories;
   private final ServiceLoader<Cache> caches;
-
+  private final List<String> layered = new ArrayList<>();
+  private final List<String> known = new ArrayList<>();
 
   private StorageFactoryFactory() {
     storageFactories = ServiceLoader.load(StorageFactory.class);
     caches = ServiceLoader.load(Cache.class);
+    caches.forEach(layer -> layered.add(layer.getName()));
+    storageFactories.forEach(storageFactory -> known.add(storageFactory.getName()));
   }
 
   public static StorageFactoryFactory getInstance() {
@@ -57,17 +60,12 @@ class StorageFactoryFactory {
   }
 
   public List<String> getKnownStorages() {
-    List<String> known = new ArrayList<>();
-    storageFactories.forEach(storageFactory -> known.add(storageFactory.getName()));
     return known;
   }
 
-  public List<String> getKnownLayers() {
-    List<String> layered = new ArrayList<>();
-    caches.forEach(layer -> layered.add(layer.getName()));
+  public List<String> getKnownLayers(){
     return layered;
   }
-
 
   @SuppressWarnings("java:S2293")
   @SneakyThrows
