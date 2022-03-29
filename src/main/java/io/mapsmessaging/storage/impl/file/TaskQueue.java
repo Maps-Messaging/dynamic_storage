@@ -96,6 +96,11 @@ public class TaskQueue {
     }
   }
 
+  public <V> Future<V> scheduleNow(FileTask<V> raw) {
+    FileWrapperTask<V> task = new FileWrapperTask<>(raw, pending);
+    return SCHEDULER_EXECUTOR.submit(task);
+  }
+
   public <V> Future<V> schedule(FileTask<V> raw, long startIn, TimeUnit timeUnit) {
     FileWrapperTask<V> task = new FileWrapperTask<>(raw, pending);
     return SCHEDULER_EXECUTOR.schedule(task, startIn, timeUnit);

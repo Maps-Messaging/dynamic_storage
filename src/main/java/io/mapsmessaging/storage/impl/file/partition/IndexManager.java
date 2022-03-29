@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.storage.impl.file.partition;
 
+import io.mapsmessaging.storage.impl.file.tasks.MemoryMapLoadTask;
 import io.mapsmessaging.utilities.collections.MappedBufferHelper;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import java.io.Closeable;
@@ -63,7 +64,7 @@ public class IndexManager implements Closeable {
   private volatile boolean closed;
   private volatile boolean paused;
 
-  private volatile AtomicBoolean loaded;
+  private final AtomicBoolean loaded;
 
 
   public IndexManager(FileChannel channel) throws IOException {
@@ -84,7 +85,7 @@ public class IndexManager implements Closeable {
     expiryIndex = new NaturalOrderedLongList();
     maxKey = 0;
     paused = false;
-    loadMap(totalSize, true);
+    index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
   }
 
   public IndexManager(long start, int itemSize, FileChannel channel) throws IOException {
@@ -114,7 +115,7 @@ public class IndexManager implements Closeable {
     channel.position(position); // Move back
     expiryIndex = new NaturalOrderedLongList();
     closed = false;
-    loadMap(totalSize, false);
+    index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
   }
 
   @Override
@@ -307,22 +308,22 @@ public class IndexManager implements Closeable {
     }
   }
 
-  private void loadMap(int totalSize, boolean walkIndex) throws IOException {
-    index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
-    Thread offLoad = new Thread(() -> {
-      try {
-        index.load(); // Ensure the file contents are loaded
-        if(walkIndex) {
-          List<Long> expired = walkIndex();
-          for (Long key : expired) {
-            delete(key, true);
-          }
+  public void loadMap(boolean walkIndex){
+    try {
+      index.load(); // Ensure the file contents are loaded
+      if(walkIndex) {
+        List<Long> expired = walkIndex();
+        for (Long key : expired) {
+          delete(key, true);
         }
-      } finally {
-        loaded.set(true); // pass any exception to another call
       }
-    });
-    offLoad.start();
+    } finally {
+      loaded.set(true); // pass any exception to another call
+    }
+  }
+
+  public MemoryMapLoadTask queueTask(boolean walkIndex) throws IOException {
+    return new MemoryMapLoadTask(this, walkIndex);
   }
 
   public class HeaderIterator implements Iterator<IndexRecord> {

@@ -147,6 +147,7 @@ public class IndexStorage<T extends Storable> {
     headerValidation.flip();
     mapChannel.write(headerValidation);
     IndexManager idx = new IndexManager(start, itemCount, mapChannel);
+    scheduler.scheduleNow(idx.queueTask(false));
     mapChannel.force(false);
     requiresValidation = false;
     return idx;
@@ -167,7 +168,7 @@ public class IndexStorage<T extends Storable> {
       throw new IOException("Unexpected item count");
     }
     IndexManager idx = new IndexManager(mapChannel);
-
+    scheduler.scheduleNow(idx.queueTask(true));
     headerValidation.flip();
     headerValidation.putLong(0, OPEN_STATE);
     mapChannel.position(0);
