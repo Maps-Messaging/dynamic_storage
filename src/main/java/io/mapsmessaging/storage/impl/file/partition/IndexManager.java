@@ -310,7 +310,6 @@ public class IndexManager implements Closeable {
   private void loadMap(int totalSize, boolean walkIndex) throws IOException {
     index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
     Thread offLoad = new Thread(() -> {
-      long time = System.currentTimeMillis();
       try {
         index.load(); // Ensure the file contents are loaded
         if(walkIndex) {
@@ -321,8 +320,6 @@ public class IndexManager implements Closeable {
         }
       } finally {
         loaded.set(true); // pass any exception to another call
-        time = System.currentTimeMillis() - time;
-        System.err.println("Time to load:"+time);
       }
     });
     offLoad.start();
