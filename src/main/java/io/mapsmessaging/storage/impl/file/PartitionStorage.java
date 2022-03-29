@@ -100,7 +100,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     deletes = new LongAdder();
     byteWrites = new LongAdder();
     byteReads = new LongAdder();
-    lastKeyStored = reloadLastKeyStore();
+    lastKeyStored = -2;
     lastAccess = System.currentTimeMillis();
   }
 
@@ -204,7 +204,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     byteWrites.add(indexRecord.getLength());
     writes.increment();
     writeTimes.add((System.currentTimeMillis() - time));
-    if (lastKeyStored < object.getKey()) {
+    if (getLastKey() < object.getKey()) {
       lastKeyStored = object.getKey();
     }
   }
@@ -274,6 +274,9 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
 
   @Override
   public long getLastKey() {
+    if(lastKeyStored == -2){
+      lastKeyStored = reloadLastKeyStore();
+    }
     return lastKeyStored;
   }
 
