@@ -32,6 +32,11 @@ import org.jetbrains.annotations.Nullable;
 
 @ToString
 public class StorageBuilder<T extends Storable> {
+
+  public static void initialiseLayer(){
+    StorageFactoryFactory.getInstance().getKnownStorages();
+    StorageFactoryFactory.getInstance().getKnownLayers();
+  }
   private final Logger logger = LoggerFactory.getLogger(StorageBuilder.class);
 
   private String storeType;
