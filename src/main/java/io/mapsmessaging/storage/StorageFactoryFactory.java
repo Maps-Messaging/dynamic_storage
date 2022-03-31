@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.ServiceLoader.Provider;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,14 +42,26 @@ class StorageFactoryFactory {
   private static final Logger logger = LoggerFactory.getLogger(StorageFactoryFactory.class);
 
   private static final StorageFactoryFactory instance = new StorageFactoryFactory();
-  private final ServiceLoader<StorageFactory> storageFactories;
-  private final ServiceLoader<Cache> caches;
+
+  private final List<StorageFactory> storageFactories;
+  private final List<Cache> caches;
   private final List<String> layered = new ArrayList<>();
   private final List<String> known = new ArrayList<>();
 
   private StorageFactoryFactory() {
-    storageFactories = ServiceLoader.load(StorageFactory.class);
-    caches = ServiceLoader.load(Cache.class);
+    ServiceLoader<StorageFactory> serviceLoader = ServiceLoader.load(StorageFactory.class);
+    ServiceLoader<Cache> serviceCaches = ServiceLoader.load(Cache.class);
+
+    storageFactories = new ArrayList<>();
+    for(StorageFactory storageFactory:serviceLoader){
+      storageFactories.add(storageFactory);
+    }
+
+    caches = new ArrayList<>();
+    for(Cache cache:serviceCaches){
+      caches.add(cache);
+    }
+
     caches.forEach(layer -> layered.add(layer.getName()));
     storageFactories.forEach(storageFactory -> known.add(storageFactory.getName()));
   }
@@ -71,10 +82,10 @@ class StorageFactoryFactory {
   @SneakyThrows
   @Nullable <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory,
       ExpiredStorableHandler expiredStorableHandler) {
-    Optional<Provider<StorageFactory>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.get().getName().equals(name)).findFirst();
+    Optional<StorageFactory> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_FACTORY, first.get().getClass().getName());
-      StorageFactory<?> found = first.get().get();
+      StorageFactory<?> found = first.get();
       Class<T> clazz = (Class<T>) found.getClass();
       Constructor<T>[] constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
       Constructor<T> constructor = null;
@@ -103,10 +114,10 @@ class StorageFactoryFactory {
   @SuppressWarnings("java:S2293")
   @SneakyThrows
   @NotNull <T extends Storable> CacheLayer<T> createCache(@NotNull String name, boolean enableWriteThrough, @NotNull Storage<T> baseStore) {
-    Optional<Provider<Cache>> first = caches.stream().filter(layer -> layer.get().getName().equals(name)).findFirst();
+    Optional<Cache> first = caches.stream().filter(layer -> layer.getName().equals(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_CACHE_FACTORY, name);
-      Cache<?> found = first.get().get();
+      Cache<?> found = first.get();
       Class<T> clazz = (Class<T>) found.getClass();
       Constructor<T>[] constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
       Constructor<T> constructor = null;
