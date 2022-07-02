@@ -54,25 +54,34 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
   }
 
   public Storage<T> create(String name, TaskQueue taskQueue) throws IOException {
-    boolean sync = false;
+    PartitionStorageConfig<T> config = new PartitionStorageConfig<>();
+    config.setFileName(name);
+    config.setTaskQueue(taskQueue);
+    config.setSync(false);
     if (properties.containsKey("Sync")) {
-      sync = Boolean.parseBoolean(properties.get("Sync"));
+      config.setSync(Boolean.parseBoolean(properties.get("Sync")));
     }
     int itemCount = ITEM_COUNT;
     if (properties.containsKey("ItemCount")) {
       itemCount = Integer.parseInt(properties.get("ItemCount"));
     }
+    config.setItemCount(itemCount);
+
     long maxPartitionSize = MAXIMUM_DATA_SIZE;
     if (properties.containsKey("MaxPartitionSize")) {
       maxPartitionSize = Long.parseLong(properties.get("MaxPartitionSize"));
     }
+    config.setMaxPartitionSize(maxPartitionSize);
 
     int expiredEventPoll = EXPIRED_EVENT_MONITOR_TIME;
     if (properties.containsKey("ExpiredEventPoll")) {
       expiredEventPoll = Integer.parseInt(properties.get("ExpiredEventPoll"));
     }
+    config.setExpiredEventPoll(expiredEventPoll);
 
-    return new PartitionStorage<>(name, storableFactory, expiredHandler, sync, itemCount, maxPartitionSize, expiredEventPoll, taskQueue);
+    config.setStorableFactory(storableFactory);
+    config.setExpiredHandler(expiredHandler);
+    return new PartitionStorage<>(config);
   }
 
   @Override
