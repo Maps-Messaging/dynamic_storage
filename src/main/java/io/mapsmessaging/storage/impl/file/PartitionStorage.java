@@ -77,7 +77,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     this.storableFactory = config.getStorableFactory();
     partitionCounter = 0;
     shutdown = false;
-    File location = new File(fileName);
+    File location = new File(config.getFileName());
     expiredMonitor = new ExpireStorableTaskManager<>(this, taskScheduler, config.getExpiredEventPoll());
     if (location.exists()) {
       reload(location);

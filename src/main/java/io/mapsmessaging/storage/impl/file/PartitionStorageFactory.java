@@ -55,12 +55,12 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
 
   public Storage<T> create(String name, TaskQueue taskQueue) throws IOException {
     PartitionStorageConfig<T> config = new PartitionStorageConfig<>();
-    config.setFileName(name);
-    config.setTaskQueue(taskQueue);
-    config.setSync(false);
+    boolean sync = false;
     if (properties.containsKey("Sync")) {
-      config.setSync(Boolean.parseBoolean(properties.get("Sync")));
+      sync = Boolean.parseBoolean(properties.get("Sync"));
     }
+    config.setSync(sync);
+
     int itemCount = ITEM_COUNT;
     if (properties.containsKey("ItemCount")) {
       itemCount = Integer.parseInt(properties.get("ItemCount"));
@@ -73,12 +73,14 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
     }
     config.setMaxPartitionSize(maxPartitionSize);
 
+    config.setFileName(name);
+    config.setTaskQueue(taskQueue);
+
     int expiredEventPoll = EXPIRED_EVENT_MONITOR_TIME;
     if (properties.containsKey("ExpiredEventPoll")) {
       expiredEventPoll = Integer.parseInt(properties.get("ExpiredEventPoll"));
     }
     config.setExpiredEventPoll(expiredEventPoll);
-
     config.setStorableFactory(storableFactory);
     config.setExpiredHandler(expiredHandler);
     return new PartitionStorage<>(config);
