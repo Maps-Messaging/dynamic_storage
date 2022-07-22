@@ -322,7 +322,7 @@ public class IndexManager implements Closeable {
     }
   }
 
-  public MemoryMapLoadTask queueTask(boolean walkIndex) throws IOException {
+  public MemoryMapLoadTask queueTask(boolean walkIndex) {
     return new MemoryMapLoadTask(this, walkIndex);
   }
 

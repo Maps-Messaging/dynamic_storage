@@ -179,20 +179,20 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Simple_Logging</artifactId>
-      <version>2.0.3</version>
+      <version>2.0.4</version>
     </dependency>
     <!-- Naturally order long collection -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Naturally_Ordered_Long_Collections</artifactId>
-      <version>1.0.12</version>
+      <version>1.0.4</version>
     </dependency>
 
     <!-- Non Blocking Task Queue module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Non_Block_Task_Scheduler</artifactId>
-      <version>2.1.0</version>
+      <version>2.1.1</version>
     </dependency>
 
     <!-- Add annotations for not null -->
@@ -225,7 +225,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.12.213</version>
+      <version>1.12.256</version>
     </dependency>
 
 

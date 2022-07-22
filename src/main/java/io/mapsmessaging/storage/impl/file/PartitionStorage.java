@@ -65,28 +65,20 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private long lastKeyStored;
   private long lastAccess;
 
-  public PartitionStorage(
-      String fileName,
-      StorableFactory<T> storableFactory,
-      ExpiredStorableHandler expiredHandler,
-      boolean sync,
-      int itemCount,
-      long maxPartitionSize,
-      int expiredEventPoll,
-      TaskQueue taskQueue) throws IOException {
+  public PartitionStorage(PartitionStorageConfig<T> config) throws IOException{
     partitions = new ArrayList<>();
-    taskScheduler = taskQueue;
-    rootDirectory = fileName;
-    this.expiredHandler = Objects.requireNonNullElseGet(expiredHandler, () -> new BaseExpiredHandler<>(this));
-    this.itemCount = itemCount;
-    this.maxPartitionSize = maxPartitionSize;
-    this.fileName = fileName + File.separator + PARTITION_FILE_NAME;
-    this.sync = sync;
-    this.storableFactory = storableFactory;
+    taskScheduler = config.getTaskQueue();
+    rootDirectory = config.getFileName();
+    this.expiredHandler = Objects.requireNonNullElseGet(config.getExpiredHandler(), () -> new BaseExpiredHandler<>(this));
+    this.itemCount = config.getItemCount();
+    this.maxPartitionSize = config.getMaxPartitionSize();
+    this.fileName = config.getFileName() + File.separator + PARTITION_FILE_NAME;
+    this.sync = config.isSync();
+    this.storableFactory = config.getStorableFactory();
     partitionCounter = 0;
     shutdown = false;
-    File location = new File(fileName);
-    expiredMonitor = new ExpireStorableTaskManager<>(this, taskScheduler, expiredEventPoll);
+    File location = new File(config.getFileName());
+    expiredMonitor = new ExpireStorableTaskManager<>(this, taskScheduler, config.getExpiredEventPoll());
     if (location.exists()) {
       reload(location);
     } else {
