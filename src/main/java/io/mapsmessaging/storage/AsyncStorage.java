@@ -28,7 +28,9 @@ import io.mapsmessaging.storage.tasks.AddTask;
 import io.mapsmessaging.storage.tasks.AutoPauseTask;
 import io.mapsmessaging.storage.tasks.CloseTask;
 import io.mapsmessaging.storage.tasks.Completion;
+import io.mapsmessaging.storage.tasks.ContainsTask;
 import io.mapsmessaging.storage.tasks.DeleteTask;
+import io.mapsmessaging.storage.tasks.GetKeysTask;
 import io.mapsmessaging.storage.tasks.GetTask;
 import io.mapsmessaging.storage.tasks.IsEmptyTask;
 import io.mapsmessaging.storage.tasks.KeepOnlyTask;
@@ -179,6 +181,24 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   public Future<List<Long>> keepOnly(@NotNull List<Long> listToKeep, Completion<List<Long>> completion) throws IOException {
     checkClose();
     return scheduler.submit(new KeepOnlyTask<>(storage, listToKeep, completion), FOREGROUND_PRIORITY);
+  }
+
+  public Future<List<Long>> getKeys() throws IOException {
+    return getKeys(null);
+  }
+
+  public Future<List<Long>> getKeys(Completion<List<Long>> completion) throws IOException {
+    checkClose();
+    return scheduler.submit(new GetKeysTask<>(storage, completion), FOREGROUND_PRIORITY);
+  }
+
+  public Future<Boolean> contains(long key) throws IOException {
+    return contains(key, null);
+  }
+
+  public Future<Boolean> contains(long key, Completion<Boolean> completion) throws IOException {
+    checkClose();
+    return scheduler.submit(new ContainsTask<>(storage, key, completion), FOREGROUND_PRIORITY);
   }
 
   public Future<Statistics> getStatistics() {

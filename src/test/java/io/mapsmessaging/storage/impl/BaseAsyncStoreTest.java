@@ -82,6 +82,42 @@ public abstract class BaseAsyncStoreTest extends BaseTest {
 
 
   @Test
+  void basicAsyncIndexTests() throws IOException, ExecutionException, InterruptedException {
+    AsyncStorage<MappedData> async=null;
+    try {
+      async = createAsyncStore(testName, false);
+      async.enableAutoPause(1000); // Enable auto pause after 2 seconds
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      for (int x = 0; x < 1000; x++) {
+        MappedData message = createMessageBuilder(x);
+        async.add(message).get();
+        validateMessage(message, x);
+      }
+      Assertions.assertEquals(1000, async.size().get());
+
+      for(int x=0;x<1000;x++){
+        Assertions.assertTrue(async.contains(x).get());
+      }
+      long index=0;
+      for(Long key:async.getKeys().get()){
+        Assertions.assertEquals(index, key);
+        index++;
+      }
+      async.keepOnly(new ArrayList<>()).get();
+
+      Assertions.assertTrue(async.isEmpty().get());
+    } finally {
+      if (async != null) {
+        async.delete().get();
+      }
+    }
+  }
+
+  @Test
   void runSimpleAsyncCompletionStore() throws IOException, ExecutionException, InterruptedException {
     AsyncStorage<MappedData> async = createAsyncStore(testName, true);
     AtomicBoolean completed = new AtomicBoolean(false);
