@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Assertions;
@@ -42,6 +43,7 @@ public class PartitionStoreTest extends BaseStoreTest {
     }
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + sync);
+    properties.put("ItemCount", ""+ 100);
     properties.put("MaxPartitionSize", "" + (512L * 1024L * 1024L)); // set to 5MB data limit
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
@@ -58,12 +60,13 @@ public class PartitionStoreTest extends BaseStoreTest {
   }
 
   @Test
-  public void testIndexCompaction() throws IOException, ExecutionException, InterruptedException {
+  void testIndexCompaction() throws IOException, ExecutionException, InterruptedException {
     File file = new File("test_file" + File.separator + "testIndexCompaction");
     Files.deleteIfExists(file.toPath());
 
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + false);
+    properties.put("ItemCount", ""+ 1_000_000);
     properties.put("MaxPartitionSize", "" + (1024L * 1024L)); // set to 1MB data limit // force the index
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
@@ -78,13 +81,25 @@ public class PartitionStoreTest extends BaseStoreTest {
     // Remove any before we start
 
     try {
-      for (int x = 0; x < 1000; x++) {
+      for (int x = 0; x < 10_000; x++) {
         MappedData message = createMessageBuilder(x);
         storage.add(message, null).get();
+        Assertions.assertEquals(x+1, storage.size().get());
+        MappedData lookup = storage.get(x).get();
+        Assertions.assertNotNull(lookup);
+        Assertions.assertEquals(message.key, lookup.key);
       }
       // We should have compacted the index and have multiple indexes now
       Statistics statistics = storage.getStatistics().get();
-      Assertions.assertEquals(3, ((StorageStatistics) statistics).getPartitionCount());
+      Assertions.assertEquals(26, ((StorageStatistics) statistics).getPartitionCount());
+      List<Long> keys = storage.getKeys().get();
+      long index =0;
+      for(Long key:keys){
+        Assertions.assertEquals(index, key);
+        index++;
+      }
+      Assertions.assertEquals(10_000, keys.size());
+
     } finally {
       storage.delete().get();
     }

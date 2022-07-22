@@ -97,6 +97,50 @@ public abstract class BaseAsyncStoreTest extends BaseTest {
     }
   }
 
+  @Test
+  void basicAsyncStoreTests() throws IOException, ExecutionException, InterruptedException {
+    AsyncStorage<MappedData> async=null;
+    try {
+      int count = 10_000;
+      async = createAsyncStore(testName, false);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      for (int x = 0; x < count; x++) {
+        MappedData message = createMessageBuilder(x);
+        async.add(message).get();
+        if(Boolean.FALSE.equals(async.contains(x).get())){
+          System.err.println("Failed "+x);
+        }
+        Assertions.assertEquals((x+1), async.size().get());
+        MappedData reloaded = async.get(x).get();
+        Assertions.assertNotNull(reloaded);
+        validateMessage(async.get(x).get(), x);
+      }
+      Assertions.assertEquals(count, async.size().get());
+
+      for(int x=0;x<count;x++){
+        Assertions.assertTrue(async.contains(x).get());
+      }
+      long index=0;
+      long size = async.size().get();
+      List<Long> keys = async.getKeys().get();
+      Assertions.assertEquals(size, keys.size());
+      for(Long key:keys){
+        Assertions.assertEquals(index, key);
+        index++;
+      }
+      async.keepOnly(new ArrayList<>()).get();
+
+      Assertions.assertTrue(async.isEmpty().get());
+    } finally {
+      if (async != null) {
+        async.delete().get();
+      }
+    }
+  }
 
   @Test
   void basicAsyncIndexTests() throws IOException, ExecutionException, InterruptedException {

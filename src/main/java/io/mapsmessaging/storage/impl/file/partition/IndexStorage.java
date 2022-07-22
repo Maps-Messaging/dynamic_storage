@@ -176,8 +176,9 @@ public class IndexStorage<T extends Storable> {
   }
 
   public void compact() throws IOException {
-    long size = ((indexManager.getEnd() - indexManager.getStart() + 1) * IndexRecord.HEADER_SIZE) + 24 + 16;
-    if (size < mapChannel.size()) {
+    long size = ((indexManager.getEnd() - indexManager.getStart() + 2) * IndexRecord.HEADER_SIZE) + 24 + 16;
+    long mapSize = mapChannel.size();
+    if (size <mapSize) {
       File currentIndex = new File(fileName);
       File tmpIndex = new File(fileName + "_tmp");
       try (FileChannel tmp = (FileChannel) Files.newByteChannel(tmpIndex.toPath(), CREATE_NEW, WRITE)) {

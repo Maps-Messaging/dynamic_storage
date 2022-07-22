@@ -90,7 +90,7 @@ public class IndexManager implements Closeable {
     this.channel = channel;
     position = channel.position();
     this.start = start;
-    end = start + itemSize;
+    end = (start + itemSize)-1;
 
     localEnd = end;
     counter = new LongAdder();
@@ -289,7 +289,7 @@ public class IndexManager implements Closeable {
   public List<Long> keySet() {
     List<Long> keys = new NaturalOrderedLongList();
     getIterator().forEachRemaining(indexRecord -> {
-      if (indexRecord != null) {
+      if (indexRecord != null && indexRecord.getLength() != 0) {
         keys.add(indexRecord.getKey());
       }
     });
@@ -343,7 +343,7 @@ public class IndexManager implements Closeable {
 
     private IndexRecord locateNext() {
       IndexRecord item = null;
-      while (key != end && item == null) {
+      while (key <= end && item == null) {
         item = get(key);
         key++;
       }
