@@ -84,6 +84,7 @@ public interface Storage<T extends Storable> extends Closeable {
 
   @NotNull List<Long> getKeys();
 
+  boolean contains(long key);
   //endregion
 
 

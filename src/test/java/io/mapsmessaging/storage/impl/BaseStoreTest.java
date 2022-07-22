@@ -67,6 +67,41 @@ public abstract class BaseStoreTest extends BaseTest {
   }
 
   @Test
+  void basicIndexTests() throws IOException {
+    Storage<MappedData> storage = null;
+    try {
+      storage = createStore(testName, false);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      for (int x = 0; x < 1000; x++) {
+        MappedData message = createMessageBuilder(x);
+        validateMessage(message, x);
+        storage.add(message);
+      }
+      Assertions.assertEquals(1000, storage.size());
+
+      for(int x=0;x<1000;x++){
+        Assertions.assertTrue(storage.contains(x));
+      }
+      long index=0;
+      for(Long key:storage.getKeys()){
+        Assertions.assertEquals(index, key);
+        index++;
+      }
+      storage.keepOnly(new ArrayList<>());
+
+      Assertions.assertTrue(storage.isEmpty());
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+    }
+  }
+
+  @Test
   void basicKeepOnlyTest() throws IOException {
     Storage<MappedData> storage = null;
     try {

@@ -89,6 +89,7 @@ public class IndexStorage<T extends Storable> {
     dataStorage = new DataStorage<>(fileName + "_data", storableFactory, sync, maxPartitionSize);
     if (dataStorage.isValidationRequired() || requiresValidation) {
       // We need to validate the data / index
+
     }
     closed = false;
     paused = false;
@@ -309,5 +310,9 @@ public class IndexStorage<T extends Storable> {
       writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE};
     }
     return (FileChannel) Files.newByteChannel(file.toPath(), writeOptions);
+  }
+
+  public boolean contains(long key) {
+    return indexManager.contains(key);
   }
 }

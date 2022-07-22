@@ -127,6 +127,11 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
     return keyList;
   }
 
+  @Override
+  public boolean contains(long key) {
+    return memoryMap.containsKey(key);
+  }
+
   public void scanForExpired() throws IOException {
     long now = System.currentTimeMillis();
     try (BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)) {

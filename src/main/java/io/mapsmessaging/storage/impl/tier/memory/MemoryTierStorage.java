@@ -158,6 +158,11 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
+  public boolean contains(long key) {
+    return primary.contains(key) || secondary.contains(key);
+  }
+
+  @Override
   public void setExecutor(TaskScheduler executor) {
     secondary.setExecutor(executor);
     scanner = secondary.getTaskScheduler().scheduleAtFixedRate(new TierMigrationTask(this), scanInterval, TimeUnit.MILLISECONDS);

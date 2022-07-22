@@ -264,6 +264,16 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   }
 
   @Override
+  public boolean contains(long key) {
+    for (IndexStorage<T> partition : partitions) {
+      if(partition.contains(key)){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
   public long size() {
     long size = 0;
     for (IndexStorage<T> partition : partitions) {

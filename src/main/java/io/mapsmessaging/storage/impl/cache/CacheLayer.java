@@ -159,6 +159,11 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   }
 
   @Override
+  public boolean contains(long key) {
+    return baseStorage.contains(key);
+  }
+
+  @Override
   public void setExecutor(TaskScheduler scheduler) {
     baseStorage.setExecutor(scheduler);
   }
