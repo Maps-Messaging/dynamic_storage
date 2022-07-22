@@ -245,6 +245,7 @@ public class IndexManager implements Closeable {
   void setMapPosition(long key) {
     setMapPosition(key, false);
   }
+
   void setMapPosition(long key, boolean override) {
     if(!override)waitForLoad();
     int adjusted = (int) (key - start);
