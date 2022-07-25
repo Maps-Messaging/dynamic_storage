@@ -23,7 +23,7 @@
 
   <groupId>io.mapsmessaging</groupId>
   <artifactId>DynamicStorage</artifactId>
-  <version>2.3.0</version>
+  <version>2.3.1</version>
   <packaging>jar</packaging>
 
   <properties>
@@ -202,7 +202,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Naturally_Ordered_Long_Collections</artifactId>
-      <version>1.0.12</version>
+      <version>1.1.0</version>
     </dependency>
 
     <!-- Non Blocking Task Queue module -->
