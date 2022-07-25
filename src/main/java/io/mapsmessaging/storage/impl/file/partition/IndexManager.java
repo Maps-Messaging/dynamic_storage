@@ -181,15 +181,18 @@ public class IndexManager implements Closeable {
   }
 
   public int size() {
+    waitForLoad();
     return (int) counter.sum();
   }
 
   public long emptySpace() {
+    waitForLoad();
     return (int) emptySpace.sum();
   }
 
 
   public boolean add(long key, @NotNull IndexRecord item) {
+    waitForLoad();
     if (key >= start && key <= localEnd && !closed && key <= end) {
       if (item.getExpiry() > 0) {
         expiryIndex.add(key);
@@ -203,6 +206,7 @@ public class IndexManager implements Closeable {
   }
 
   public @Nullable IndexRecord get(long key) {
+    waitForLoad();
     IndexRecord item = null;
     if (key >= start && key <= localEnd && !closed && key <= end) {
       setMapPosition(key);
@@ -213,6 +217,7 @@ public class IndexManager implements Closeable {
   }
 
   public boolean contains(long key) {
+    waitForLoad();
     if (key >= start && key <= localEnd && !closed && key <= end) {
       setMapPosition(key);
       IndexRecord item = new IndexRecord(index);
@@ -226,6 +231,7 @@ public class IndexManager implements Closeable {
   }
 
   boolean delete(long key, boolean override) {
+    waitForLoad();
     if (key >= start && key <= localEnd && !closed && key <= end) {
       setMapPosition(key, override);
       IndexRecord item = new IndexRecord(index);
@@ -287,6 +293,7 @@ public class IndexManager implements Closeable {
   }
 
   public List<Long> keySet() {
+    waitForLoad();
     List<Long> keys = new NaturalOrderedLongList();
     getIterator().forEachRemaining(indexRecord -> {
       if (indexRecord != null && indexRecord.getLength() != 0) {
