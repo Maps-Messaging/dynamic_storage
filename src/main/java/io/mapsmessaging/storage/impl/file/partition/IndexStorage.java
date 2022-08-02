@@ -51,7 +51,7 @@ public class IndexStorage<T extends Storable> {
   private static final long CLOSE_STATE = 0x0000000000000000L;
 
   private final long maxPartitionSize;
-  private final int itemCount;
+  private int itemCount;
   private final boolean sync;
   private final String fileName;
   private final StorableFactory<T> storableFactory;
@@ -163,7 +163,7 @@ public class IndexStorage<T extends Storable> {
       throw new IOException("Unexpected file version");
     }
     if (headerValidation.getLong() != itemCount) {
-      throw new IOException("Unexpected item count");
+      itemCount = (int)(headerValidation.getLong() & 0x7fffffffL);
     }
     IndexManager idx = new IndexManager(mapChannel);
     idx.loadMap(true);

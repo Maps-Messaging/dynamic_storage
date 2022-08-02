@@ -22,9 +22,14 @@ import lombok.Getter;
 
 public class MemoryTierStatistics implements Statistics {
 
-  private final @Getter Statistics memoryStatistics;
-  private final @Getter Statistics fileStatistics;
-  private final @Getter long migratedCount;
+  @Getter
+  private final Statistics memoryStatistics;
+
+  @Getter
+  private final Statistics fileStatistics;
+
+  @Getter
+  private final long migratedCount;
 
   MemoryTierStatistics(Statistics memoryStatistics, Statistics fileStatistics, long migratedCount){
     this.memoryStatistics = memoryStatistics;

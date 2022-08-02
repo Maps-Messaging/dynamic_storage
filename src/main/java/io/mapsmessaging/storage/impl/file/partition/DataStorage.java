@@ -53,10 +53,12 @@ public class DataStorage<T extends Storable> implements Closeable {
   private final ByteBuffer lengthBuffer;
 
   private volatile boolean closed;
-  private @Getter
-  boolean validationRequired;
-  private @Getter
-  boolean full;
+
+  @Getter
+  private boolean validationRequired;
+
+  @Getter
+  private boolean full;
 
   public DataStorage(String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
     objectStorableFactory = storableFactory;

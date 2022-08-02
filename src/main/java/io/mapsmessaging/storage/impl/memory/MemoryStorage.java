@@ -55,7 +55,8 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   private final LongAdder deletes;
   private final ExpiredStorableHandler expiredStorableHandler;
   private final ExpireStorableTaskManager<T> expireStorableTaskManager;
-  private final @Getter TaskQueue taskScheduler;
+  @Getter
+  private final TaskQueue taskScheduler;
 
   private long lastKeyStored;
   private long lastAccess;

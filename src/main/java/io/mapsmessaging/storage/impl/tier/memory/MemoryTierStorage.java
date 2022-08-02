@@ -40,13 +40,18 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   private final Storage<ObjectMonitor<T>> primary;
   private final Storage<T> secondary;
-  private final @Getter long scanInterval;
-  private final @Getter long migrationTime;
   private final long memorySize;
   private final Queue<Long> memoryList;
   private final LongAdder migratedEvents;
 
   private ScheduledFuture<?> scanner;
+
+  @Getter
+  private final long scanInterval;
+
+  @Getter
+  private final long migrationTime;
+
 
   private long lastKey;
 

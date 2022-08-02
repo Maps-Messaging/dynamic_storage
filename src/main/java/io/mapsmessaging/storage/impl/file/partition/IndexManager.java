@@ -43,8 +43,14 @@ public class IndexManager implements Closeable {
 
   private static final int HEADER_SIZE = 16;
 
+  @Getter
+  private final long start;
 
-  private final @Getter List<Long> expiryIndex;
+  @Getter
+  private long end;
+
+  @Getter
+  private final List<Long> expiryIndex;
 
   private final FileChannel channel;
   private final long position;
@@ -52,9 +58,6 @@ public class IndexManager implements Closeable {
 
   private final LongAdder counter;
   private final LongAdder emptySpace;
-  private final @Getter long start;
-
-  private @Getter long end;
   private MappedByteBuffer index;
 
   private volatile long maxKey;

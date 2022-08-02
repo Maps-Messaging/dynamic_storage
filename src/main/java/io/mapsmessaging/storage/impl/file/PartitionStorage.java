@@ -57,8 +57,10 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private static final String PARTITION_FILE_NAME = "partition_";
 
   private final ExpiredStorableHandler expiredHandler;
-  private final @Getter
-  TaskQueue taskScheduler;
+
+  @Getter
+  private final TaskQueue taskScheduler;
+
   private final int itemCount;
   private final long maxPartitionSize;
   private final ExpireStorableTaskManager<T> expiredMonitor;

@@ -22,14 +22,14 @@ import lombok.Getter;
 
 public class CacheStatistics implements Statistics {
 
-  private final @Getter
-  long miss;
-  private final @Getter
-  long hit;
-  private final @Getter
-  int size;
-  private final @Getter
-  Statistics storageStatistics;
+  @Getter
+  private final long miss;
+  @Getter
+  private final long hit;
+  @Getter
+  private final int size;
+  @Getter
+  private final Statistics storageStatistics;
 
   public CacheStatistics(long miss, long hit, int size, Statistics storageStatistics) {
     this.miss = miss;
