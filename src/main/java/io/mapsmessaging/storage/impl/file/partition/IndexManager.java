@@ -271,20 +271,25 @@ public class IndexManager implements Closeable {
   }
 
   private void validateIndexRecord(int index, IndexRecord indexRecord, long now, List<Long> expired) {
-    if (indexRecord.getPosition() != 0) {
+    long positionIndex = indexRecord.getPosition();
+    if (positionIndex != 0) {
       maxKey = index;
-      if (indexRecord.getPosition() > 0) {
+      if (positionIndex > 0) {
         counter.increment();
         checkExpiryDetails(indexRecord, now, expired);
       }
-    } else if (indexRecord.getLength() > 0) {
-      emptySpace.add(indexRecord.getLength());
+    } else{
+      long indexLength = indexRecord.getLength();
+      if (indexLength > 0) {
+        emptySpace.add(indexLength);
+      }
     }
   }
 
   private void checkExpiryDetails(IndexRecord indexRecord, long now, List<Long> expired) {
-    if (indexRecord.getExpiry() != 0) {
-      if (indexRecord.getExpiry() > now) {
+    long expiry = indexRecord.getExpiry();
+    if (expiry != 0) {
+      if (expiry > now) {
         expiryIndex.add(indexRecord.getKey());
       } else {
         expired.add(indexRecord.getKey());
