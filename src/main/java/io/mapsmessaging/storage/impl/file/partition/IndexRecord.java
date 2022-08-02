@@ -29,11 +29,13 @@ public class IndexRecord {
 
   @Getter
   private final long expiry;     // Expiry of this entry in milliseconds
+
   @Getter
   private final long position;   // Position within the log file or the index file
 
   @Getter
   private final int locationId; // If 0 then located within the index file, else is the unique ID of the data file
+
   @Getter
   private final int length;     // The number of bytes that the record consumes
 
