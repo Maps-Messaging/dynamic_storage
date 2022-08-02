@@ -40,10 +40,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -455,11 +458,19 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     if (location.isDirectory()) {
       String[] childFiles = location.list();
       if (childFiles != null) {
-        boolean hasExpired = false;
-        for (String test : childFiles) {
-          hasExpired = loadStore(test) || hasExpired;
+        AtomicBoolean hasExpired = new AtomicBoolean(false);
+        AtomicReference<IOException> exception = new AtomicReference<>();
+        Arrays.stream(childFiles).parallel().forEach(test -> {
+          try {
+            hasExpired.set(loadStore(test) || hasExpired.get());
+          } catch (IOException e) {
+            exception.set(e);
+          }
+        });
+        if(exception.get() != null){
+          throw exception.get();
         }
-        if (hasExpired) {
+        if (hasExpired.get()) {
           expiredMonitor.schedulePoll();
         }
       }
@@ -474,11 +485,12 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
 
   private void scanForEmpty() throws IOException {
     List<IndexStorage<T>> emptyReloads = new ArrayList<>();
-    for (IndexStorage<T> storage : partitions) {
-      if (storage.isEmpty()) {
-        emptyReloads.add(storage);
+    partitions.stream().parallel().forEach(tIndexStorage -> {
+      if(tIndexStorage.isEmpty()){
+        emptyReloads.add(tIndexStorage);
       }
-    }
+    });
+
     if (partitions.size() > 1) {
       // OK we have them simply remove them and schedule delete task
       for (IndexStorage<T> storage : emptyReloads) {
@@ -495,10 +507,12 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     if (test.startsWith(PARTITION_FILE_NAME) && test.endsWith("index")) {
       String loadName = test.substring(PARTITION_FILE_NAME.length(), test.length() - "_index".length());
       IndexStorage<T> indexStorage = new IndexStorage<>(fileName + loadName, storableFactory, sync, 0, itemCount, maxPartitionSize, taskScheduler);
-      partitions.add(indexStorage);
-      int partNumber = extractPartitionNumber(loadName);
-      if (partNumber > partitionCounter) {
-        partitionCounter = partNumber;
+      synchronized (partitions) {
+        partitions.add(indexStorage);
+        int partNumber = extractPartitionNumber(loadName);
+        if (partNumber > partitionCounter) {
+          partitionCounter = partNumber;
+        }
       }
       return (indexStorage.hasExpired());
     }
