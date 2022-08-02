@@ -166,7 +166,7 @@ public class IndexStorage<T extends Storable> {
       throw new IOException("Unexpected item count");
     }
     IndexManager idx = new IndexManager(mapChannel);
-    scheduler.scheduleNow(idx.queueTask(true));
+    idx.loadMap(true);
     headerValidation.flip();
     headerValidation.putLong(0, OPEN_STATE);
     mapChannel.position(0);
