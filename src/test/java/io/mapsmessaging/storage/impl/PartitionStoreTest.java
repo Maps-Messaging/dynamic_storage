@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -103,6 +104,54 @@ public class PartitionStoreTest extends BaseStoreTest {
     } finally {
       storage.delete().get();
     }
+  }
 
+
+  @Test
+  void testRestart() throws IOException, ExecutionException, InterruptedException {
+    File file = new File("test_file" + File.separator + "testRestart");
+    Files.deleteIfExists(file.toPath());
+
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("Sync", "" + false);
+    properties.put("ItemCount", ""+ 1_000);
+    properties.put("ExpiredEventPoll", ""+2000);
+    properties.put("MaxPartitionSize", "" + (1024L * 1024L)); // set to 1MB data limit // force the index
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder.setStorageType("Partition")
+        .setFactory(getFactory())
+        .setName("test_file" + File.separator + "testRestart")
+        .setProperties(properties);
+    AsyncStorage<MappedData> storage = new AsyncStorage<>(storageBuilder.build());
+
+    ThreadStateContext context = new ThreadStateContext();
+    context.add("domain", "ResourceAccessKey");
+    ThreadLocalContext.set(context);
+    // Remove any before we start
+
+    try {
+      for (int x = 0; x < 10_000; x++) {
+        MappedData message = createMessageBuilder(x);
+        message.setExpiry(System.currentTimeMillis()+2000); // 2 Seconds
+        storage.add(message, null).get();
+        Assertions.assertEquals(x+1, storage.size().get());
+        MappedData lookup = storage.get(x).get();
+        Assertions.assertNotNull(lookup);
+        Assertions.assertEquals(message.key, lookup.key);
+      }
+      storage.close();
+      TimeUnit.SECONDS.sleep(3);
+      // Now let's reopen the file and check the expired events
+      storage = new AsyncStorage<>(storageBuilder.build());
+      int count = 0;
+      while(storage.size().get() != 0 && count < 60){
+        TimeUnit.SECONDS.sleep(1);
+        count++;
+      }
+      Assertions.assertEquals(0, (long) storage.size().get());
+
+    } finally {
+      storage.delete().get();
+    }
   }
 }
