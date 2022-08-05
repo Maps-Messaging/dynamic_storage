@@ -19,7 +19,6 @@ package io.mapsmessaging.storage.impl.file.partition;
 
 import java.nio.ByteBuffer;
 import lombok.Getter;
-import lombok.Setter;
 
 public class IndexRecord {
 
@@ -40,8 +39,7 @@ public class IndexRecord {
   private final int length;     // The number of bytes that the record consumes
 
   @Getter
-  @Setter
-  private long key;      // The key, this is calculated and is NOT stored in the header!
+  private final long key;      // The key, this is calculated and is NOT stored in the header!
 
   IndexRecord() {
     position = 0;
@@ -49,9 +47,11 @@ public class IndexRecord {
 
     locationId = 0;
     length = 0;
+    key = 0;
   }
 
-  public IndexRecord(int locationId, long position, long expiry, int length) {
+  public IndexRecord(long key, int locationId, long position, long expiry, int length) {
+    this.key = key;
     this.position = position;
     this.expiry = expiry;
 
@@ -59,7 +59,8 @@ public class IndexRecord {
     this.length = length;
   }
 
-  public IndexRecord(ByteBuffer buffer) {
+  public IndexRecord(long key, ByteBuffer buffer) {
+    this.key = key;
     position = buffer.getLong();
     expiry = buffer.getLong();
     long tmp2 = buffer.getLong();

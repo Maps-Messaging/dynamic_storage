@@ -213,8 +213,7 @@ public class IndexManager implements Closeable {
     IndexRecord item = null;
     if (key >= start && key <= localEnd && !closed && key <= end) {
       setMapPosition(key);
-      item = new IndexRecord(index);
-      item.setKey(key);
+      item = new IndexRecord(key, index);
     }
     return item;
   }
@@ -223,7 +222,7 @@ public class IndexManager implements Closeable {
     waitForLoad();
     if (key >= start && key <= localEnd && !closed && key <= end) {
       setMapPosition(key);
-      IndexRecord item = new IndexRecord(index);
+      IndexRecord item = new IndexRecord(key, index);
       return item.getPosition() != 0;
     }
     return false;
@@ -237,14 +236,14 @@ public class IndexManager implements Closeable {
   boolean delete(long key, boolean override) {
     if (key >= start && key <= localEnd && !closed && key <= end) {
       setMapPosition(key, override);
-      IndexRecord item = new IndexRecord(index);
+      IndexRecord item = new IndexRecord(key, index);
       if (item.getPosition() > 0) {
         expiryIndex.remove(key);
         counter.decrement();
         emptySpace.add(item.getLength());
         setMapPosition(key, true);
         // Mark it as deleted, so on reload we can get the total length and key
-        IndexRecord indexRecord = new IndexRecord(0, -1, 0, item.getLength());
+        IndexRecord indexRecord = new IndexRecord(key, 0, -1, 0, item.getLength());
         indexRecord.update(index);
         return true;
       }
@@ -268,8 +267,7 @@ public class IndexManager implements Closeable {
     int size = (int) (end - start) + 1;
     long now = System.currentTimeMillis();
     for (int x = 0; x < size; x++) {
-      IndexRecord indexRecord = new IndexRecord(index);
-      indexRecord.setKey(start+x);
+      IndexRecord indexRecord = new IndexRecord(start+x, index);
       validateIndexRecord(x, indexRecord, now, expired);
     }
     return expired;

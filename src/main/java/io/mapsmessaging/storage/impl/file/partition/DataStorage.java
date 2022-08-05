@@ -170,9 +170,7 @@ public class DataStorage<T extends Storable> implements Closeable {
     long fileLength = writeChannel.size();
     long length = fileLength - eof;
     full = fileLength > maxPartitionSize;
-    IndexRecord item = new IndexRecord(0, eof, object.getExpiry(), (int) length);
-    item.setKey(object.getKey());
-    return item;
+    return new IndexRecord(object.getKey(), 0, eof, object.getExpiry(), (int) length);
   }
 
   public @Nullable T get(IndexRecord item) throws IOException {
