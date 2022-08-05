@@ -68,7 +68,9 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
   }
 
   public void schedulePoll() {
-    expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask(storage), poll, TimeUnit.SECONDS);
+    if(expiryTask == null || expiryTask.isDone() || expiryTask.isCancelled()) {
+      expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask(storage), poll, TimeUnit.SECONDS);
+    }
   }
 
   public void added(T object) {

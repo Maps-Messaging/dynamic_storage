@@ -115,7 +115,7 @@ public class PartitionStoreTest extends BaseStoreTest {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + false);
     properties.put("ItemCount", ""+ 1_000);
-    properties.put("ExpiredEventPoll", ""+2000);
+    properties.put("ExpiredEventPoll", ""+2);
     properties.put("MaxPartitionSize", "" + (1024L * 1024L)); // set to 1MB data limit // force the index
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
@@ -133,6 +133,7 @@ public class PartitionStoreTest extends BaseStoreTest {
       for (int x = 0; x < 10_000; x++) {
         MappedData message = createMessageBuilder(x);
         message.setExpiry(System.currentTimeMillis()+2000); // 2 Seconds
+        message.setKey(x);
         storage.add(message, null).get();
         Assertions.assertEquals(x+1, storage.size().get());
         MappedData lookup = storage.get(x).get();
@@ -144,7 +145,7 @@ public class PartitionStoreTest extends BaseStoreTest {
       // Now let's reopen the file and check the expired events
       storage = new AsyncStorage<>(storageBuilder.build());
       int count = 0;
-      while(storage.size().get() != 0 && count < 60){
+      while(storage.size().get() != 0 && count < 20){
         TimeUnit.SECONDS.sleep(1);
         count++;
       }

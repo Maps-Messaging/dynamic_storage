@@ -268,7 +268,9 @@ public class IndexManager implements Closeable {
     int size = (int) (end - start) + 1;
     long now = System.currentTimeMillis();
     for (int x = 0; x < size; x++) {
-      validateIndexRecord(x, new IndexRecord(index), now, expired);
+      IndexRecord indexRecord = new IndexRecord(index);
+      indexRecord.setKey(start+x);
+      validateIndexRecord(x, indexRecord, now, expired);
     }
     return expired;
   }
