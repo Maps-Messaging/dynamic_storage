@@ -33,6 +33,7 @@ import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -167,7 +168,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   }
 
   @Override
-  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) {
+  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) {
     List<Long> itemsToRemove = new ArrayList<>(memoryMap.keySet());
     itemsToRemove.removeIf(listToKeep::contains);
     if (!itemsToRemove.isEmpty()) {
@@ -198,4 +199,16 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
     return false;
   }
 
+  @Override
+  public int removeAll(@NotNull Collection<Long> listToRemove) {
+    int count = 0;
+    if (!listToRemove.isEmpty()) {
+      for (long key : listToRemove) {
+        if(memoryMap.remove(key) != null) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
 }

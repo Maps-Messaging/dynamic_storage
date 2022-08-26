@@ -26,6 +26,7 @@ import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
@@ -122,10 +123,17 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
-    List<Long> next = primary.keepOnly(listToKeep);
+  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) throws IOException {
+    Collection<Long> next = primary.keepOnly(listToKeep);
     secondary.keepOnly(next);
     return next;
+  }
+
+  @Override
+  public int removeAll(@NotNull Collection<Long> listToRemove) throws IOException {
+    int count  = primary.removeAll(listToRemove);
+    count += secondary.removeAll(listToRemove);
+    return count;
   }
 
   @Override

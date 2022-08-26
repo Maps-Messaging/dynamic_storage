@@ -39,6 +39,7 @@ import io.mapsmessaging.storage.tasks.SizeTask;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -171,11 +172,11 @@ public class AsyncStorage<T extends Storable> implements Closeable {
   }
 
   // Returns a list of events NOT found but was in the to keep list
-  public Future<List<Long>> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
+  public Future<Collection<Long>> keepOnly(@NotNull Collection<Long> listToKeep) throws IOException {
     return keepOnly(listToKeep, null);
   }
 
-  public Future<List<Long>> keepOnly(@NotNull List<Long> listToKeep, Completion<List<Long>> completion) throws IOException {
+  public Future<Collection<Long>> keepOnly(@NotNull Collection<Long> listToKeep, Completion<Collection<Long>> completion) throws IOException {
     checkClose();
     return scheduler.submit(new KeepOnlyTask<>(storage, listToKeep, completion), FOREGROUND_PRIORITY);
   }

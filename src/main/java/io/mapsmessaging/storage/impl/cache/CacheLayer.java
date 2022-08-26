@@ -25,6 +25,7 @@ import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.tasks.Completion;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.LongAdder;
 import org.jetbrains.annotations.NotNull;
@@ -123,9 +124,15 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
   }
 
   @Override
-  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException {
+  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) throws IOException {
     cache.cacheClear();
     return baseStorage.keepOnly(listToKeep);
+  }
+
+  @Override
+  public int removeAll(@NotNull Collection<Long> listToRemove) throws IOException {
+    cache.cacheClear();
+    return baseStorage.removeAll(listToRemove);
   }
 
   @Override

@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
@@ -283,7 +284,7 @@ public class IndexStorage<T extends Storable> {
     return indexManager.size() == 0;
   }
 
-  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) {
+  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) {
     List<Long> itemsToRemove = indexManager.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
     if (!itemsToRemove.isEmpty()) {
@@ -299,6 +300,19 @@ public class IndexStorage<T extends Storable> {
     }
     return new ArrayList<>();
   }
+
+  public int removeAll(@NotNull Collection<Long> listToRemove) {
+    int count =0;
+    if (!listToRemove.isEmpty()) {
+      for (long key : listToRemove) {
+        if(remove(key)){
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
 
   private FileChannel openChannel(File file) throws IOException {
     StandardOpenOption[] writeOptions;

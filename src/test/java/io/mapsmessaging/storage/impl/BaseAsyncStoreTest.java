@@ -28,6 +28,7 @@ import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -291,7 +292,7 @@ public abstract class BaseAsyncStoreTest extends BaseTest {
       for (long x = 0; x < 1000; x = x + 2) {
         keepList.add(x);
       }
-      List<Long> result = async.keepOnly(keepList, null).get();
+      Collection<Long> result = async.keepOnly(keepList, null).get();
       Assertions.assertEquals(500, async.size().get());
 
       for (int x = 0; x < 1000; x++) {

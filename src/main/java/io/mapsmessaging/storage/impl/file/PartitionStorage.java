@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -360,11 +361,20 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   }
 
   @Override
-  public @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) {
+  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) {
     for (IndexStorage<T> partition : partitions) {
       listToKeep = partition.keepOnly(listToKeep);
     }
     return listToKeep;
+  }
+
+  @Override
+  public int removeAll(@NotNull Collection<Long> listToRemove) {
+    int counter = 0;
+    for (IndexStorage<T> partition : partitions) {
+      counter += partition.removeAll(listToRemove);
+    }
+    return counter;
   }
 
   @Override

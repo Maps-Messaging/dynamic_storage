@@ -21,6 +21,7 @@ import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,7 +68,9 @@ public interface Storage<T extends Storable> extends Closeable {
   }
 
   // Returns a list of events NOT found but was in the to keep list
-  @NotNull List<Long> keepOnly(@NotNull List<Long> listToKeep) throws IOException;
+  @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) throws IOException;
+
+  @NotNull int removeAll(@NotNull Collection<Long> listToRemove) throws IOException;
 
   @NotNull Statistics getStatistics();
   //endregion
