@@ -304,7 +304,7 @@ public class IndexManager implements Closeable {
     waitForLoad();
     List<Long> keys = new NaturalOrderedLongList();
     getIterator().forEachRemaining(indexRecord -> {
-      if (indexRecord != null && indexRecord.getLength() != 0) {
+      if (indexRecord != null && indexRecord.getLength() != 0 && indexRecord.getPosition() >= 0) {
         keys.add(indexRecord.getKey());
       }
     });

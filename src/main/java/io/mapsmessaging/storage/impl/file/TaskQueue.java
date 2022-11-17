@@ -18,7 +18,6 @@
 package io.mapsmessaging.storage.impl.file;
 
 import io.mapsmessaging.storage.impl.file.tasks.FileTask;
-import io.mapsmessaging.storage.impl.file.tasks.IndependentTask;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Map;
@@ -130,11 +129,11 @@ public class TaskQueue {
 
 
   public void submit(FileTask<?> raw) throws IOException {
-    if (raw instanceof IndependentTask) {
-      submitIndependentTask(raw);
-    } else {
+//    if (raw instanceof IndependentTask) {
+//      submitIndependentTask(raw);
+//    } else {
       submitInternalTask(raw);
-    }
+//    }
   }
 
   private void submitInternalTask(FileTask<?> raw) throws IOException {

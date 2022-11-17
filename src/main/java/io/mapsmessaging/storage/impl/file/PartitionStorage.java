@@ -233,14 +233,16 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
 
     IndexStorage<T> partition = locatePartition(key);
     if (partition != null) {
-      partition.remove(key);
-      deletes.increment();
-      if (partition.isEmpty() && partitions.size() > 1) {
-        partitions.remove(partition);
-        submit(new DeletePartitionTask<>(partition));
+      if(partition.remove(key)) {
+        deletes.increment();
+        if (partition.isEmpty() && partitions.size() > 1) {
+          partitions.remove(partition);
+          submit(new DeletePartitionTask<>(partition));
+        }
+        byteReads.add(IndexRecord.HEADER_SIZE); // We read it first
+        byteWrites.add(IndexRecord.HEADER_SIZE); // We then write a block of zeros
+        return true;
       }
-      byteReads.add(IndexRecord.HEADER_SIZE); // We read it first
-      byteWrites.add(IndexRecord.HEADER_SIZE); // We then write a block of zeros
     }
     return false;
   }

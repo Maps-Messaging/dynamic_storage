@@ -108,8 +108,9 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   @Override
   public boolean remove(long key) throws IOException {
     lastAccess = System.currentTimeMillis();
-    deletes.increment();
-    return memoryMap.remove(key) != null;
+    boolean val = memoryMap.remove(key) != null;
+    if(val) deletes.increment();
+    return val;
   }
 
   @Override

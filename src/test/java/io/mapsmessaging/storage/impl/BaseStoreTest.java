@@ -64,6 +64,58 @@ public abstract class BaseStoreTest extends BaseTest {
   }
 
   @Test
+  void testTrailingDeletion() throws IOException {
+    Storage<MappedData> storage = null;
+    try {
+      storage = createStore(testName, false);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      // Remove any before we start
+
+      int deleteIndex = 0;
+      for (int x = 0; x < 1_000_000; x++) {
+        MappedData message = createMessageBuilder(x);
+        validateMessage(message, x);
+        storage.add(message);
+        if(storage.size() > 5_000){
+          Assertions.assertTrue(storage.remove(deleteIndex), "Failed to delete index "+deleteIndex);
+          deleteIndex++;
+          if(deleteIndex % 500 == 0){
+            deleteIndex++; // skip every 500
+          }
+        }
+      }
+      while(deleteIndex < 1_000_000) {
+        Assertions.assertTrue(storage.remove(deleteIndex), "Failed to delete index " + deleteIndex);
+        deleteIndex++;
+        if (deleteIndex % 500 == 0) {
+          deleteIndex++; // skip every 500
+        }
+      }
+
+      Assertions.assertEquals(1999, storage.size());
+
+      for(int x=500;x<1_000_000;x= x+500){
+        Assertions.assertTrue(storage.contains(x), "Should contain index: "+x);
+      }
+      long index=500;
+      List<Long> keyList = storage.getKeys();
+      for(Long key: keyList){
+        Assertions.assertEquals(index, key);
+        index += 500;
+      }
+      storage.keepOnly(new ArrayList<>());
+
+      Assertions.assertTrue(storage.isEmpty());
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+    }
+  }
+
+  @Test
   void basicIndexTests() throws IOException {
     Storage<MappedData> storage = null;
     try {
