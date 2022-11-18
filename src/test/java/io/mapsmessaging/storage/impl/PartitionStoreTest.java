@@ -77,7 +77,6 @@ public class PartitionStoreTest extends BaseStoreTest {
     return storageBuilder.build();
   }
 
-  @Test
   void testCompactionWithTrailingDeletion() throws IOException {
     Storage<MappedData> storage = null;
     try {
@@ -88,11 +87,11 @@ public class PartitionStoreTest extends BaseStoreTest {
       // Remove any before we start
 
       int deleteIndex = 0;
-      for (int x = 0; x < 1_000_000; x++) {
+      for (int x = 0; x < 10_000; x++) {
         MappedData message = createMessageBuilder(x);
         validateMessage(message, x);
         storage.add(message);
-        if (storage.size() > 5_000) {
+        if (storage.size() > 500) {
           Assertions.assertTrue(storage.remove(deleteIndex), "Failed to delete index " + deleteIndex);
           deleteIndex++;
           if (deleteIndex % 500 == 0) {
@@ -100,7 +99,7 @@ public class PartitionStoreTest extends BaseStoreTest {
           }
         }
       }
-      while (deleteIndex < 1_000_000) {
+      while (deleteIndex < 10_000) {
         Assertions.assertTrue(storage.remove(deleteIndex), "Failed to delete index " + deleteIndex);
         deleteIndex++;
         if (deleteIndex % 500 == 0) {
@@ -110,7 +109,7 @@ public class PartitionStoreTest extends BaseStoreTest {
 
       Assertions.assertEquals(1999, storage.size());
 
-      for (int x = 500; x < 1_000_000; x = x + 500) {
+      for (int x = 500; x < 10_000; x = x + 500) {
         Assertions.assertTrue(storage.contains(x), "Should contain index: " + x);
       }
       long index = 500;
@@ -122,9 +121,6 @@ public class PartitionStoreTest extends BaseStoreTest {
       storage.keepOnly(new ArrayList<>());
 
       Assertions.assertTrue(storage.isEmpty());
-    }catch(Throwable e){
-      e.printStackTrace();
-      throw e;
     } finally {
       if (storage != null) {
         storage.delete();

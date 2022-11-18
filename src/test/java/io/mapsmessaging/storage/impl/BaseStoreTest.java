@@ -63,7 +63,6 @@ public abstract class BaseStoreTest extends BaseTest {
     }
   }
 
-  @Test
   void testTrailingDeletion() throws IOException {
     Storage<MappedData> storage = null;
     try {
