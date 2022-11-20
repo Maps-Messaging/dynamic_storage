@@ -20,7 +20,6 @@ package io.mapsmessaging.storage.tasks;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import java.util.Collection;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 public class KeepOnlyTask<T extends Storable> extends BaseTask<T, Collection<Long>> {
