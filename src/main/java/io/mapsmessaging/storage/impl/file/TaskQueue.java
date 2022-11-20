@@ -148,17 +148,6 @@ public class TaskQueue {
     }
   }
 
-  private void submitIndependentTask(FileTask<?> raw) {
-    FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
-    Future<?> future = SCHEDULER_EXECUTOR.submit(task);
-    if (!future.isDone()) {
-      pending.put(task, future);
-      if (future.isDone()) {
-        pending.remove(task);
-      }
-    }
-  }
-
   @SuppressWarnings("java:S112")
   public boolean executeTasks() throws IOException {
     FileTask<?> task = syncTasks.poll();
@@ -180,7 +169,7 @@ public class TaskQueue {
     SCHEDULER_EXECUTOR.purge();
   }
 
-  private final class FileWrapperTask<T> implements FileTask<T> {
+  private static final class FileWrapperTask<T> implements FileTask<T> {
 
     private final FileTask<T> task;
     private final Map<FileTask<?>, Future<?>> pending;
