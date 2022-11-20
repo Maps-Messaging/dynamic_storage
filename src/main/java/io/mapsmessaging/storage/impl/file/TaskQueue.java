@@ -129,11 +129,7 @@ public class TaskQueue {
 
 
   public void submit(FileTask<?> raw) throws IOException {
-//    if (raw instanceof IndependentTask) {
-//      submitIndependentTask(raw);
-//    } else {
-      submitInternalTask(raw);
-//    }
+    submitInternalTask(raw);
   }
 
   private void submitInternalTask(FileTask<?> raw) throws IOException {
