@@ -232,17 +232,15 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     lastAccess = System.currentTimeMillis();
 
     IndexStorage<T> partition = locatePartition(key);
-    if (partition != null) {
-      if(partition.remove(key)) {
-        deletes.increment();
-        if (partition.isEmpty() && partitions.size() > 1) {
-          partitions.remove(partition);
-          submit(new DeletePartitionTask<>(partition));
-        }
-        byteReads.add(IndexRecord.HEADER_SIZE); // We read it first
-        byteWrites.add(IndexRecord.HEADER_SIZE); // We then write a block of zeros
-        return true;
+    if (partition != null && partition.remove(key)) {
+      deletes.increment();
+      if (partition.isEmpty() && partitions.size() > 1) {
+        partitions.remove(partition);
+        submit(new DeletePartitionTask<>(partition));
       }
+      byteReads.add(IndexRecord.HEADER_SIZE); // We read it first
+      byteWrites.add(IndexRecord.HEADER_SIZE); // We then write a block of zeros
+      return true;
     }
     return false;
   }

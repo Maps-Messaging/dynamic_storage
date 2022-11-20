@@ -77,7 +77,10 @@ public class PartitionStoreTest extends BaseStoreTest {
     return storageBuilder.build();
   }
 
+  @Test
   void testCompactionWithTrailingDeletion() throws IOException {
+    int eventCount = 10_000;
+    int skipCount = 100;
     Storage<MappedData> storage = null;
     try {
       storage = createCompactionStore();
@@ -87,36 +90,36 @@ public class PartitionStoreTest extends BaseStoreTest {
       // Remove any before we start
 
       int deleteIndex = 0;
-      for (int x = 0; x < 10_000; x++) {
+      for (int x = 0; x < eventCount; x++) {
         MappedData message = createMessageBuilder(x);
         validateMessage(message, x);
         storage.add(message);
-        if (storage.size() > 500) {
+        if (storage.size() > skipCount) {
           Assertions.assertTrue(storage.remove(deleteIndex), "Failed to delete index " + deleteIndex);
           deleteIndex++;
-          if (deleteIndex % 500 == 0) {
+          if (deleteIndex % skipCount == 0) {
             deleteIndex++; // skip every 500
           }
         }
       }
-      while (deleteIndex < 10_000) {
+      while (deleteIndex < eventCount) {
         Assertions.assertTrue(storage.remove(deleteIndex), "Failed to delete index " + deleteIndex);
         deleteIndex++;
-        if (deleteIndex % 500 == 0) {
+        if (deleteIndex % skipCount == 0) {
           deleteIndex++; // skip every 500
         }
       }
 
-      Assertions.assertEquals(1999, storage.size());
+      Assertions.assertEquals(skipCount-1, storage.size());
 
-      for (int x = 500; x < 10_000; x = x + 500) {
+      for (int x = skipCount; x < eventCount; x = x + skipCount) {
         Assertions.assertTrue(storage.contains(x), "Should contain index: " + x);
       }
-      long index = 500;
+      long index = skipCount;
       List<Long> keyList = storage.getKeys();
       for (Long key : keyList) {
         Assertions.assertEquals(index, key);
-        index += 500;
+        index += skipCount;
       }
       storage.keepOnly(new ArrayList<>());
 
