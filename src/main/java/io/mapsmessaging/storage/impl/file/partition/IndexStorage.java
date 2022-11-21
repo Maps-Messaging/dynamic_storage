@@ -27,6 +27,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
+import io.mapsmessaging.storage.impl.file.partition.s3tier.DataStorageProxy;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
 import java.io.File;
 import java.io.IOException;
@@ -51,15 +52,13 @@ public class IndexStorage<T extends Storable> {
   private static final long OPEN_STATE = 0xEFFFFFFFFFFFFFFFL;
   private static final long CLOSE_STATE = 0x0000000000000000L;
 
-  private final long maxPartitionSize;
   private int itemCount;
   private final boolean sync;
   private final String fileName;
-  private final StorableFactory<T> storableFactory;
   private final TaskQueue scheduler;
+  private final DataStorageProxy<T> dataStorage;
 
   private IndexManager indexManager;
-  private DataStorage<T> dataStorage;
   private FileChannel mapChannel;
 
   private volatile boolean closed;
@@ -72,8 +71,6 @@ public class IndexStorage<T extends Storable> {
     scheduler = taskScheduler;
     this.sync = sync;
     this.itemCount = itemCount;
-    this.maxPartitionSize = maxPartitionSize;
-    this.storableFactory = storableFactory;
     long length = 0;
     if (file.exists()) {
       length = file.length();
@@ -84,7 +81,7 @@ public class IndexStorage<T extends Storable> {
     } else {
       indexManager = initialise(start);
     }
-    dataStorage = new DataStorage<>(fileName + "_data", storableFactory, sync, maxPartitionSize);
+    dataStorage = new DataStorageProxy<>(null,fileName + "_data", storableFactory, sync, maxPartitionSize);
     if (dataStorage.isValidationRequired() || requiresValidation) {
       // We need to validate the data / index
 
@@ -123,7 +120,7 @@ public class IndexStorage<T extends Storable> {
       mapChannel.force(true);
 
       mapChannel.close();
-      dataStorage.close();
+      dataStorage.pause();
     }
   }
 
@@ -133,7 +130,7 @@ public class IndexStorage<T extends Storable> {
       File file = new File(this.fileName);
       mapChannel = openChannel(file);
       indexManager.resume(mapChannel);
-      dataStorage = new DataStorage<>(fileName + "_data", storableFactory, sync, maxPartitionSize);
+      dataStorage.resume();
     }
   }
 

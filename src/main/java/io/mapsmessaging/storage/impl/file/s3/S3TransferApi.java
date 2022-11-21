@@ -35,9 +35,11 @@ public class S3TransferApi {
     this.bucketName = bucketName;
   }
 
-  public boolean retrieve(String localFileName) throws IOException {
-    S3Record s3Record = new S3Record();
-    s3Record.read(localFileName);
+  public void delete(S3Record s3Record ){
+    amazonS3.deleteObject(s3Record.getBucketName(), s3Record.getEntryName());
+  }
+
+  public boolean retrieve(String localFileName, S3Record s3Record) throws IOException {
     File file = new File(localFileName);
     if(!file.delete()){
       System.err.println("Log this fact");
@@ -52,12 +54,12 @@ public class S3TransferApi {
     return success;
   }
 
-  public boolean archive(String path, String localFileName) throws IOException {
+  public S3Record archive(String path, String localFileName) throws IOException {
     File file = new File(localFileName);
     String entryName = path+"/"+UUID.randomUUID();
     PutObjectResult putObjectResult = amazonS3.putObject(bucketName, entryName, file);
-    S3Record s3Record = new S3Record(bucketName, entryName,  putObjectResult.getContentMd5());
+    S3Record s3Record = new S3Record(bucketName, entryName,  putObjectResult.getContentMd5(), file.length());
     s3Record.write(localFileName);
-    return true;
+    return s3Record;
   }
 }

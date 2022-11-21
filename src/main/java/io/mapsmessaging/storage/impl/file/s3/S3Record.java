@@ -43,16 +43,21 @@ public class S3Record {
 
   @Getter
   @Setter
+  private long length;
+
+  @Getter
+  @Setter
   private LocalDateTime archivedDate;
 
   public S3Record() {
   }
 
-  public S3Record(String bucketName, String entryName, String contentMd5) {
+  public S3Record(String bucketName, String entryName, String contentMd5, long length) {
     this.archivedDate = LocalDateTime.now();
     this.bucketName = bucketName;
     this.entryName = entryName;
     this.md5 = contentMd5;
+    this.length = length;
   }
 
   public void write(String fileName) throws IOException {
@@ -62,6 +67,7 @@ public class S3Record {
       writer.write(bucketName + "\n");
       writer.write(entryName + "\n");
       writer.write(md5 + "\n");
+      writer.write(""+length+"\n");
       writer.write(archivedDate.toString() + "\n");
     }
   }
@@ -75,6 +81,7 @@ public class S3Record {
       bucketName = reader.readLine();
       entryName = reader.readLine();
       md5 = reader.readLine();
+      length = Long.parseLong(reader.readLine());
       archivedDate = LocalDateTime.parse(reader.readLine());
     }
   }

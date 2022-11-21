@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.partition;
+package io.mapsmessaging.storage.impl.file.partition.s3tier;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.DSYNC;
@@ -25,7 +25,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
-import java.io.Closeable;
+import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -36,14 +36,13 @@ import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class DataStorage<T extends Storable> implements Closeable {
-
+public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
   private static final int HEADER_SIZE = 24;
 
   private static final double VERSION = 1.0;
-  private static final long UNIQUE_ID = 0xf00d0000d00f0000L;
-  private static final long OPEN_STATE = 0xEFFFFFFFFFFFFFFFL;
-  private static final long CLOSE_STATE = 0x0000000000000000L;
+  public static final long UNIQUE_ID = 0xf00d0000d00f0000L;
+  public static final long OPEN_STATE = 0xEFFFFFFFFFFFFFFFL;
+  public static final long CLOSE_STATE = 0x0000000000000000L;
 
   private final long maxPartitionSize;
   private final StorableFactory<T> objectStorableFactory;
@@ -60,7 +59,7 @@ public class DataStorage<T extends Storable> implements Closeable {
   @Getter
   private boolean full;
 
-  public DataStorage(String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
+  public DataStorageImpl(String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
     objectStorableFactory = storableFactory;
     this.fileName = fileName;
     this.maxPartitionSize = maxPartitionSize;
