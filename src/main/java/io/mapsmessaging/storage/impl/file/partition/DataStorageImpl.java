@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.partition.s3tier;
+package io.mapsmessaging.storage.impl.file.partition;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.DSYNC;
@@ -25,7 +25,6 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
-import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;

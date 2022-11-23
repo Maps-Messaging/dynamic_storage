@@ -19,6 +19,8 @@ package io.mapsmessaging.storage.impl.file.partition.s3tier;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
+import io.mapsmessaging.storage.impl.file.partition.DataStorage;
+import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import io.mapsmessaging.storage.impl.file.s3.S3Record;
 import io.mapsmessaging.storage.impl.file.s3.S3TransferApi;

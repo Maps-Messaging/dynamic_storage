@@ -15,10 +15,9 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.partition.s3tier;
+package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import java.io.Closeable;
 import java.io.IOException;
 
