@@ -57,25 +57,24 @@ public class PartitionStorageConfig<T extends Storable> {
   @Setter
   private TaskQueue taskQueue;
 
-
   @Getter
   @Setter
   private String archiveName = "None";
 
   @Getter
   @Setter
-  private String S3AccessKeyId;
+  private String s3AccessKeyId;
 
   @Getter
   @Setter
-  private String S3SecretAccessKey;
+  private String s3SecretAccessKey;
 
   @Getter
   @Setter
-  private String S3RegionName;
+  private String s3RegionName;
 
   @Getter
   @Setter
-  private String S3BucketName;
+  private String s3BucketName;
 
 }
