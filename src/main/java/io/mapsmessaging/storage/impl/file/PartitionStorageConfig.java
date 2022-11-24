@@ -62,4 +62,20 @@ public class PartitionStorageConfig<T extends Storable> {
   @Setter
   private String archiveName = "None";
 
+  @Getter
+  @Setter
+  private String S3AccessKeyId;
+
+  @Getter
+  @Setter
+  private String S3SecretAccessKey;
+
+  @Getter
+  @Setter
+  private String S3RegionName;
+
+  @Getter
+  @Setter
+  private String S3BucketName;
+
 }

@@ -27,6 +27,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
+import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
 import java.io.File;
@@ -65,7 +66,7 @@ public class IndexStorage<T extends Storable> {
   private volatile boolean paused;
   private boolean requiresValidation;
 
-  public IndexStorage(String name, StorableFactory<T> storableFactory, boolean sync, long start, int itemCount, long maxPartitionSize, TaskQueue taskScheduler) throws IOException {
+  public IndexStorage(PartitionStorageConfig<T> config, String name, StorableFactory<T> storableFactory, boolean sync, long start, int itemCount, long maxPartitionSize, TaskQueue taskScheduler) throws IOException {
     this.fileName = name + "_index";
     File file = new File(this.fileName);
     scheduler = taskScheduler;
@@ -81,7 +82,7 @@ public class IndexStorage<T extends Storable> {
     } else {
       indexManager = initialise(start);
     }
-    ArchivedDataStorage store = getInstance().create(null, fileName+ "_data", storableFactory, sync, maxPartitionSize);
+    ArchivedDataStorage store = getInstance().create(config, fileName+ "_data", storableFactory, sync, maxPartitionSize);
     dataStorage = (ArchivedDataStorage<T>) store;
     if (dataStorage.isValidationRequired() || requiresValidation) {
       // We need to validate the data / index

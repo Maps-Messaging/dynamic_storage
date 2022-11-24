@@ -65,6 +65,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private final int itemCount;
   private final long maxPartitionSize;
   private final ExpireStorableTaskManager<T> expiredMonitor;
+  private final PartitionStorageConfig<T> config;
 
   private final List<IndexStorage<T>> partitions;
   private final String fileName;
@@ -89,6 +90,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private long lastAccess;
 
   public PartitionStorage(PartitionStorageConfig<T> config) throws IOException{
+    this.config = config;
     partitions = new ArrayList<>();
     taskScheduler = config.getTaskQueue();
     rootDirectory = config.getFileName();
@@ -436,7 +438,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
       if (key < start || key > (start + itemCount)) {
         start = key;
       }
-      partition = new IndexStorage<>(partitionName, storableFactory, sync, start, itemCount, maxPartitionSize, taskScheduler);
+      partition = new IndexStorage<>(config, partitionName, storableFactory, sync, start, itemCount, maxPartitionSize, taskScheduler);
       partitions.add(partition);
       partitions.sort(Comparator.comparingLong(IndexStorage::getStart));
     }
@@ -518,7 +520,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private boolean loadStore(String test) throws IOException {
     if (test.startsWith(PARTITION_FILE_NAME) && test.endsWith("index")) {
       String loadName = test.substring(PARTITION_FILE_NAME.length(), test.length() - "_index".length());
-      IndexStorage<T> indexStorage = new IndexStorage<>(fileName + loadName, storableFactory, sync, 0, itemCount, maxPartitionSize, taskScheduler);
+      IndexStorage<T> indexStorage = new IndexStorage<>(config,fileName + loadName, storableFactory, sync, 0, itemCount, maxPartitionSize, taskScheduler);
       synchronized (partitions) {
         partitions.add(indexStorage);
         int partNumber = extractPartitionNumber(loadName);
