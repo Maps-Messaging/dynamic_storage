@@ -19,6 +19,7 @@ package io.mapsmessaging.storage.impl.file.partition.s3tier;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
+import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
@@ -28,7 +29,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-public class DataStorageProxy<T extends Storable> implements DataStorage<T> {
+public class S3DataStorageProxy<T extends Storable> implements ArchivedDataStorage<T> {
 
   private final String fileName;
   private final StorableFactory<T> storableFactory;
@@ -40,7 +41,7 @@ public class DataStorageProxy<T extends Storable> implements DataStorage<T> {
   private DataStorage<T> physicalStore;
   private boolean isArchived;
 
-  public DataStorageProxy(S3TransferApi transferApi, String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
+  public S3DataStorageProxy(S3TransferApi transferApi, String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
     this.fileName = fileName;
     this.sync = sync;
     this.storableFactory = storableFactory;
@@ -86,6 +87,11 @@ public class DataStorageProxy<T extends Storable> implements DataStorage<T> {
     if(!isArchived) {
       physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
     }
+  }
+
+  @Override
+  public String getArchiveName(){
+    return "S3";
   }
 
   @Override
@@ -144,10 +150,25 @@ public class DataStorageProxy<T extends Storable> implements DataStorage<T> {
     }
   }
 
+  public void restore() throws IOException {
+    S3Record s3Record = ((S3DataStorageStub<T>)physicalStore).getS3Record();
+    s3TransferApi.retrieve(fileName, s3Record);
+    isArchived = false;
+  }
+
+  @Override
+  public boolean isArchived() {
+    return isArchived;
+  }
+
+  @Override
+  public boolean supportsArchiving() {
+    return s3TransferApi != null;
+  }
+
   private void loadIfArchived() throws IOException {
     if(isArchived){
-      S3Record s3Record = ((S3DataStorageStub<T>)physicalStore).getS3Record();
-      s3TransferApi.retrieve(fileName, s3Record);
+      restore();
     }
   }
 }

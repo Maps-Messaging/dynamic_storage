@@ -15,51 +15,17 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file;
+package io.mapsmessaging.storage.impl.file.partition;
 
-import io.mapsmessaging.storage.ExpiredStorableHandler;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
-import lombok.Getter;
-import lombok.Setter;
+import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import java.io.IOException;
 
-public class PartitionStorageConfig<T extends Storable> {
+public interface DataStorageFactory<T extends Storable> {
 
-  @Getter
-  @Setter
-  private String fileName;
+  String getName();
 
-  @Getter
-  @Setter
-  private StorableFactory<T> storableFactory;
-
-  @Getter
-  @Setter
-  private ExpiredStorableHandler expiredHandler;
-
-  @Getter
-  @Setter
-  private boolean sync;
-
-  @Getter
-  @Setter
-  private int itemCount;
-
-  @Getter
-  @Setter
-  private long maxPartitionSize;
-
-  @Getter
-  @Setter
-  private int expiredEventPoll;
-
-  @Getter
-  @Setter
-  private TaskQueue taskQueue;
-
-
-  @Getter
-  @Setter
-  private String archiveName = "None";
+  ArchivedDataStorage<T> create(PartitionStorageConfig<T> config, String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException;
 
 }

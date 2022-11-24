@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.storage.impl.file.partition;
 
+import static io.mapsmessaging.storage.impl.file.partition.PartitionDataManagerFactory.getInstance;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.CREATE_NEW;
 import static java.nio.file.StandardOpenOption.DSYNC;
@@ -27,7 +28,6 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
-import io.mapsmessaging.storage.impl.file.partition.s3tier.DataStorageProxy;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
 import java.io.File;
 import java.io.IOException;
@@ -56,7 +56,7 @@ public class IndexStorage<T extends Storable> {
   private final boolean sync;
   private final String fileName;
   private final TaskQueue scheduler;
-  private final DataStorageProxy<T> dataStorage;
+  private final ArchivedDataStorage<T> dataStorage;
 
   private IndexManager indexManager;
   private FileChannel mapChannel;
@@ -81,7 +81,8 @@ public class IndexStorage<T extends Storable> {
     } else {
       indexManager = initialise(start);
     }
-    dataStorage = new DataStorageProxy<>(null,fileName + "_data", storableFactory, sync, maxPartitionSize);
+    ArchivedDataStorage store = getInstance().create(null, fileName+ "_data", storableFactory, sync, maxPartitionSize);
+    dataStorage = (ArchivedDataStorage<T>) store;
     if (dataStorage.isValidationRequired() || requiresValidation) {
       // We need to validate the data / index
 
