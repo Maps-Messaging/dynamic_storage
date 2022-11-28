@@ -72,6 +72,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private final String rootDirectory;
   private final StorableFactory<T> storableFactory;
   private final boolean sync;
+  private final long archiveIdleTime;
 
   private final LongAdder reads;
   private final LongAdder writes;
@@ -100,6 +101,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     this.fileName = config.getFileName() + File.separator + PARTITION_FILE_NAME;
     this.sync = config.isSync();
     this.storableFactory = config.getStorableFactory();
+    archiveIdleTime = config.getArchiveIdleTime();
     partitionCounter = 0;
     shutdown = false;
     File location = new File(config.getFileName());
@@ -357,6 +359,17 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
         if (!expiredList.isEmpty()) {
           expiredHandler.expired(expiredList);
           expiredMonitor.schedulePoll();
+        }
+      }
+    }
+  }
+
+  public void scanForArchiveMigration() throws IOException {
+    if(archiveIdleTime > 0) {
+      long archiveThreshold = System.currentTimeMillis() - archiveIdleTime;
+      for (IndexStorage<T> partition : partitions) {
+        if (!partition.isArchived() && partition.getLastAccess() < archiveThreshold) {
+          partition.archive();
         }
       }
     }

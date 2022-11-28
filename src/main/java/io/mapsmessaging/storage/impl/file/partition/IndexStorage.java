@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,6 +62,9 @@ public class IndexStorage<T extends Storable> {
 
   private IndexManager indexManager;
   private FileChannel mapChannel;
+
+  @Getter
+  private long lastAccess;
 
   private volatile boolean closed;
   private volatile boolean paused;
@@ -134,6 +138,23 @@ public class IndexStorage<T extends Storable> {
       indexManager.resume(mapChannel);
       dataStorage.resume();
     }
+  }
+
+  public void archive() throws IOException {
+    dataStorage.archive();
+  }
+
+  public void restore() throws IOException{
+    if(dataStorage.isArchived()) {
+      dataStorage.restore();
+    }
+  }
+
+  public boolean isArchived(){
+    if(dataStorage.supportsArchiving() && dataStorage.isFull()) { // Can only archive data once the store is full
+      return dataStorage.isArchived();
+    }
+    return false;
   }
 
   private IndexManager initialise(long start) throws IOException {
@@ -241,6 +262,7 @@ public class IndexStorage<T extends Storable> {
     }
     IndexRecord item = dataStorage.add(object);
     indexManager.add(object.getKey(), item);
+    lastAccess = System.currentTimeMillis();
     return item;
   }
 
@@ -249,6 +271,7 @@ public class IndexStorage<T extends Storable> {
   }
 
   public boolean remove(long key) {
+    lastAccess = System.currentTimeMillis();
     return indexManager.delete(key);
   }
 
@@ -262,6 +285,7 @@ public class IndexStorage<T extends Storable> {
       }
     }
     if (item != null) {
+      lastAccess = System.currentTimeMillis();
       return new IndexGet<>(item, obj);
     }
     return null;
@@ -284,6 +308,7 @@ public class IndexStorage<T extends Storable> {
   }
 
   public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) {
+    lastAccess = System.currentTimeMillis();
     List<Long> itemsToRemove = indexManager.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
     if (!itemsToRemove.isEmpty()) {
@@ -309,6 +334,7 @@ public class IndexStorage<T extends Storable> {
         }
       }
     }
+    lastAccess = System.currentTimeMillis();
     return count;
   }
 

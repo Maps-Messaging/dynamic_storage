@@ -77,4 +77,7 @@ public class PartitionStorageConfig<T extends Storable> {
   @Setter
   private String s3BucketName;
 
+  @Getter
+  @Setter
+  private long archiveIdleTime = -1;
 }
