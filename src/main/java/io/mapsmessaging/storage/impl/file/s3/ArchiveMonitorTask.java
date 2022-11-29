@@ -15,27 +15,39 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.tasks;
+package io.mapsmessaging.storage.impl.file.s3;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
+import io.mapsmessaging.storage.impl.file.PartitionStorage;
+import io.mapsmessaging.storage.impl.file.tasks.FileTask;
+import java.io.IOException;
 
-public class ArchiveDataFileTask<T extends Storable> implements FileTask<Boolean> {
+public class ArchiveMonitorTask<T extends Storable> implements FileTask<Boolean>, Runnable {
 
-  private final IndexStorage<T> indexStorage;
+  private final PartitionStorage<T> storage;
 
-  public ArchiveDataFileTask(IndexStorage<T> indexStorage) {
-    this.indexStorage = indexStorage;
+  public ArchiveMonitorTask(PartitionStorage<T> storage) {
+    this.storage = storage;
+  }
+
+  @Override
+  public Boolean call() throws IOException {
+    System.err.println("Scanning for archive");
+    storage.scanForArchiveMigration();
+    return true;
+  }
+
+  public void run(){
+    try {
+      call();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
   public boolean canCancel() {
-    return false;
-  }
-
-  @Override
-  public Boolean call() throws Exception {
-    indexStorage.archive();
     return true;
   }
+
 }

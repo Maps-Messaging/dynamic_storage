@@ -70,12 +70,15 @@ public class IndexStorage<T extends Storable> {
   private volatile boolean paused;
   private boolean requiresValidation;
 
-  public IndexStorage(PartitionStorageConfig<T> config, String name, StorableFactory<T> storableFactory, boolean sync, long start, int itemCount, long maxPartitionSize, TaskQueue taskScheduler) throws IOException {
+  public IndexStorage(PartitionStorageConfig<T> config, String name, StorableFactory<T> storableFactory, long start, TaskQueue taskScheduler) throws IOException {
+    this.itemCount = config.getItemCount();
+    this.sync = config.isSync();
+    long maxPartitionSize = config.getMaxPartitionSize();
+
     this.fileName = name + "_index";
     File file = new File(this.fileName);
     scheduler = taskScheduler;
-    this.sync = sync;
-    this.itemCount = itemCount;
+
     long length = 0;
     if (file.exists()) {
       length = file.length();

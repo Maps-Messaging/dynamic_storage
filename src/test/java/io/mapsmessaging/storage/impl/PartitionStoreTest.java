@@ -22,6 +22,7 @@ import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.storage.StorageStatistics;
+import io.mapsmessaging.storage.impl.file.PartitionStorage;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import java.io.File;
@@ -36,9 +37,9 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class PartitionStoreTest extends BaseStoreTest {
+class PartitionStoreTest extends BaseStoreTest {
 
-  static Storage<MappedData> build(String testName, boolean sync) throws IOException {
+  static  Map<String, String> buildProperties(boolean sync) throws IOException {
     File file = new File("test_file" + File.separator);
     if (!file.exists()) {
       Files.createDirectory(file.toPath());
@@ -47,6 +48,11 @@ public class PartitionStoreTest extends BaseStoreTest {
     properties.put("Sync", "" + sync);
     properties.put("ItemCount", ""+ 100);
     properties.put("MaxPartitionSize", "" + (512L * 1024L * 1024L)); // set to 5MB data limit
+
+    return properties;
+  }
+
+  static Storage<MappedData> build(Map<String, String> properties, String testName) throws IOException {
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Partition")
         .setFactory(getFactory())
@@ -54,6 +60,11 @@ public class PartitionStoreTest extends BaseStoreTest {
         .setProperties(properties);
 
     return storageBuilder.build();
+  }
+
+  static Storage<MappedData> build(String testName, boolean sync) throws IOException{
+    Map<String, String> properties = buildProperties(sync);
+    return build(properties, testName);
   }
 
   @Override
@@ -212,6 +223,40 @@ public class PartitionStoreTest extends BaseStoreTest {
 
     } finally {
       storage.delete().get();
+    }
+  }
+
+  @Test
+  void archiveAndRestorePartition() throws IOException, InterruptedException {
+    String accessKeyId = System.getProperty("accessKeyId");
+    String secretAccessKey = System.getProperty("secretAccessKey");
+    String region = System.getProperty("regionName");
+    String bucketName = System.getProperty("bucketName");
+    if(accessKeyId != null && secretAccessKey != null && region != null && bucketName != null) {
+      Map<String, String> properties = buildProperties(false);
+      properties.put("archiveName", "S3");
+      properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
+      properties.put("S3AccessKeyId", accessKeyId);
+      properties.put("S3SecretAccessKey",secretAccessKey);
+      properties.put("S3RegionName", region);
+      properties.put("S3BucketName", bucketName);
+      Storage<MappedData> storage = build(properties, testName);
+      for (int x = 0; x < 1_000; x++) {
+        MappedData message = createMessageBuilder(x);
+        storage.add(message);
+      }
+      // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
+      TimeUnit.SECONDS.sleep(40);
+      ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
+
+      // They should now be archived
+      for (int x = 0; x < 1_000; x++) {
+        MappedData data = storage.get(x);
+        Assertions.assertNotNull(data);
+        Assertions.assertEquals(data.key, x);
+
+      }
+      storage.delete();
     }
   }
 }

@@ -28,7 +28,8 @@ import lombok.Setter;
 
 public class S3Record {
 
-  private static final String HEADER = "s3 bucket place holder";
+  private static final String HEADER = "# s3 bucket place holder";
+
   @Getter
   @Setter
   private String bucketName;

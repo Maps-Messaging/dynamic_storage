@@ -29,6 +29,7 @@ import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
 import io.mapsmessaging.storage.impl.file.partition.IndexGet;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
+import io.mapsmessaging.storage.impl.file.s3.ArchiveMonitorTask;
 import io.mapsmessaging.storage.impl.file.tasks.DeletePartitionTask;
 import io.mapsmessaging.storage.impl.file.tasks.FileTask;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
@@ -46,6 +47,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
@@ -63,7 +65,6 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private final TaskQueue taskScheduler;
 
   private final int itemCount;
-  private final long maxPartitionSize;
   private final ExpireStorableTaskManager<T> expiredMonitor;
   private final PartitionStorageConfig<T> config;
 
@@ -71,7 +72,6 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private final String fileName;
   private final String rootDirectory;
   private final StorableFactory<T> storableFactory;
-  private final boolean sync;
   private final long archiveIdleTime;
 
   private final LongAdder reads;
@@ -97,9 +97,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     rootDirectory = config.getFileName();
     this.expiredHandler = Objects.requireNonNullElseGet(config.getExpiredHandler(), () -> new BaseExpiredHandler<>(this));
     this.itemCount = config.getItemCount();
-    this.maxPartitionSize = config.getMaxPartitionSize();
     this.fileName = config.getFileName() + File.separator + PARTITION_FILE_NAME;
-    this.sync = config.isSync();
     this.storableFactory = config.getStorableFactory();
     archiveIdleTime = config.getArchiveIdleTime();
     partitionCounter = 0;
@@ -395,6 +393,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   @Override
   public void setExecutor(TaskScheduler scheduler) {
     taskScheduler.setTaskScheduler(scheduler);
+    taskScheduler.scheduleAtFixedRate(new ArchiveMonitorTask(this), 10, TimeUnit.SECONDS);
   }
 
   @Override
@@ -451,7 +450,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
       if (key < start || key > (start + itemCount)) {
         start = key;
       }
-      partition = new IndexStorage<>(config, partitionName, storableFactory, sync, start, itemCount, maxPartitionSize, taskScheduler);
+      partition = new IndexStorage<>(config, partitionName, storableFactory, start, taskScheduler);
       partitions.add(partition);
       partitions.sort(Comparator.comparingLong(IndexStorage::getStart));
     }
@@ -533,7 +532,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private boolean loadStore(String test) throws IOException {
     if (test.startsWith(PARTITION_FILE_NAME) && test.endsWith("index")) {
       String loadName = test.substring(PARTITION_FILE_NAME.length(), test.length() - "_index".length());
-      IndexStorage<T> indexStorage = new IndexStorage<>(config,fileName + loadName, storableFactory, sync, 0, itemCount, maxPartitionSize, taskScheduler);
+      IndexStorage<T> indexStorage = new IndexStorage<>(config,fileName + loadName, storableFactory,  0, taskScheduler);
       synchronized (partitions) {
         partitions.add(indexStorage);
         int partNumber = extractPartitionNumber(loadName);

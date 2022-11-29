@@ -80,6 +80,19 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
     config.setExpiredEventPoll(expiredEventPoll);
     config.setStorableFactory(storableFactory);
     config.setExpiredHandler(expiredHandler);
+
+    if(properties.containsKey("archiveName")) {
+      config.setArchiveName(properties.get("archiveName"));
+    }
+
+    config.setS3AccessKeyId(properties.get("S3AccessKeyId"));
+    config.setS3SecretAccessKey(properties.get("S3SecretAccessKey"));
+    config.setS3RegionName(properties.get("S3RegionName"));
+    config.setS3BucketName(properties.get("S3BucketName"));
+    if(properties.containsKey("archiveIdleTime")) {
+      config.setArchiveIdleTime(Integer.parseInt(properties.get("archiveIdleTime")));
+    }
+
     return new PartitionStorage<>(config);
   }
 

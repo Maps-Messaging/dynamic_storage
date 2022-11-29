@@ -18,12 +18,16 @@
 package io.mapsmessaging.storage.impl.file.s3;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.UUID;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 
 public class S3TransferApi {
 
@@ -39,24 +43,43 @@ public class S3TransferApi {
     amazonS3.deleteObject(s3Record.getBucketName(), s3Record.getEntryName());
   }
 
-  public boolean retrieve(String localFileName, S3Record s3Record) throws IOException {
+  public void retrieve(String localFileName, S3Record s3Record) throws IOException {
     File file = new File(localFileName);
-    if(!file.delete()){
-      System.err.println("Log this fact");
+    boolean success;
+    try {
+      S3Object s3Object = amazonS3.getObject(s3Record.getBucketName(), s3Record.getEntryName());
+      if(!file.delete()){
+        System.err.println("Log this fact");
+      }
+      MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+      try(FileOutputStream fileOutputStream = new FileOutputStream(file, false)){
+        long read = 0;
+        byte[] tmp = new byte[1024];
+        S3ObjectInputStream inputStream = s3Object.getObjectContent();
+        while(read < s3Record.getLength()){
+          int t  = inputStream.read(tmp, 0, tmp.length);
+          if(t > 0) {
+            messageDigest.update(tmp, 0, t);
+            fileOutputStream.write(tmp, 0, t);
+            read += t;
+          }
+        }
+      }
+      byte[] md5Hash = messageDigest.digest();
+      String base = Base64.getEncoder().encodeToString(md5Hash);
+      success = base.equals(s3Record.getMd5());
+      if(!success) {
+        throw new IOException("MD5 mismatch");
+      }
+      amazonS3.deleteObject(s3Record.getBucketName(), s3Record.getEntryName());
+    } catch (NoSuchAlgorithmException | AmazonS3Exception e) {
+      throw new IOException(e);
     }
-    GetObjectRequest getObjectRequest = new GetObjectRequest(s3Record.getBucketName(), s3Record.getEntryName());
-    ObjectMetadata objectMetadata = amazonS3.getObject(getObjectRequest, file);
-    boolean success = s3Record.getMd5().equals(objectMetadata.getContentMD5());
-    if(!success) {
-      throw new IOException("MD5 signatures do not match");
-    }
-    amazonS3.deleteObject(s3Record.getBucketName(), s3Record.getEntryName());
-    return success;
   }
 
   public S3Record archive(String path, String localFileName) throws IOException {
     File file = new File(localFileName);
-    String entryName = path+"/"+UUID.randomUUID();
+    String entryName = path+"/"+file.getName();
     PutObjectResult putObjectResult = amazonS3.putObject(bucketName, entryName, file);
     S3Record s3Record = new S3Record(bucketName, entryName,  putObjectResult.getContentMd5(), file.length());
     s3Record.write(localFileName);

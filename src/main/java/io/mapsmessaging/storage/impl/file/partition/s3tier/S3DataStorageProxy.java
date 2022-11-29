@@ -62,7 +62,7 @@ public class S3DataStorageProxy<T extends Storable> implements ArchivedDataStora
     try (FileInputStream fileInputStream = new FileInputStream(fileName)) {
       byte[] tmp = fileInputStream.readNBytes(16);
       int test = tmp[0] & 0xff;
-      isArchived = (test != 0x0 && test != 0xff);
+      isArchived = (test != 0xEF && test != 0x00);
     }
     if(!isArchived){
       return new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
@@ -153,6 +153,7 @@ public class S3DataStorageProxy<T extends Storable> implements ArchivedDataStora
   public void restore() throws IOException {
     S3Record s3Record = ((S3DataStorageStub<T>)physicalStore).getS3Record();
     s3TransferApi.retrieve(fileName, s3Record);
+    physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
     isArchived = false;
   }
 
