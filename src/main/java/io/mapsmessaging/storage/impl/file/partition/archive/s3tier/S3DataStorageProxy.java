@@ -24,8 +24,6 @@ import io.mapsmessaging.storage.impl.file.partition.DataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageStub;
-import io.mapsmessaging.storage.impl.file.s3.S3Record;
-import io.mapsmessaging.storage.impl.file.s3.S3TransferApi;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;

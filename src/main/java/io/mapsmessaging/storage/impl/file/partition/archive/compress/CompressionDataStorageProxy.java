@@ -23,14 +23,10 @@ import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
-import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
 import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageStub;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 public class CompressionDataStorageProxy<T extends Storable> implements ArchivedDataStorage<T> {
 
@@ -66,7 +62,7 @@ public class CompressionDataStorageProxy<T extends Storable> implements Archived
     if (!isArchived) {
       return new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
     }
-    ZipRecord zipRecord = new ZipRecord();
+    CompressionRecord zipRecord = new CompressionRecord();
     zipRecord.read(fileName);
     return new DataStorageStub<>(zipRecord);
   }
@@ -139,54 +135,20 @@ public class CompressionDataStorageProxy<T extends Storable> implements Archived
 
   public void archive() throws IOException {
     if (!isArchived) {
-      File file = new File(fileName);
-      File zipFile = new File(fileName+"_zip");
-      ZipRecord zipRecord = new ZipRecord(file.length());
-
-      try(FileOutputStream fileOutputStream = new FileOutputStream(zipFile)){
-        try(GZIPOutputStream gzipOutputStream = new GZIPOutputStream(fileOutputStream)) {
-          try (FileInputStream fileInputStream = new FileInputStream(file)) {
-            byte[] tmp = new byte[1024];
-            int count = 0;
-            while (count < zipRecord.getLength()) {
-              int len = fileInputStream.read(tmp, 0, tmp.length);
-              if (len > 0) {
-                gzipOutputStream.write(tmp, 0, len);
-                count += len;
-              }
-            }
-            gzipOutputStream.flush();
-          }
-        }
-      }
-      file.delete();
-      physicalStore = new DataStorageStub<>(zipRecord);
+      CompressionHelper compressionHelper = new CompressionHelper();
+      long length = compressionHelper.compress(fileName);
+      CompressionRecord compressionRecord = new CompressionRecord(length);
+      compressionRecord.write(fileName);
+      physicalStore = new DataStorageStub<>(compressionRecord);
       isArchived = true;
     }
   }
 
   public void restore() throws IOException {
-    ArchiveRecord zipRecord = ((DataStorageStub<T>) physicalStore).getArchiveRecord();
-    File file = new File(fileName);
-    File zipFile = new File(fileName+"_zip");
-
-    try(FileInputStream fileInputStream = new FileInputStream(zipFile)){
-      try(GZIPInputStream gzipInputStream = new GZIPInputStream(fileInputStream)) {
-        try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
-          byte[] tmp = new byte[1024];
-          int count = 0;
-          while (count < zipRecord.getLength()) {
-            int len = gzipInputStream.read(tmp, 0, tmp.length);
-            if (len > 0) {
-              fileOutputStream.write(tmp, 0, len);
-              count += len;
-            }
-          }
-          fileOutputStream.flush();
-        }
-      }
-    }
-    zipFile.delete();
+    CompressionHelper helper = new CompressionHelper();
+    File placeHolder = new File(fileName);
+    placeHolder.delete();
+    helper.decompress(fileName);
     physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
     isArchived = false;
   }

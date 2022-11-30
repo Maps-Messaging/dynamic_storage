@@ -292,6 +292,7 @@ class PartitionStoreTest extends BaseStoreTest {
     String secretAccessKey = System.getProperty("secretAccessKey");
     String region = System.getProperty("regionName");
     String bucketName = System.getProperty("bucketName");
+
     if(accessKeyId != null && secretAccessKey != null && region != null && bucketName != null) {
       AmazonS3 amazonS3 = createAmazonId(accessKeyId, secretAccessKey, region);
 
@@ -303,6 +304,7 @@ class PartitionStoreTest extends BaseStoreTest {
       properties.put("S3SecretAccessKey",secretAccessKey);
       properties.put("S3RegionName", region);
       properties.put("S3BucketName", bucketName);
+      properties.put("S3CompressEnabled", "true");
       Storage<MappedData> storage = build(properties, testName);
       for (int x = 0; x < 1100; x++) {
         MappedData message = createMessageBuilder(x);
@@ -343,6 +345,7 @@ class PartitionStoreTest extends BaseStoreTest {
       properties.put("S3SecretAccessKey",secretAccessKey);
       properties.put("S3RegionName", region);
       properties.put("S3BucketName", bucketName);
+      properties.put("S3CompressEnabled", "true");
       Storage<MappedData> storage = build(properties, testName);
       for (int x = 0; x < 1100; x++) {
         MappedData message = createMessageBuilder(x);

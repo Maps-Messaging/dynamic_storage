@@ -89,6 +89,7 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
     config.setS3SecretAccessKey(properties.get("S3SecretAccessKey"));
     config.setS3RegionName(properties.get("S3RegionName"));
     config.setS3BucketName(properties.get("S3BucketName"));
+    config.setS3Compression(Boolean.parseBoolean(properties.get("S3CompressEnabled")));
     if(properties.containsKey("archiveIdleTime")) {
       config.setArchiveIdleTime(Integer.parseInt(properties.get("archiveIdleTime")));
     }

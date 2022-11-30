@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.s3;
+package io.mapsmessaging.storage.impl.file.partition.archive.s3tier;
 
 import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
 import java.io.BufferedReader;
@@ -47,15 +47,20 @@ public class S3Record extends ArchiveRecord {
   @Setter
   private LocalDateTime archivedDate;
 
+  @Getter
+  @Setter
+  private boolean compressed;
+
   public S3Record() {
   }
 
-  public S3Record(String bucketName, String entryName, String contentMd5, long length) {
+  public S3Record(String bucketName, String entryName, String contentMd5, long length, boolean compressed ) {
     super(length);
     this.archivedDate = LocalDateTime.now();
     this.bucketName = bucketName;
     this.entryName = entryName;
     this.md5 = contentMd5;
+    this.compressed = compressed;
   }
 
   public void write(String fileName) throws IOException {
@@ -67,6 +72,7 @@ public class S3Record extends ArchiveRecord {
       writer.write(md5 + "\n");
       writer.write(""+getLength()+"\n");
       writer.write(archivedDate.toString() + "\n");
+      writer.write(compressed + "\n");
     }
   }
 
@@ -81,6 +87,7 @@ public class S3Record extends ArchiveRecord {
       md5 = reader.readLine();
       setLength(Long.parseLong(reader.readLine()));
       archivedDate = LocalDateTime.parse(reader.readLine());
+      compressed = Boolean.parseBoolean(reader.readLine());
     }
   }
 }

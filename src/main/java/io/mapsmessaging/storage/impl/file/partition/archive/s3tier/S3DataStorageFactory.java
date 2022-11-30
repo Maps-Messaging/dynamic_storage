@@ -28,7 +28,6 @@ import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
-import io.mapsmessaging.storage.impl.file.s3.S3TransferApi;
 import java.io.IOException;
 
 public class S3DataStorageFactory<T extends Storable> implements DataStorageFactory<T> {
@@ -54,7 +53,7 @@ public class S3DataStorageFactory<T extends Storable> implements DataStorageFact
         .withRegion(regions)
         .withCredentials(new AWSStaticCredentialsProvider(credentials))
         .build();
-    S3TransferApi transferApi = new S3TransferApi(amazonS3, config.getS3BucketName() );
+    S3TransferApi transferApi = new S3TransferApi(amazonS3, config.getS3BucketName(), config.isS3Compression());
     return new S3DataStorageProxy<>(transferApi, fileName, storableFactory, sync, maxPartitionSize);
   }
 }

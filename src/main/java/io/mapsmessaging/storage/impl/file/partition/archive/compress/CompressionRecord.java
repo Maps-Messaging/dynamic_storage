@@ -27,7 +27,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-public class ZipRecord extends ArchiveRecord {
+public class CompressionRecord extends ArchiveRecord {
 
   private static final String HEADER = "# Zip file place holder";
 
@@ -35,10 +35,10 @@ public class ZipRecord extends ArchiveRecord {
   @Setter
   private LocalDateTime archivedDate;
 
-  public ZipRecord() {
+  public CompressionRecord() {
   }
 
-  public ZipRecord(long length) {
+  public CompressionRecord(long length) {
     super(length);
     this.archivedDate = LocalDateTime.now();
   }

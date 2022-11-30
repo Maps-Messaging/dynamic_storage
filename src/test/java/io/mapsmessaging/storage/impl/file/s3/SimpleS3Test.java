@@ -23,6 +23,8 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import io.mapsmessaging.storage.impl.file.partition.archive.s3tier.S3Record;
+import io.mapsmessaging.storage.impl.file.partition.archive.s3tier.S3TransferApi;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -55,7 +57,7 @@ class SimpleS3Test {
   void archiveAndDelete() throws IOException {
     Assumptions.assumeTrue(new ConfigurationCheck(), "AWS Configuration not preset");
     AmazonS3 amazonS3 = createAmazonId();
-    S3TransferApi transferApi = new S3TransferApi(amazonS3, bucketName);
+    S3TransferApi transferApi = new S3TransferApi(amazonS3, bucketName, false);
     String filename = "FileToArchive.dmp";
     FileOutputStream fileOutputStream = new FileOutputStream(filename, false);
     for(int x=0;x<1024 * 1024;x++){
@@ -74,7 +76,7 @@ class SimpleS3Test {
   void archiveAndRestore() throws IOException, NoSuchAlgorithmException {
     Assumptions.assumeTrue(new ConfigurationCheck(), "AWS Configuration not preset");
     AmazonS3 amazonS3 = createAmazonId();
-    S3TransferApi transferApi = new S3TransferApi(amazonS3, bucketName);
+    S3TransferApi transferApi = new S3TransferApi(amazonS3, bucketName, false);
 
     String filename = "FileToArchive.dmp";
     MessageDigest md = MessageDigest.getInstance("SHA-256");

@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.s3;
+package io.mapsmessaging.storage.impl.file.partition.archive.s3tier;
 
 import static io.mapsmessaging.storage.logging.StorageLogMessages.S3_ARCHIVING_DATA;
 import static io.mapsmessaging.storage.logging.StorageLogMessages.S3_ENTITY_DELETED;
@@ -30,6 +30,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.storage.impl.file.partition.archive.compress.CompressionHelper;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -42,10 +43,12 @@ public class S3TransferApi {
 
   private final AmazonS3 amazonS3;
   private final String bucketName;
+  private final boolean compress;
 
-  public S3TransferApi(AmazonS3 amazonS3, String bucketName){
+  public S3TransferApi(AmazonS3 amazonS3, String bucketName, boolean compress){
     this.amazonS3 = amazonS3;
     this.bucketName = bucketName;
+    this.compress = compress;
   }
 
   public void delete(S3Record s3Record ){
@@ -55,13 +58,16 @@ public class S3TransferApi {
 
   public void retrieve(String localFileName, S3Record s3Record) throws IOException {
     File file = new File(localFileName);
+    if(!file.delete()){
+      LOGGER.log(S3_FILE_DELETE_FAILED, localFileName);
+      throw new IOException("Unable to delete placeholder file");
+    }
+    if(s3Record.isCompressed()){
+      file = new File(localFileName+"_zip");
+    }
     boolean success;
     try {
       S3Object s3Object = amazonS3.getObject(s3Record.getBucketName(), s3Record.getEntryName());
-      if(!file.delete()){
-        LOGGER.log(S3_FILE_DELETE_FAILED, localFileName);
-        throw new IOException("Unable to delete placeholder file");
-      }
       MessageDigest messageDigest = MessageDigest.getInstance("MD5");
       try(FileOutputStream fileOutputStream = new FileOutputStream(file, false)){
         long read = 0;
@@ -79,6 +85,12 @@ public class S3TransferApi {
       byte[] md5Hash = messageDigest.digest();
       String base = Base64.getEncoder().encodeToString(md5Hash);
       success = base.equals(s3Record.getMd5());
+      if(s3Record.isCompressed()){
+        CompressionHelper compressionHelper = new CompressionHelper();
+        compressionHelper.decompress(localFileName);
+        file.delete();
+      }
+
       if(!success) {
         LOGGER.log(S3_MD5_HASH_FAILED, localFileName, s3Record.getMd5(), base);
         throw new IOException("MD5 mismatch");
@@ -92,9 +104,16 @@ public class S3TransferApi {
 
   public S3Record archive(String path, String localFileName) throws IOException {
     File file = new File(localFileName);
+    if(compress) {
+      CompressionHelper compressionHelper = new CompressionHelper();
+      compressionHelper.compress(localFileName);
+      file = new File(localFileName+"_zip");
+    }
+
     String entryName = path+"/"+file.getName();
     PutObjectResult putObjectResult = amazonS3.putObject(bucketName, entryName, file);
-    S3Record s3Record = new S3Record(bucketName, entryName,  putObjectResult.getContentMd5(), file.length());
+    S3Record s3Record = new S3Record(bucketName, entryName,  putObjectResult.getContentMd5(), file.length(), compress);
+    file.delete(); // Removes the _zip file
     s3Record.write(localFileName);
     LOGGER.log(S3_ARCHIVING_DATA, localFileName, bucketName);
     return s3Record;
