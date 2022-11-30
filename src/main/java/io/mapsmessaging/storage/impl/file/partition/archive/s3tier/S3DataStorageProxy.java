@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.partition.s3tier;
+package io.mapsmessaging.storage.impl.file.partition.archive.s3tier;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
@@ -23,6 +23,7 @@ import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
+import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageStub;
 import io.mapsmessaging.storage.impl.file.s3.S3Record;
 import io.mapsmessaging.storage.impl.file.s3.S3TransferApi;
 import java.io.File;
@@ -69,7 +70,7 @@ public class S3DataStorageProxy<T extends Storable> implements ArchivedDataStora
     }
     S3Record s3Record = new S3Record();
     s3Record.read(fileName);
-    return new S3DataStorageStub<>(s3Record);
+    return new DataStorageStub<>(s3Record);
   }
 
   @Override
@@ -104,7 +105,7 @@ public class S3DataStorageProxy<T extends Storable> implements ArchivedDataStora
     if(isArchived) {
       File file = new File(fileName);
       file.delete();
-      S3Record s3Record = ((S3DataStorageStub<T>)physicalStore).getS3Record();
+      S3Record s3Record =(S3Record) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
       s3TransferApi.delete(s3Record); // Delete the S3 entry
     }
     else {
@@ -143,13 +144,13 @@ public class S3DataStorageProxy<T extends Storable> implements ArchivedDataStora
     if(!isArchived){
       File file = new File(fileName);
       S3Record s3Record = s3TransferApi.archive(file.getParentFile().getPath(), fileName);
-      physicalStore = new S3DataStorageStub<>(s3Record);
+      physicalStore = new DataStorageStub<>(s3Record);
       isArchived = true;
     }
   }
 
   public void restore() throws IOException {
-    S3Record s3Record = ((S3DataStorageStub<T>)physicalStore).getS3Record();
+    S3Record s3Record = (S3Record) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
     s3TransferApi.retrieve(fileName, s3Record);
     physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
     isArchived = false;

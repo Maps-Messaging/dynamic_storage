@@ -15,24 +15,23 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.partition.s3tier;
+package io.mapsmessaging.storage.impl.file.partition.archive;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.partition.DataStorage;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
-import io.mapsmessaging.storage.impl.file.s3.S3Record;
 import java.io.IOException;
 import lombok.Getter;
 
-public class S3DataStorageStub<T extends Storable> implements DataStorage<T> {
+public class DataStorageStub<T extends Storable> implements DataStorage<T> {
 
   private static final String ERROR_MESSAGE = "This should not be called, the file needs to be restored";
 
   @Getter
-  private final S3Record s3Record;
+  private final ArchiveRecord archiveRecord;
 
-  public S3DataStorageStub(S3Record s3Record){
-    this.s3Record = s3Record;
+  public DataStorageStub(ArchiveRecord archiveRecord) {
+    this.archiveRecord = archiveRecord;
   }
 
   @Override
@@ -62,7 +61,7 @@ public class S3DataStorageStub<T extends Storable> implements DataStorage<T> {
 
   @Override
   public long length() throws IOException {
-    return s3Record.getLength();
+    return archiveRecord.getLength();
   }
 
   @Override

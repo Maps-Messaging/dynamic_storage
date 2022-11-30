@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.s3;
+package io.mapsmessaging.storage.impl.file.partition.archive.compress;
 
 import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
 import java.io.BufferedReader;
@@ -27,44 +27,26 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-public class S3Record extends ArchiveRecord {
+public class ZipRecord extends ArchiveRecord {
 
-  private static final String HEADER = "# s3 bucket place holder";
-
-  @Getter
-  @Setter
-  private String bucketName;
-
-  @Getter
-  @Setter
-  private String entryName;
-
-  @Getter
-  @Setter
-  private String md5;
+  private static final String HEADER = "# Zip file place holder";
 
   @Getter
   @Setter
   private LocalDateTime archivedDate;
 
-  public S3Record() {
+  public ZipRecord() {
   }
 
-  public S3Record(String bucketName, String entryName, String contentMd5, long length) {
+  public ZipRecord(long length) {
     super(length);
     this.archivedDate = LocalDateTime.now();
-    this.bucketName = bucketName;
-    this.entryName = entryName;
-    this.md5 = contentMd5;
   }
 
   public void write(String fileName) throws IOException {
     FileOutputStream fileOutputStream = new FileOutputStream(fileName, false);
     try (OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream)) {
       writer.write(HEADER +"\n");
-      writer.write(bucketName + "\n");
-      writer.write(entryName + "\n");
-      writer.write(md5 + "\n");
       writer.write(""+getLength()+"\n");
       writer.write(archivedDate.toString() + "\n");
     }
@@ -76,9 +58,6 @@ public class S3Record extends ArchiveRecord {
       if(!reader.readLine().equals(HEADER)){
         throw new IOException("Invalid place holder");
       }
-      bucketName = reader.readLine();
-      entryName = reader.readLine();
-      md5 = reader.readLine();
       setLength(Long.parseLong(reader.readLine()));
       archivedDate = LocalDateTime.parse(reader.readLine());
     }
