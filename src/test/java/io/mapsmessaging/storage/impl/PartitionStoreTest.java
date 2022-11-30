@@ -260,7 +260,7 @@ class PartitionStoreTest extends BaseStoreTest {
       // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
       TimeUnit.SECONDS.sleep(40);
       ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
-      Assertions.assertEquals(10, getBucketEntityCount(amazonS3, bucketName), "S3 bucket should have nine entries");
+      Assertions.assertEquals(10, getBucketEntityCount(amazonS3, bucketName), "S3 bucket should have ten entries");
 
       // They should now be archived
       for (int x = 0; x < 1100; x++) {
@@ -269,12 +269,45 @@ class PartitionStoreTest extends BaseStoreTest {
         Assertions.assertEquals(data.key, x);
 
       }
-      Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty before the test starts");
+      Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty when the test finishes");
       storage.delete();
     }
   }
 
+  @Test
+  void archiveAndDeleteStore() throws IOException, InterruptedException {
+    String accessKeyId = System.getProperty("accessKeyId");
+    String secretAccessKey = System.getProperty("secretAccessKey");
+    String region = System.getProperty("regionName");
+    String bucketName = System.getProperty("bucketName");
+    if(accessKeyId != null && secretAccessKey != null && region != null && bucketName != null) {
+      AmazonS3 amazonS3 = createAmazonId(accessKeyId, secretAccessKey, region);
+
+      Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty before the test starts");
+      Map<String, String> properties = buildProperties(false);
+      properties.put("archiveName", "S3");
+      properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
+      properties.put("S3AccessKeyId", accessKeyId);
+      properties.put("S3SecretAccessKey",secretAccessKey);
+      properties.put("S3RegionName", region);
+      properties.put("S3BucketName", bucketName);
+      Storage<MappedData> storage = build(properties, testName);
+      for (int x = 0; x < 1100; x++) {
+        MappedData message = createMessageBuilder(x);
+        storage.add(message);
+      }
+
+      // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
+      TimeUnit.SECONDS.sleep(40);
+      ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
+      Assertions.assertEquals(10, getBucketEntityCount(amazonS3, bucketName), "S3 bucket should have ten entries");
+      storage.delete();
+      Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty when the test finishes");
+    }
+  }
+
   private AmazonS3 createAmazonId(String accessKeyId, String secretAccessKey, String region){
+
     AWSCredentials credentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
     Regions regions = Regions.fromName(region);
     return AmazonS3ClientBuilder.standard()
