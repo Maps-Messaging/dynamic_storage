@@ -32,7 +32,6 @@ public class ArchiveMonitorTask<T extends Storable> implements FileTask<Boolean>
 
   @Override
   public Boolean call() throws IOException {
-    System.err.println("Scanning for archive");
     storage.scanForArchiveMigration();
     return true;
   }
