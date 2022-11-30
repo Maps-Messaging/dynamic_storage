@@ -365,7 +365,8 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   public void scanForArchiveMigration() throws IOException {
     if(archiveIdleTime > 0) {
       long archiveThreshold = System.currentTimeMillis() - archiveIdleTime;
-      for (IndexStorage<T> partition : partitions) {
+      for(int x=0;x<partitions.size() -1; x++){
+        IndexStorage<T> partition = partitions.get(x);
         if (!partition.isArchived() && partition.getLastAccess() < archiveThreshold) {
           partition.archive();
         }
