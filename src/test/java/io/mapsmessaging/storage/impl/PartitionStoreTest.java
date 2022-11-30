@@ -44,6 +44,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class PartitionStoreTest extends BaseStoreTest {
 
@@ -286,8 +288,9 @@ class PartitionStoreTest extends BaseStoreTest {
     storage.delete();
   }
 
-  @Test
-  void s3ArchiveAndRestorePartition() throws IOException, InterruptedException {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void s3ArchiveAndRestorePartition(boolean compress) throws IOException, InterruptedException {
     String accessKeyId = System.getProperty("accessKeyId");
     String secretAccessKey = System.getProperty("secretAccessKey");
     String region = System.getProperty("regionName");
@@ -304,7 +307,7 @@ class PartitionStoreTest extends BaseStoreTest {
       properties.put("S3SecretAccessKey",secretAccessKey);
       properties.put("S3RegionName", region);
       properties.put("S3BucketName", bucketName);
-      properties.put("S3CompressEnabled", "true");
+      properties.put("S3CompressEnabled", ""+compress);
       Storage<MappedData> storage = build(properties, testName);
       for (int x = 0; x < 1100; x++) {
         MappedData message = createMessageBuilder(x);
@@ -328,8 +331,9 @@ class PartitionStoreTest extends BaseStoreTest {
     }
   }
 
-  @Test
-  void s3ArchiveAndDeleteStore() throws IOException, InterruptedException {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void s3ArchiveAndDeleteStore(boolean compress) throws IOException, InterruptedException {
     String accessKeyId = System.getProperty("accessKeyId");
     String secretAccessKey = System.getProperty("secretAccessKey");
     String region = System.getProperty("regionName");
@@ -345,7 +349,7 @@ class PartitionStoreTest extends BaseStoreTest {
       properties.put("S3SecretAccessKey",secretAccessKey);
       properties.put("S3RegionName", region);
       properties.put("S3BucketName", bucketName);
-      properties.put("S3CompressEnabled", "true");
+      properties.put("S3CompressEnabled", ""+compress);
       Storage<MappedData> storage = build(properties, testName);
       for (int x = 0; x < 1100; x++) {
         MappedData message = createMessageBuilder(x);
