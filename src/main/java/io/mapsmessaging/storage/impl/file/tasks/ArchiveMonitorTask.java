@@ -15,14 +15,19 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.s3;
+package io.mapsmessaging.storage.impl.file.tasks;
 
+import static io.mapsmessaging.storage.logging.StorageLogMessages.ARCHIVE_MONITOR_FAILED;
+
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.PartitionStorage;
-import io.mapsmessaging.storage.impl.file.tasks.FileTask;
 import java.io.IOException;
 
 public class ArchiveMonitorTask<T extends Storable> implements FileTask<Boolean>, Runnable {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveMonitorTask.class);
 
   private final PartitionStorage<T> storage;
 
@@ -40,13 +45,13 @@ public class ArchiveMonitorTask<T extends Storable> implements FileTask<Boolean>
     try {
       call();
     } catch (IOException e) {
-      e.printStackTrace();
+      LOGGER.log(ARCHIVE_MONITOR_FAILED, e, storage.getName());
     }
   }
 
   @Override
   public boolean canCancel() {
-    return true;
+    return false;
   }
 
 }

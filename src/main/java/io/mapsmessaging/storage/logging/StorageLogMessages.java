@@ -58,6 +58,18 @@ public enum StorageLogMessages implements LogMessage {
   REMOVING_EXPIRED_ENTRY(LEVEL.TRACE, STORAGE_CATEGORY.FACTORY, "Removing expired entry, {}, from {}"),
   //endregion
 
+  // region S3
+  S3_ARCHIVING_DATA (LEVEL.INFO, STORAGE_CATEGORY.FILE, "Successfully archived {} to s3 bucket {}"),
+  S3_RESTORED_DATA (LEVEL.INFO, STORAGE_CATEGORY.FILE, "Successfully restored {} from s3 bucket {}"),
+  S3_ENTITY_DELETED (LEVEL.INFO, STORAGE_CATEGORY.FILE, "Successfully deleted {} from s3 bucket {}"),
+  S3_MD5_HASH_FAILED (LEVEL.ERROR, STORAGE_CATEGORY.FILE, "MD5 hash on {} failed, expected {}, computed {}"),
+  S3_FILE_DELETE_FAILED (LEVEL.ERROR, STORAGE_CATEGORY.FILE, "Unable to delete {}, unable to restore data from S3"),
+  // endregion
+
+  // region S3
+  ARCHIVE_MONITOR_FAILED (LEVEL.ERROR, STORAGE_CATEGORY.FILE, "Exception raised during archival of store {}"),
+  // endregion
+
   //region StoreBuilder
   STORAGE_ALREADY_CONFIGURED(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "The storage type has already been configured"),
   NO_SUCH_STORAGE_FOUND(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "No such Storage implementation found {}"),
@@ -67,6 +79,7 @@ public enum StorageLogMessages implements LogMessage {
   CACHE_ALREADY_CONFIGURED(LEVEL.WARN, STORAGE_CATEGORY.FACTORY, "The cache has already been configured"),
   NO_SUCH_CACHE_FOUND(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "No such cache implementation found {}"),
   DEFAULTING_CACHE(LEVEL.INFO, STORAGE_CATEGORY.FACTORY, "Defaulting the cache implementation to {}");
+
   //endregion
 
   private final @Getter String message;

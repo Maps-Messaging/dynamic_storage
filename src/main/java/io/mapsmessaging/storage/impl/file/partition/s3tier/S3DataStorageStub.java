@@ -26,6 +26,8 @@ import lombok.Getter;
 
 public class S3DataStorageStub<T extends Storable> implements DataStorage<T> {
 
+  private static final String ERROR_MESSAGE = "This should not be called, the file needs to be restored";
+
   @Getter
   private final S3Record s3Record;
 
@@ -35,7 +37,7 @@ public class S3DataStorageStub<T extends Storable> implements DataStorage<T> {
 
   @Override
   public void close() throws IOException {
-
+    // We have nothing to close!!
   }
 
   @Override
@@ -45,17 +47,17 @@ public class S3DataStorageStub<T extends Storable> implements DataStorage<T> {
 
   @Override
   public void delete() throws IOException {
-    throw new IOException("This should not be called, the file needs to be restored");
+    throw new IOException(ERROR_MESSAGE);
   }
 
   @Override
   public IndexRecord add(T object) throws IOException {
-    throw new IOException("This should not be called, the file needs to be restored");
+    throw new IOException(ERROR_MESSAGE);
   }
 
   @Override
   public T get(IndexRecord item) throws IOException {
-    throw new IOException("This should not be called, the file needs to be restored");
+    throw new IOException(ERROR_MESSAGE);
   }
 
   @Override

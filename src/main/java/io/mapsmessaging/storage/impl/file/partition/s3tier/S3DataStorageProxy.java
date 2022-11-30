@@ -103,9 +103,7 @@ public class S3DataStorageProxy<T extends Storable> implements ArchivedDataStora
   public void delete() throws IOException {
     if(isArchived) {
       File file = new File(fileName);
-      if (!file.delete()) { // Delete local reference
-        System.err.println("Failed to delete");
-      }
+      file.delete();
       S3Record s3Record = ((S3DataStorageStub<T>)physicalStore).getS3Record();
       s3TransferApi.delete(s3Record); // Delete the S3 entry
     }

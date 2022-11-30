@@ -29,7 +29,7 @@ import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
 import io.mapsmessaging.storage.impl.file.partition.IndexGet;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
-import io.mapsmessaging.storage.impl.file.s3.ArchiveMonitorTask;
+import io.mapsmessaging.storage.impl.file.tasks.ArchiveMonitorTask;
 import io.mapsmessaging.storage.impl.file.tasks.DeletePartitionTask;
 import io.mapsmessaging.storage.impl.file.tasks.FileTask;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
