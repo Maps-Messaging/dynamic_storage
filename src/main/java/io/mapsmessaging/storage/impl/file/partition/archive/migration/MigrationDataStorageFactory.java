@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.compress;
+package io.mapsmessaging.storage.impl.file.partition.archive.migration;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
@@ -24,21 +24,21 @@ import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
 import java.io.IOException;
 
-public class CompressionDataStorageFactory<T extends Storable> implements DataStorageFactory<T> {
+public class MigrationDataStorageFactory<T extends Storable> implements DataStorageFactory<T> {
 
-  public CompressionDataStorageFactory() {
+  public MigrationDataStorageFactory() {
     // Only needed for service loading
   }
 
   @Override
   public String getName() {
-    return "Compress";
+    return "Migrate";
   }
 
   @Override
   public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config, String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize)
       throws IOException {
-    return new CompressionDataStorageProxy<>(fileName, storableFactory, sync, maxPartitionSize);
+    return new MigrationDataStorageProxy<>(config.getMigrationDestination(), fileName, storableFactory, sync, maxPartitionSize);
   }
 
 }

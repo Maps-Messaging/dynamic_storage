@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.compress;
+package io.mapsmessaging.storage.impl.file.partition.archive.migration;
 
 import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
 import java.io.BufferedReader;
@@ -27,9 +27,9 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-public class CompressionRecord extends ArchiveRecord {
+public class MigrationRecord extends ArchiveRecord {
 
-  private static final String HEADER = "# Zip file place holder";
+  private static final String HEADER = "# Migration file place holder";
 
   @Getter
   @Setter
@@ -39,14 +39,13 @@ public class CompressionRecord extends ArchiveRecord {
   @Setter
   private String md5;
 
-
-  public CompressionRecord() {
+  public MigrationRecord() {
   }
 
-  public CompressionRecord(long length, String md5) {
+  public MigrationRecord(long length, String md5) {
     super(length);
-    this.archivedDate = LocalDateTime.now();
     this.md5 = md5;
+    this.archivedDate = LocalDateTime.now();
   }
 
   public void write(String fileName) throws IOException {
@@ -54,7 +53,7 @@ public class CompressionRecord extends ArchiveRecord {
     try (OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream)) {
       writer.write(HEADER +"\n");
       writer.write(""+getLength()+"\n");
-      writer.write(md5+"\n");
+      writer.write(""+md5+"\n");
       writer.write(archivedDate.toString() + "\n");
     }
   }

@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.compress;
+package io.mapsmessaging.storage.impl.file.partition.archive.migration;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
@@ -24,6 +24,7 @@ import io.mapsmessaging.storage.impl.file.partition.DataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageStub;
+import io.mapsmessaging.storage.impl.file.partition.archive.compress.FileCompressionProcessor;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -31,8 +32,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
-public class CompressionDataStorageProxy<T extends Storable> implements ArchivedDataStorage<T> {
+public class MigrationDataStorageProxy<T extends Storable> implements ArchivedDataStorage<T> {
 
+  private final String destination;
   private final String fileName;
   private final StorableFactory<T> storableFactory;
   private final boolean sync;
@@ -41,7 +43,8 @@ public class CompressionDataStorageProxy<T extends Storable> implements Archived
   private DataStorage<T> physicalStore;
   private boolean isArchived;
 
-  public CompressionDataStorageProxy(String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
+  public MigrationDataStorageProxy(String destination, String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
+    this.destination = destination;
     this.fileName = fileName;
     this.sync = sync;
     this.storableFactory = storableFactory;
@@ -65,9 +68,9 @@ public class CompressionDataStorageProxy<T extends Storable> implements Archived
     if (!isArchived) {
       return new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
     }
-    CompressionRecord zipRecord = new CompressionRecord();
-    zipRecord.read(fileName);
-    return new DataStorageStub<>(zipRecord);
+    MigrationRecord migrationRecord = new MigrationRecord();
+    migrationRecord.read(fileName);
+    return new DataStorageStub<>(migrationRecord);
   }
 
   @Override
@@ -89,7 +92,7 @@ public class CompressionDataStorageProxy<T extends Storable> implements Archived
 
   @Override
   public String getArchiveName() {
-    return "Compress";
+    return "Migrate";
   }
 
   @Override
@@ -101,9 +104,7 @@ public class CompressionDataStorageProxy<T extends Storable> implements Archived
   public void delete() throws IOException {
     if (isArchived) {
       File file = new File(fileName);
-      File zipFile = new File(fileName+"_zip");
       file.delete();
-      zipFile.delete();
     } else {
       physicalStore.delete();
     }
@@ -138,43 +139,43 @@ public class CompressionDataStorageProxy<T extends Storable> implements Archived
 
   public void archive() throws IOException {
     if (!isArchived) {
-      FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
-      File source = new File(fileName);
-      File zipped = new File(fileName+"_zip");
-      CompressionRecord compressionRecord = null;
+      File from = new File(fileName);
+      File to = new File(destination+"/"+fileName+"_zip");
       try {
         MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-        long length = compressionHelper.in(source, zipped, messageDigest);
-        compressionRecord = new CompressionRecord(length, Base64.getEncoder().encodeToString(messageDigest.digest()));
-        compressionRecord.write(fileName);
+        FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
+        long length = compressionHelper.in(from, to, messageDigest);
+        MigrationRecord migrationRecord = new MigrationRecord(length,  Base64.getEncoder().encodeToString(messageDigest.digest()));
+        migrationRecord.write(to.getName());
+        from.delete();
+        physicalStore = new DataStorageStub<>(migrationRecord);
+        isArchived = true;
       } catch (NoSuchAlgorithmException e) {
         throw new IOException(e);
       }
-      physicalStore = new DataStorageStub<>(compressionRecord);
-      isArchived = true;
     }
   }
 
   public void restore() throws IOException {
-    FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
-    File placeHolder = new File(fileName);
-    placeHolder.delete();
-    File zipped = new File(fileName+"_zip");
-    File destination = new File(fileName);
     try {
-      CompressionRecord compressionRecord = (CompressionRecord) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
+      File to = new File(fileName+"_zip");
+      File from = new File(destination+"/"+fileName+"_zip");
+      FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
+      to.delete();
       MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-      compressionHelper.out(zipped, destination, messageDigest);
-      String computed = Base64.getEncoder().encodeToString(messageDigest.digest());
-      if(!computed.equals(compressionRecord.getMd5())){
-        throw new IOException("MD5 hash does not match");
+      compressionHelper.out(to, from, messageDigest);
+      String digest = Base64.getEncoder().encodeToString(messageDigest.digest());
+      MigrationRecord migrationRecord = (MigrationRecord) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
+      if(!digest.equals(migrationRecord.getMd5())){
+        throw new IOException("File has been changed, MD5 hash does not match");
       }
+      from.delete();
       physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
       isArchived = false;
-    }
-    catch (NoSuchAlgorithmException e) {
+    } catch (NoSuchAlgorithmException e) {
       throw new IOException(e);
     }
+
   }
 
   @Override
