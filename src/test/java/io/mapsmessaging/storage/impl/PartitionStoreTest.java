@@ -47,40 +47,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class PartitionStoreTest extends BaseStoreTest {
+class PartitionStoreTest extends BasePartitionStoreTest {
 
-  static  Map<String, String> buildProperties(boolean sync) throws IOException {
-    File file = new File("test_file" + File.separator);
-    if (!file.exists()) {
-      Files.createDirectory(file.toPath());
-    }
-    Map<String, String> properties = new LinkedHashMap<>();
-    properties.put("Sync", "" + sync);
-    properties.put("ItemCount", ""+ 100);
-    properties.put("MaxPartitionSize", "" + (512L * 1024L * 1024L)); // set to 5MB data limit
-
-    return properties;
-  }
-
-  static Storage<MappedData> build(Map<String, String> properties, String testName) throws IOException {
-    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Partition")
-        .setFactory(getFactory())
-        .setName("test_file" + File.separator + testName)
-        .setProperties(properties);
-
-    return storageBuilder.build();
-  }
-
-  static Storage<MappedData> build(String testName, boolean sync) throws IOException{
-    Map<String, String> properties = buildProperties(sync);
-    return build(properties, testName);
-  }
-
-  @Override
-  public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
-    return build(testName, sync);
-  }
 
   private Storage<MappedData> createCompactionStore() throws IOException {
     File file = new File("test_file" + File.separator + "testIndexCompaction");
