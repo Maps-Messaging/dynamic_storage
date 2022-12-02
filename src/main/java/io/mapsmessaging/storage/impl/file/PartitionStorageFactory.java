@@ -84,6 +84,7 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
     if(properties.containsKey("archiveName")) {
       config.setArchiveName(properties.get("archiveName"));
     }
+    config.setMigrationDestination(properties.get("migrationPath"));
 
     config.setS3AccessKeyId(properties.get("S3AccessKeyId"));
     config.setS3SecretAccessKey(properties.get("S3SecretAccessKey"));

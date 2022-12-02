@@ -28,6 +28,7 @@ import io.mapsmessaging.storage.impl.file.partition.archive.compress.FileCompres
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -144,10 +145,10 @@ public class MigrationDataStorageProxy<T extends Storable> implements ArchivedDa
       try {
         MessageDigest messageDigest = MessageDigest.getInstance("MD5");
         FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
+        Files.createDirectories(to.getParentFile().toPath());
         long length = compressionHelper.in(from, to, messageDigest);
         MigrationRecord migrationRecord = new MigrationRecord(length,  Base64.getEncoder().encodeToString(messageDigest.digest()));
-        migrationRecord.write(to.getName());
-        from.delete();
+        migrationRecord.write(fileName);
         physicalStore = new DataStorageStub<>(migrationRecord);
         isArchived = true;
       } catch (NoSuchAlgorithmException e) {
@@ -158,12 +159,12 @@ public class MigrationDataStorageProxy<T extends Storable> implements ArchivedDa
 
   public void restore() throws IOException {
     try {
-      File to = new File(fileName+"_zip");
+      File to = new File(fileName);
       File from = new File(destination+"/"+fileName+"_zip");
       FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
       to.delete();
       MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-      compressionHelper.out(to, from, messageDigest);
+      compressionHelper.out(from, to, messageDigest);
       String digest = Base64.getEncoder().encodeToString(messageDigest.digest());
       MigrationRecord migrationRecord = (MigrationRecord) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
       if(!digest.equals(migrationRecord.getMd5())){
