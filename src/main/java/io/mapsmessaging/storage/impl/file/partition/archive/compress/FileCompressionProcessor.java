@@ -22,7 +22,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.DigestException;
 import java.security.MessageDigest;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
