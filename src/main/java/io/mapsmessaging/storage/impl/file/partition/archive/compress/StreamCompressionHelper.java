@@ -31,14 +31,14 @@ import org.jetbrains.annotations.Nullable;
 public class StreamCompressionHelper extends StreamProcessor {
 
   @Override
-  public int in(@NotNull InputStream inputStream, @NotNull OutputStream outputStream, @Nullable MessageDigest messageDigest) throws IOException, DigestException {
+  public int in(@NotNull InputStream inputStream, @NotNull OutputStream outputStream, @Nullable MessageDigest messageDigest) throws IOException {
     try(GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream)) {
       return super.in(inputStream, gzipOutputStream, messageDigest);
     }
   }
 
   @Override
-  public int out(@NotNull InputStream inputStream, @NotNull OutputStream outputStream, @Nullable MessageDigest messageDigest) throws IOException, DigestException {
+  public int out(@NotNull InputStream inputStream, @NotNull OutputStream outputStream, @Nullable MessageDigest messageDigest) throws IOException {
     try(GZIPInputStream gzipInputStream = new GZIPInputStream(inputStream)) {
       return super.out(gzipInputStream, outputStream, messageDigest);
     }

@@ -36,11 +36,7 @@ public class FileCompressionProcessor implements FileProcessor {
     try(FileOutputStream fileOutputStream = new FileOutputStream(out)){
       try (FileInputStream fileInputStream = new FileInputStream(in)) {
         StreamCompressionHelper streamCompressionHelper = new StreamCompressionHelper();
-        try {
-          streamCompressionHelper.in(fileInputStream, fileOutputStream, digest);
-        } catch (DigestException e) {
-          throw new IOException(e);
-        }
+        streamCompressionHelper.in(fileInputStream, fileOutputStream, digest);
       }
     }
     return length;
@@ -50,11 +46,7 @@ public class FileCompressionProcessor implements FileProcessor {
     try(FileInputStream fileInputStream = new FileInputStream(in)){
       try (FileOutputStream fileOutputStream = new FileOutputStream(out)) {
         StreamCompressionHelper streamCompressionHelper = new StreamCompressionHelper();
-        try {
-          streamCompressionHelper.out(fileInputStream, fileOutputStream, digest);
-        } catch (DigestException e) {
-          throw new IOException(e);
-        }
+        streamCompressionHelper.out(fileInputStream, fileOutputStream, digest);
       }
     }
     in.delete();

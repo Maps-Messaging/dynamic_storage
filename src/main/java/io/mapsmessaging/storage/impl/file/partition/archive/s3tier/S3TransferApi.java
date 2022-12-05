@@ -86,7 +86,7 @@ public class S3TransferApi {
       }
       amazonS3.deleteObject(s3Record.getBucketName(), s3Record.getEntryName());
       LOGGER.log(S3_RESTORED_DATA, localFileName, bucketName);
-    } catch (AmazonS3Exception | DigestException e) {
+    } catch (AmazonS3Exception e) {
       throw new IOException(e);
     }
   }
