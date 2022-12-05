@@ -22,7 +22,6 @@ import io.mapsmessaging.storage.ExpiredMonitor;
 import io.mapsmessaging.storage.ExpiredStorableHandler;
 import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
@@ -71,7 +70,6 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private final List<IndexStorage<T>> partitions;
   private final String fileName;
   private final String rootDirectory;
-  private final StorableFactory<T> storableFactory;
   private final long archiveIdleTime;
 
   private final LongAdder reads;
@@ -98,7 +96,6 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     this.expiredHandler = Objects.requireNonNullElseGet(config.getExpiredHandler(), () -> new BaseExpiredHandler<>(this));
     this.itemCount = config.getItemCount();
     this.fileName = config.getFileName() + File.separator + PARTITION_FILE_NAME;
-    this.storableFactory = config.getStorableFactory();
     archiveIdleTime = config.getArchiveIdleTime();
     partitionCounter = 0;
     shutdown = false;
@@ -164,7 +161,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     partitions.clear();
     File file = new File(rootDirectory);
     String[] children = file.list();
-    if (children != null && children.length > 0) {
+    if (children != null) {
       for (String child : children) {
         File t = new File(child);
         Files.deleteIfExists(t.toPath());
@@ -394,7 +391,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   @Override
   public void setExecutor(TaskScheduler scheduler) {
     taskScheduler.setTaskScheduler(scheduler);
-    taskScheduler.scheduleAtFixedRate(new ArchiveMonitorTask(this), 10, TimeUnit.SECONDS);
+    taskScheduler.scheduleAtFixedRate(new ArchiveMonitorTask<T>(this), 10, TimeUnit.SECONDS);
   }
 
   @Override
