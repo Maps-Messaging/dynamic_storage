@@ -18,6 +18,7 @@
 package io.mapsmessaging.storage.impl.file.partition.archive.migration;
 
 import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.impl.file.FileHelper;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
 import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
@@ -54,8 +55,7 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
   public void delete() throws IOException {
     if (isArchived) {
       super.delete();
-      File file = new File(destination);
-      file.delete();
+      FileHelper.delete(digestName);
     } else {
       physicalStore.delete();
     }
@@ -89,7 +89,7 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
       File to = new File(fileName);
       File from = new File(destination+File.separator+fileName+"_zip");
       FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
-      to.delete();
+      FileHelper.delete(to);
       MigrationRecord migrationRecord = (MigrationRecord) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
       MessageDigest messageDigest = getMessageDigest(migrationRecord.getDigestName());
       compressionHelper.out(from, to, messageDigest);
@@ -100,7 +100,7 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
           throw new IOException("File has been changed, MD5 hash does not match");
         }
       }
-      from.delete();
+      FileHelper.delete(from);
       physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
       isArchived = false;
     } catch (NoSuchAlgorithmException e) {

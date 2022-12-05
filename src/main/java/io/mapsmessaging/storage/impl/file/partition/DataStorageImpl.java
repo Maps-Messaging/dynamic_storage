@@ -25,6 +25,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
+import io.mapsmessaging.storage.impl.file.FileHelper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -142,8 +143,7 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
 
   public void delete() throws IOException {
     close();
-    File path = new File(fileName);
-    Files.delete(path.toPath());
+    FileHelper.delete(fileName);
   }
 
   public IndexRecord add(@NotNull T object) throws IOException {

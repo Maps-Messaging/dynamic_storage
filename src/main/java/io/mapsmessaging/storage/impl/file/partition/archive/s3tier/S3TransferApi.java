@@ -28,6 +28,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.S3Object;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.storage.impl.file.FileHelper;
 import io.mapsmessaging.storage.impl.file.partition.archive.StreamProcessor;
 import io.mapsmessaging.storage.impl.file.partition.archive.compress.FileCompressionProcessor;
 import io.mapsmessaging.storage.impl.file.partition.archive.compress.StreamCompressionHelper;
@@ -35,7 +36,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.DigestException;
 import java.security.MessageDigest;
 import java.util.Base64;
 
@@ -59,7 +59,7 @@ public class S3TransferApi {
 
   public void retrieve(String localFileName, S3Record s3Record, MessageDigest messageDigest) throws IOException {
     File file = new File(localFileName);
-    if(!file.delete()){
+    if(!FileHelper.delete(localFileName)){
       LOGGER.log(S3_FILE_DELETE_FAILED, localFileName);
       throw new IOException("Unable to delete placeholder file");
     }
@@ -111,7 +111,7 @@ public class S3TransferApi {
     amazonS3.putObject(bucketName, entryName, file);
     S3Record s3Record = new S3Record(bucketName, entryName, digest, file.length(), compress);
     LOGGER.log(S3_ARCHIVING_DATA, localFileName, bucketName);
-    file.delete();
+    FileHelper.delete(file);
     return s3Record;
   }
 

@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.storage.impl.file.partition.archive.compress;
 
+import io.mapsmessaging.storage.impl.file.FileHelper;
 import io.mapsmessaging.storage.impl.file.partition.archive.FileProcessor;
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,7 +49,7 @@ public class FileCompressionProcessor implements FileProcessor {
         streamCompressionHelper.out(fileInputStream, fileOutputStream, digest);
       }
     }
-    in.delete();
+    FileHelper.delete(in);
     return out.length();
   }
 }

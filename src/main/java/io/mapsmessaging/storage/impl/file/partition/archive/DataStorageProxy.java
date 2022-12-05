@@ -19,6 +19,7 @@ package io.mapsmessaging.storage.impl.file.partition.archive;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
+import io.mapsmessaging.storage.impl.file.FileHelper;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorage;
@@ -82,8 +83,7 @@ public abstract class DataStorageProxy<T extends Storable> implements ArchivedDa
   @Override
   public void delete() throws IOException {
     if (isArchived) {
-      File file = new File(fileName);
-      file.delete();
+      FileHelper.delete(fileName);
     } else {
       physicalStore.delete();
     }

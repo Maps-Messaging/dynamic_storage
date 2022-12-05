@@ -18,6 +18,7 @@
 package io.mapsmessaging.storage.impl.file.partition.archive.compress;
 
 import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.impl.file.FileHelper;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
 import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
@@ -49,8 +50,7 @@ public class CompressionDataStorageProxy<T extends Storable> extends DataStorage
   public void delete() throws IOException {
     if (isArchived) {
       super.delete();
-      File zipFile = new File(fileName+"_zip");
-      zipFile.delete();
+      FileHelper.delete(fileName+"_zip");
     }
   }
 
@@ -79,8 +79,7 @@ public class CompressionDataStorageProxy<T extends Storable> extends DataStorage
 
   public void restore() throws IOException {
     FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
-    File placeHolder = new File(fileName);
-    placeHolder.delete();
+    FileHelper.delete(fileName);
     File zipped = new File(fileName+"_zip");
     File destination = new File(fileName);
     try {
