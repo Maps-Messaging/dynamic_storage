@@ -451,7 +451,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
       if (key < start || key > (start + itemCount)) {
         start = key;
       }
-      partition = new IndexStorage<>(config, partitionName, storableFactory, start, taskScheduler);
+      partition = new IndexStorage<>(config, partitionName, start, taskScheduler);
       partitions.add(partition);
       partitions.sort(Comparator.comparingLong(IndexStorage::getStart));
     }
@@ -533,7 +533,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private boolean loadStore(String test) throws IOException {
     if (test.startsWith(PARTITION_FILE_NAME) && test.endsWith("index")) {
       String loadName = test.substring(PARTITION_FILE_NAME.length(), test.length() - "_index".length());
-      IndexStorage<T> indexStorage = new IndexStorage<>(config,fileName + loadName, storableFactory,  0, taskScheduler);
+      IndexStorage<T> indexStorage = new IndexStorage<>(config,fileName + loadName,  0, taskScheduler);
       synchronized (partitions) {
         partitions.add(indexStorage);
         int partNumber = extractPartitionNumber(loadName);

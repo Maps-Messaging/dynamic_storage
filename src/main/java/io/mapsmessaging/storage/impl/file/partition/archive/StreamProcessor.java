@@ -29,27 +29,56 @@ import javax.annotation.Nullable;
 public class StreamProcessor {
 
   public int in(@Nonnull InputStream inputStream, @Nonnull  OutputStream outputStream, @Nullable MessageDigest messageDigest) throws IOException, DigestException{
+    if(messageDigest == null){
+      return joinStreams(inputStream, outputStream);
+    }
     return joinStreams(inputStream, outputStream, messageDigest);
   }
 
   public int out(@Nonnull InputStream inputStream, @Nonnull OutputStream outputStream, @Nullable MessageDigest messageDigest) throws IOException, DigestException{
+    if(messageDigest == null){
+      return joinStreams(inputStream, outputStream);
+    }
     return joinStreams(inputStream, outputStream, messageDigest);
   }
 
-
-  private int joinStreams(@Nonnull InputStream inputStream, @Nonnull OutputStream outputStream, @Nullable MessageDigest messageDigest) throws IOException, DigestException {
+  private int joinStreams(@Nonnull InputStream inputStream, @Nonnull OutputStream outputStream) throws IOException {
     byte[] tmp = new byte[10240];
     int count = 0;
     int len =1;
-
     while (len >0) {
-      Arrays.fill( tmp, (byte) 0 );
       len = inputStream.read(tmp, 0, tmp.length);
-      if (len > 0) {
+      if (len > 0 ) {
         outputStream.write(tmp, 0, len);
         count += len;
-        if(messageDigest != null){
-          messageDigest.update(tmp, 0, Math.max(len, messageDigest.getDigestLength()));
+      }
+    }
+    outputStream.flush();
+    return count;
+  }
+
+  private int joinStreams(@Nonnull InputStream inputStream, @Nonnull OutputStream outputStream, @Nonnull MessageDigest messageDigest) throws IOException{
+    byte[] tmp = new byte[10240];
+    int count = 0;
+    int len = 0;
+    int pos =0;
+    int bufLen = tmp.length;
+    int digestLength = messageDigest.getDigestLength();
+    while (len >= 0) {
+      len += inputStream.read(tmp, pos, bufLen);
+      if (len > 0 ) {
+        if(len > digestLength){
+          outputStream.write(tmp, 0, len);
+          messageDigest.update(tmp, 0, len);
+          count += len;
+          len =0;
+          pos =0;
+          bufLen = tmp.length;
+          Arrays.fill( tmp, (byte) 0 );
+        }
+        else if(inputStream.available() > 0){
+          pos = len;
+          bufLen = bufLen -len;
         }
       }
     }

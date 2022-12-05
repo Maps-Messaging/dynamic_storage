@@ -18,7 +18,6 @@
 package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import java.io.IOException;
 
@@ -26,6 +25,6 @@ public interface DataStorageFactory<T extends Storable> {
 
   String getName();
 
-  ArchivedDataStorage<T> create(PartitionStorageConfig<T> config, String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException;
+  ArchivedDataStorage<T> create(PartitionStorageConfig<T> config) throws IOException;
 
 }

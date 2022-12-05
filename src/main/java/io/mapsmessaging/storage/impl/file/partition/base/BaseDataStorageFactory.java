@@ -18,7 +18,6 @@
 package io.mapsmessaging.storage.impl.file.partition.base;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
@@ -37,8 +36,9 @@ public class BaseDataStorageFactory<T extends Storable>  implements DataStorageF
   }
 
   @Override
-  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config, String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize)
+  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config)
       throws IOException {
-    return new BaseDataStorage<>(fileName, storableFactory, sync, maxPartitionSize);
+
+    return new BaseDataStorage<>(config );
   }
 }

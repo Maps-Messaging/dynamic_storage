@@ -23,50 +23,35 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.time.LocalDateTime;
-import lombok.Getter;
-import lombok.Setter;
 
 public class MigrationRecord extends ArchiveRecord {
 
   private static final String HEADER = "# Migration file place holder";
 
-  @Getter
-  @Setter
-  private LocalDateTime archivedDate;
-
-  @Getter
-  @Setter
-  private String md5;
-
   public MigrationRecord() {
   }
 
-  public MigrationRecord(long length, String md5) {
-    super(length);
-    this.md5 = md5;
-    this.archivedDate = LocalDateTime.now();
+  public MigrationRecord(long length, String hash, String digestName) {
+    super(digestName, hash, length);
   }
 
   public void write(String fileName) throws IOException {
-    FileOutputStream fileOutputStream = new FileOutputStream(fileName, false);
-    try (OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream)) {
-      writer.write(HEADER +"\n");
-      writer.write(""+getLength()+"\n");
-      writer.write(""+md5+"\n");
-      writer.write(archivedDate.toString() + "\n");
+    try (FileOutputStream fileOutputStream = new FileOutputStream(fileName, false)) {
+      try (OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream)) {
+        writer.write(HEADER + "\n");
+        writeOut(writer);
+      }
     }
   }
 
   public void read(String fileName) throws IOException{
-    FileReader fileReader = new FileReader(fileName);
-    try (BufferedReader reader = new BufferedReader(fileReader)) {
-      if(!reader.readLine().equals(HEADER)){
-        throw new IOException("Invalid place holder");
+    try(FileReader fileReader = new FileReader(fileName)) {
+      try (BufferedReader reader = new BufferedReader(fileReader)) {
+        if (!reader.readLine().equals(HEADER)) {
+          throw new IOException("Invalid place holder");
+        }
+        readIn(reader);
       }
-      setLength(Long.parseLong(reader.readLine()));
-      md5 = reader.readLine();
-      archivedDate = LocalDateTime.parse(reader.readLine());
     }
   }
 }

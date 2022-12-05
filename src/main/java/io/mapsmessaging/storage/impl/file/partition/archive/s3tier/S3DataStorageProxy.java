@@ -18,75 +18,26 @@
 package io.mapsmessaging.storage.impl.file.partition.archive.s3tier;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.StorableFactory;
-import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
-import io.mapsmessaging.storage.impl.file.partition.DataStorage;
+import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
-import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
+import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
+import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageProxy;
 import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageStub;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
-public class S3DataStorageProxy<T extends Storable> implements ArchivedDataStorage<T> {
-
-  private final String fileName;
-  private final StorableFactory<T> storableFactory;
-  private final boolean sync;
-  private final long maxPartitionSize;
+public class S3DataStorageProxy<T extends Storable> extends DataStorageProxy<T> {
 
   private final S3TransferApi s3TransferApi;
 
-  private DataStorage<T> physicalStore;
-  private boolean isArchived;
-
-  public S3DataStorageProxy(S3TransferApi transferApi, String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
-    this.fileName = fileName;
-    this.sync = sync;
-    this.storableFactory = storableFactory;
-    this.maxPartitionSize = maxPartitionSize;
+  public S3DataStorageProxy(S3TransferApi transferApi, PartitionStorageConfig<T> config) throws IOException {
+    super(config);
     this.s3TransferApi = transferApi;
-
-    File file = new File(fileName);
-    isArchived = false;
-    if(!file.exists()){
-      physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
-    }
-    else{
-      physicalStore = detectAndLoad();
-    }
   }
 
-  private DataStorage<T> detectAndLoad() throws IOException {
-    try (FileInputStream fileInputStream = new FileInputStream(fileName)) {
-      byte[] tmp = fileInputStream.readNBytes(16);
-      int test = tmp[0] & 0xff;
-      isArchived = (test != 0xEF && test != 0x00);
-    }
-    if(!isArchived){
-      return new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
-    }
-    S3Record s3Record = new S3Record();
-    s3Record.read(fileName);
-    return new DataStorageStub<>(s3Record);
-  }
 
-  @Override
-  public void close() throws IOException {
-    physicalStore.close();
-  }
-
-  public void pause() throws IOException {
-    if(!isArchived) {
-      physicalStore.close();
-    }
-  }
-
-  public void resume() throws IOException {
-    if(!isArchived) {
-      physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
-    }
-  }
 
   @Override
   public String getArchiveName(){
@@ -94,15 +45,9 @@ public class S3DataStorageProxy<T extends Storable> implements ArchivedDataStora
   }
 
   @Override
-  public String getName() {
-    return fileName;
-  }
-
-  @Override
   public void delete() throws IOException {
     if(isArchived) {
-      File file = new File(fileName);
-      file.delete();
+      super.delete();
       S3Record s3Record =(S3Record) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
       s3TransferApi.delete(s3Record); // Delete the S3 entry
     }
@@ -112,61 +57,35 @@ public class S3DataStorageProxy<T extends Storable> implements ArchivedDataStora
   }
 
   @Override
-  public IndexRecord add(T object) throws IOException {
-    loadIfArchived();
-    return physicalStore.add(object);
-  }
-
-  @Override
-  public T get(IndexRecord item) throws IOException {
-    loadIfArchived();
-    return physicalStore.get(item);
-  }
-
-  @Override
-  public long length() throws IOException {
-    return physicalStore.length();
-  }
-
-  @Override
-  public boolean isValidationRequired() {
-    return physicalStore.isValidationRequired();
-  }
-
-  @Override
-  public boolean isFull() {
-    return physicalStore.isFull();
+  protected ArchiveRecord buildArchiveRecord() {
+    return new S3Record();
   }
 
   public void archive() throws IOException {
     if(!isArchived){
       File file = new File(fileName);
-      S3Record s3Record = s3TransferApi.archive(file.getParentFile().getPath(), fileName);
-      physicalStore = new DataStorageStub<>(s3Record);
-      isArchived = true;
+      try {
+        MessageDigest messageDigest = getMessageDigest();
+        S3Record s3Record = s3TransferApi.archive(file.getParentFile().getPath(), fileName, messageDigest);
+        s3Record.setDigestName(digestName);
+        s3Record.write(fileName);
+        physicalStore = new DataStorageStub<>(s3Record);
+        isArchived = true;
+      } catch (NoSuchAlgorithmException e) {
+        throw new IOException(e);
+      }
     }
   }
 
   public void restore() throws IOException {
     S3Record s3Record = (S3Record) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
-    s3TransferApi.retrieve(fileName, s3Record);
-    physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
-    isArchived = false;
-  }
-
-  @Override
-  public boolean isArchived() {
-    return isArchived;
-  }
-
-  @Override
-  public boolean supportsArchiving() {
-    return s3TransferApi != null;
-  }
-
-  private void loadIfArchived() throws IOException {
-    if(isArchived){
-      restore();
+    try {
+      MessageDigest messageDigest = getMessageDigest(s3Record.getDigestName());
+      s3TransferApi.retrieve(fileName, s3Record, messageDigest);
+      physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
+      isArchived = false;
+    } catch (NoSuchAlgorithmException e) {
+      throw new IOException(e);
     }
   }
 }

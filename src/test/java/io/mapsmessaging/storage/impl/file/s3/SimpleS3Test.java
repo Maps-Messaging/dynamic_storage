@@ -65,11 +65,11 @@ class SimpleS3Test {
       fileOutputStream.write(val);
     }
     fileOutputStream.close();
-    S3Record record = transferApi.archive("mapsMessaging/test", filename);
+    S3Record record = transferApi.archive("mapsMessaging/test", filename, null);
     Assertions.assertEquals(bucketName, record.getBucketName(), "Bucket names must match");
     Assertions.assertEquals(1024 * 1024, record.getLength(), "File Length should match");
     transferApi.delete(record);
-    Assertions.assertThrowsExactly(IOException.class, () -> transferApi.retrieve(filename, record));
+    Assertions.assertThrowsExactly(IOException.class, () -> transferApi.retrieve(filename, record, null));
   }
 
   @Test
@@ -95,7 +95,8 @@ class SimpleS3Test {
     byte[] digest = md.digest();
     fileOutputStream.close();
 
-    S3Record record = transferApi.archive("mapsMessaging/test", filename);
+    S3Record record = transferApi.archive("mapsMessaging/test", filename, null);
+    record.write(filename);
 
     Assertions.assertEquals(bucketName, record.getBucketName(), "Bucket names must match");
     Assertions.assertEquals(bufferSize, record.getLength(), "File Length should match");
@@ -107,11 +108,11 @@ class SimpleS3Test {
 
     Assertions.assertEquals(record.getLength(), reloaded.getLength());
     Assertions.assertEquals(record.getEntryName(), reloaded.getEntryName());
-    Assertions.assertEquals(record.getMd5(), reloaded.getMd5());
+    Assertions.assertEquals(record.getArchiveHash(), reloaded.getArchiveHash());
     Assertions.assertEquals(record.getBucketName(), reloaded.getBucketName());
     Assertions.assertEquals(record.getArchivedDate(), reloaded.getArchivedDate());
 
-    transferApi.retrieve(filename, reloaded);
+    transferApi.retrieve(filename, reloaded, null);
     FileInputStream fileInputStream = new FileInputStream(filename);
     byte[] tmp = new byte[1024];
     int read = 1;

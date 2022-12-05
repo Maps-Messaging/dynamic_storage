@@ -94,7 +94,9 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
     if(properties.containsKey("archiveIdleTime")) {
       config.setArchiveIdleTime(Integer.parseInt(properties.get("archiveIdleTime")));
     }
-
+    if(properties.containsKey("digestName")) {
+      config.setDigestName(properties.get("digestName"));
+    }
     return new PartitionStorage<>(config);
   }
 

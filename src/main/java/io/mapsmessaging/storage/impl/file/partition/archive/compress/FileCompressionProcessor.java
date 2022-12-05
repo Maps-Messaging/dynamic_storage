@@ -43,7 +43,6 @@ public class FileCompressionProcessor implements FileProcessor {
         }
       }
     }
-    in.delete();
     return length;
   }
 

@@ -18,7 +18,6 @@
 package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -43,12 +42,12 @@ public class PartitionDataManagerFactory<T extends Storable> {
     }
   }
 
-  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config, String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
+  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config) throws IOException {
     String archiveName = "None";
     if(config != null){
       archiveName = config.getArchiveName();
     }
     DataStorageFactory<T> factory = dataStorageManagers.get(archiveName);
-    return factory.create(config, fileName, storableFactory, sync, maxPartitionSize);
+    return factory.create(config);
   }
 }

@@ -23,7 +23,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -41,53 +40,41 @@ public class S3Record extends ArchiveRecord {
 
   @Getter
   @Setter
-  private String md5;
-
-  @Getter
-  @Setter
-  private LocalDateTime archivedDate;
-
-  @Getter
-  @Setter
   private boolean compressed;
 
   public S3Record() {
   }
 
   public S3Record(String bucketName, String entryName, String contentMd5, long length, boolean compressed ) {
-    super(length);
-    this.archivedDate = LocalDateTime.now();
+    super("", contentMd5, length);
     this.bucketName = bucketName;
     this.entryName = entryName;
-    this.md5 = contentMd5;
     this.compressed = compressed;
   }
 
   public void write(String fileName) throws IOException {
-    FileOutputStream fileOutputStream = new FileOutputStream(fileName, false);
-    try (OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream)) {
-      writer.write(HEADER +"\n");
-      writer.write(bucketName + "\n");
-      writer.write(entryName + "\n");
-      writer.write(md5 + "\n");
-      writer.write(""+getLength()+"\n");
-      writer.write(archivedDate.toString() + "\n");
-      writer.write(compressed + "\n");
+    try(FileOutputStream fileOutputStream = new FileOutputStream(fileName, false)) {
+      try (OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream)) {
+        writer.write(HEADER + "\n");
+        writer.write(bucketName + "\n");
+        writer.write(entryName + "\n");
+        writer.write(compressed + "\n");
+        writeOut(writer);
+      }
     }
   }
 
   public void read(String fileName) throws IOException{
-    FileReader fileReader = new FileReader(fileName);
-    try (BufferedReader reader = new BufferedReader(fileReader)) {
-      if(!reader.readLine().equals(HEADER)){
-        throw new IOException("Invalid place holder");
+    try(FileReader fileReader = new FileReader(fileName)) {
+      try (BufferedReader reader = new BufferedReader(fileReader)) {
+        if (!reader.readLine().equals(HEADER)) {
+          throw new IOException("Invalid place holder");
+        }
+        bucketName = reader.readLine();
+        entryName = reader.readLine();
+        compressed = Boolean.parseBoolean(reader.readLine());
+        readIn(reader);
       }
-      bucketName = reader.readLine();
-      entryName = reader.readLine();
-      md5 = reader.readLine();
-      setLength(Long.parseLong(reader.readLine()));
-      archivedDate = LocalDateTime.parse(reader.readLine());
-      compressed = Boolean.parseBoolean(reader.readLine());
     }
   }
 }

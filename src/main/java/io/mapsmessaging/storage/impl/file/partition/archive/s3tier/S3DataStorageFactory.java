@@ -24,7 +24,6 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
@@ -42,7 +41,7 @@ public class S3DataStorageFactory<T extends Storable> implements DataStorageFact
   }
 
   @Override
-  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config, String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize)
+  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config)
       throws IOException {
     AWSCredentials credentials = new BasicAWSCredentials(
         config.getS3AccessKeyId(),
@@ -54,6 +53,6 @@ public class S3DataStorageFactory<T extends Storable> implements DataStorageFact
         .withCredentials(new AWSStaticCredentialsProvider(credentials))
         .build();
     S3TransferApi transferApi = new S3TransferApi(amazonS3, config.getS3BucketName(), config.isS3Compression());
-    return new S3DataStorageProxy<>(transferApi, fileName, storableFactory, sync, maxPartitionSize);
+    return new S3DataStorageProxy<>(transferApi, config);
   }
 }

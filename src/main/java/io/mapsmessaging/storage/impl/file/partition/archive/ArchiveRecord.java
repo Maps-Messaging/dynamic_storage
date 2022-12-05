@@ -17,19 +17,54 @@
 
 package io.mapsmessaging.storage.impl.file.partition.archive;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 
-public class ArchiveRecord {
+public abstract class ArchiveRecord {
+
+  @Getter
+  @Setter
+  protected String digestName;
+
+  @Getter
+  @Setter
+  protected String archiveHash;
 
   @Getter
   @Setter
   private long length;
 
-  public ArchiveRecord(){}
+  @Getter
+  @Setter
+  protected LocalDateTime archivedDate;
 
-  public ArchiveRecord(long length){
+  protected ArchiveRecord(){}
+
+  protected ArchiveRecord(String digestName, String archiveHash, long length){
+    this.digestName = digestName;
+    this.archiveHash = Objects.requireNonNullElse(archiveHash, "");
     this.length = length;
+    this.archivedDate = LocalDateTime.now();
   }
 
+  public abstract void read(String filename) throws IOException;
+
+  protected void readIn(BufferedReader reader) throws IOException {
+    digestName = reader.readLine();
+    archiveHash = reader.readLine();
+    setLength(Long.parseLong(reader.readLine()));
+    archivedDate = LocalDateTime.parse(reader.readLine());
+  }
+
+  protected void writeOut(OutputStreamWriter writer) throws IOException{
+    writer.write(digestName+"\n");
+    writer.write(archiveHash + "\n");
+    writer.write(""+getLength()+"\n");
+    writer.write(archivedDate.toString() + "\n");
+  }
 }

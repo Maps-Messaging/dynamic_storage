@@ -88,4 +88,33 @@ public class PartitionStorageConfig<T extends Storable> {
   @Getter
   @Setter
   private String migrationDestination;
+
+  @Getter
+  @Setter
+  private String digestName = "";
+
+  public PartitionStorageConfig(){
+    // Default constructor
+  }
+
+
+  public PartitionStorageConfig(PartitionStorageConfig<T> lhs){
+    this.fileName = lhs.getFileName();
+    this.storableFactory = lhs.storableFactory;
+    this.sync = lhs.isSync();
+    this.expiredHandler = lhs.expiredHandler;
+    this.itemCount = lhs.itemCount;
+    this.maxPartitionSize = lhs.maxPartitionSize;
+    this.expiredEventPoll = lhs.expiredEventPoll;
+    this.taskQueue = lhs.taskQueue;
+    this.archiveName = lhs.archiveName;
+    this.archiveIdleTime = lhs.archiveIdleTime;
+    this.s3Compression = lhs.s3Compression;
+    this.s3AccessKeyId = lhs.s3AccessKeyId;
+    this.s3SecretAccessKey = lhs.s3SecretAccessKey;
+    this.s3RegionName = lhs.s3RegionName;
+    this.s3BucketName = lhs.s3BucketName;
+    this.migrationDestination = lhs.migrationDestination;
+    this.digestName = lhs.digestName;
+  }
 }

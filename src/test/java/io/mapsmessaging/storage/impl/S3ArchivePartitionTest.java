@@ -1,3 +1,20 @@
+/*
+ *   Copyright [2020 - 2022]   [Matthew Buckton]
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.storage.impl;
 
 import com.amazonaws.auth.AWSCredentials;
@@ -21,7 +38,17 @@ class S3ArchivePartitionTest extends BaseTest {
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  void s3ArchiveAndRestorePartition(boolean compress) throws IOException, InterruptedException {
+  void s3ArchiveAndRestoreCompressDigestPartition(boolean compress) throws IOException, InterruptedException {
+    doTest(compress, "MD5");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"None", "MD5", "SHA-1", "SHA-256"})
+  void s3ArchiveAndRestoreDigestDigestPartition(String digest) throws IOException, InterruptedException {
+    doTest(true, digest);
+  }
+
+  void doTest(boolean compress, String digest) throws IOException, InterruptedException {
     String accessKeyId = System.getProperty("accessKeyId");
     String secretAccessKey = System.getProperty("secretAccessKey");
     String region = System.getProperty("regionName");
@@ -33,12 +60,13 @@ class S3ArchivePartitionTest extends BaseTest {
       Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty before the test starts");
       Map<String, String> properties = BasePartitionStoreTest.buildProperties(false);
       properties.put("archiveName", "S3");
-      properties.put("archiveIdleTime", ""+ TimeUnit.SECONDS.toMillis(30));
+      properties.put("archiveIdleTime", ""+ TimeUnit.SECONDS.toMillis(4));
       properties.put("S3AccessKeyId", accessKeyId);
       properties.put("S3SecretAccessKey",secretAccessKey);
       properties.put("S3RegionName", region);
       properties.put("S3BucketName", bucketName);
       properties.put("S3CompressEnabled", ""+compress);
+      properties.put("digestName", digest);
       Storage<MappedData> storage = BasePartitionStoreTest.build(properties, testName);
       for (int x = 0; x < 1100; x++) {
         MappedData message = createMessageBuilder(x);
@@ -46,7 +74,7 @@ class S3ArchivePartitionTest extends BaseTest {
       }
 
       // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
-      TimeUnit.SECONDS.sleep(40);
+      TimeUnit.SECONDS.sleep(5);
       ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
       Assertions.assertEquals(10, getBucketEntityCount(amazonS3, bucketName), "S3 bucket should have ten entries");
 
@@ -75,7 +103,7 @@ class S3ArchivePartitionTest extends BaseTest {
       Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty before the test starts");
       Map<String, String> properties = BasePartitionStoreTest.buildProperties(false);
       properties.put("archiveName", "S3");
-      properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
+      properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(4));
       properties.put("S3AccessKeyId", accessKeyId);
       properties.put("S3SecretAccessKey",secretAccessKey);
       properties.put("S3RegionName", region);
@@ -88,7 +116,7 @@ class S3ArchivePartitionTest extends BaseTest {
       }
 
       // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
-      TimeUnit.SECONDS.sleep(40);
+      TimeUnit.SECONDS.sleep(5);
       ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
       Assertions.assertEquals(10, getBucketEntityCount(amazonS3, bucketName), "S3 bucket should have ten entries");
       storage.delete();

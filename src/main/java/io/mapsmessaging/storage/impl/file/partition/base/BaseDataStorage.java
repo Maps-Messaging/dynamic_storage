@@ -19,6 +19,7 @@ package io.mapsmessaging.storage.impl.file.partition.base;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
+import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
@@ -34,11 +35,11 @@ public class BaseDataStorage <T extends Storable> implements ArchivedDataStorage
 
   private DataStorage<T> physicalStore;
 
-  public BaseDataStorage(String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize) throws IOException {
-    this.fileName = fileName;
-    this.sync = sync;
-    this.storableFactory = storableFactory;
-    this.maxPartitionSize = maxPartitionSize;
+  public BaseDataStorage(PartitionStorageConfig<T> config) throws IOException {
+    this.fileName = config.getFileName()+ "_data";
+    this.sync = config.isSync();
+    this.storableFactory = config.getStorableFactory();
+    this.maxPartitionSize = config.getMaxPartitionSize();
     physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
   }
 

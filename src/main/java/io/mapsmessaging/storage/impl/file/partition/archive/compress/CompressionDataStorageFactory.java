@@ -18,7 +18,6 @@
 package io.mapsmessaging.storage.impl.file.partition.archive.compress;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
@@ -36,9 +35,9 @@ public class CompressionDataStorageFactory<T extends Storable> implements DataSt
   }
 
   @Override
-  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config, String fileName, StorableFactory<T> storableFactory, boolean sync, long maxPartitionSize)
+  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config)
       throws IOException {
-    return new CompressionDataStorageProxy<>(fileName, storableFactory, sync, maxPartitionSize);
+    return new CompressionDataStorageProxy<>(config);
   }
 
 }
