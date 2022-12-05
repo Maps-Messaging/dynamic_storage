@@ -64,7 +64,7 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
   public void archive() throws IOException {
     if (!isArchived) {
       File from = new File(fileName);
-      File to = new File(destination+"/"+fileName+"_zip");
+      File to = new File(destination+File.separator+fileName+"_zip");
       try {
         MessageDigest messageDigest = getMessageDigest();
         FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
@@ -87,7 +87,7 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
   public void restore() throws IOException {
     try {
       File to = new File(fileName);
-      File from = new File(destination+"/"+fileName+"_zip");
+      File from = new File(destination+File.separator+fileName+"_zip");
       FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
       to.delete();
       MigrationRecord migrationRecord = (MigrationRecord) ((DataStorageStub<T>)physicalStore).getArchiveRecord();

@@ -96,10 +96,12 @@ public class BaseDataStorage <T extends Storable> implements ArchivedDataStorage
     return physicalStore.isFull();
   }
 
-  public void archive() throws IOException {
+  public void archive() {
+    // No Archive options are supported for the base functionality
   }
 
-  public void restore() throws IOException {
+  public void restore() {
+    // No Archive options are supported for the base functionality
   }
 
   @Override
