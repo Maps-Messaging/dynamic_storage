@@ -27,14 +27,15 @@ import javax.annotation.Nullable;
 
 public class StreamProcessor {
 
-  public int in(@Nonnull InputStream inputStream, @Nonnull  OutputStream outputStream, @Nullable MessageDigest messageDigest) throws IOException {
-    if(messageDigest == null){
-      return joinStreams(inputStream, outputStream);
-    }
-    return joinStreams(inputStream, outputStream, messageDigest);
+  public int in(@Nonnull InputStream inputStream, @Nonnull  OutputStream outputStream, @Nullable MessageDigest messageDigest) throws IOException{
+    return processStreams(inputStream, outputStream, messageDigest);
   }
 
   public int out(@Nonnull InputStream inputStream, @Nonnull OutputStream outputStream, @Nullable MessageDigest messageDigest) throws IOException {
+    return processStreams(inputStream, outputStream, messageDigest);
+  }
+
+  protected int processStreams(@Nonnull InputStream inputStream, @Nonnull OutputStream outputStream, @Nullable MessageDigest messageDigest) throws IOException {
     if(messageDigest == null){
       return joinStreams(inputStream, outputStream);
     }
