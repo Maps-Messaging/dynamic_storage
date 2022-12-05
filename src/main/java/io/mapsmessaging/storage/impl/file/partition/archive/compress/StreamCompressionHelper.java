@@ -21,7 +21,6 @@ import io.mapsmessaging.storage.impl.file.partition.archive.StreamProcessor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.DigestException;
 import java.security.MessageDigest;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
