@@ -87,7 +87,7 @@ public class IndexStorage<T extends Storable> {
     } else {
       indexManager = initialise(start);
     }
-    PartitionStorageConfig<T> partitionConfig = new PartitionStorageConfig(config);
+    PartitionStorageConfig<T> partitionConfig = new PartitionStorageConfig<>(config);
     partitionConfig.setFileName(this.fileName);
     dataStorage = getInstance().create(partitionConfig);
     if (dataStorage.isValidationRequired() || requiresValidation) {
