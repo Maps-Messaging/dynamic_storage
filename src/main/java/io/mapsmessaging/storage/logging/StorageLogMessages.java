@@ -76,6 +76,10 @@ public enum StorageLogMessages implements LogMessage {
   NO_STORAGE_FACTORY_FOUND(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "The storage factory for the type can not be found"),
   BUILT_STORAGE(LEVEL.INFO, STORAGE_CATEGORY.FACTORY, "Successfully built the storage layer {}"),
 
+  FILE_HELPER_FILE_DOES_NOT_EXIST(LEVEL.WARN, STORAGE_CATEGORY.FILE, "The file does not exist, unable to delete it {}"),
+  FILE_HELPER_DELETED_FILE(LEVEL.INFO, STORAGE_CATEGORY.FILE, "Deleted file {}"),
+  FILE_HELPER_EXCEPTION_RAISED(LEVEL.INFO, STORAGE_CATEGORY.FILE, "Exception raised while deleting {}"),
+
   CACHE_ALREADY_CONFIGURED(LEVEL.WARN, STORAGE_CATEGORY.FACTORY, "The cache has already been configured"),
   NO_SUCH_CACHE_FOUND(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "No such cache implementation found {}"),
   DEFAULTING_CACHE(LEVEL.INFO, STORAGE_CATEGORY.FACTORY, "Defaulting the cache implementation to {}");

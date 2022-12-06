@@ -17,11 +17,19 @@
 
 package io.mapsmessaging.storage.impl.file;
 
+import static io.mapsmessaging.storage.logging.StorageLogMessages.FILE_HELPER_DELETED_FILE;
+import static io.mapsmessaging.storage.logging.StorageLogMessages.FILE_HELPER_EXCEPTION_RAISED;
+import static io.mapsmessaging.storage.logging.StorageLogMessages.FILE_HELPER_FILE_DOES_NOT_EXIST;
+
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
 public class FileHelper {
+
+  private static final Logger logger = LoggerFactory.getLogger(FileHelper.class);
 
   public static boolean delete(String fileName) throws IOException {
     return delete(new File(fileName));
@@ -32,7 +40,7 @@ public class FileHelper {
       try {
         return delete(new File(fileName), andChildren);
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(FILE_HELPER_EXCEPTION_RAISED, e, fileName);
       }
     }
     return delete(new File(fileName), andChildren);
@@ -53,15 +61,22 @@ public class FileHelper {
           }
         }
         Files.deleteIfExists(file.toPath());
+        logger.log(FILE_HELPER_DELETED_FILE, file.toString());
+
       }
       else{
         Files.deleteIfExists(file.toPath());
+        logger.log(FILE_HELPER_DELETED_FILE, file.toString());
       }
     }
     else{
+      logger.log(FILE_HELPER_FILE_DOES_NOT_EXIST, file.toString());
       throw new IOException("File does not exist");
     }
     return true;
   }
 
+  private FileHelper(){
+    // Hide the constructor
+  }
 }
