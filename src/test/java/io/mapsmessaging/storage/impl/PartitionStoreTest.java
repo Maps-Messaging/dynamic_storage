@@ -323,7 +323,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
       Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty before the test starts");
       Map<String, String> properties = buildProperties(false);
       properties.put("archiveName", "S3");
-      properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
+      properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(4));
       properties.put("S3AccessKeyId", accessKeyId);
       properties.put("S3SecretAccessKey",secretAccessKey);
       properties.put("S3RegionName", region);
@@ -336,7 +336,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
       }
 
       // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
-      TimeUnit.SECONDS.sleep(40);
+      TimeUnit.SECONDS.sleep(5);
       ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
       Assertions.assertEquals(10, getBucketEntityCount(amazonS3, bucketName), "S3 bucket should have ten entries");
 

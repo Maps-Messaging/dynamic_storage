@@ -54,6 +54,9 @@ public class FileHelper {
         }
         Files.deleteIfExists(file.toPath());
       }
+      else{
+        Files.deleteIfExists(file.toPath());
+      }
     }
     else{
       throw new IOException("File does not exist");
