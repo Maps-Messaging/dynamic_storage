@@ -38,7 +38,11 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
 
   public MigrationDataStorageProxy(PartitionStorageConfig<T> config) throws IOException {
     super(config);
-    destination = config.getMigrationDestination();
+    String t = config.getMigrationDestination();
+    if(t.endsWith(File.separator)){
+      t = t.substring(0, t.length()-1);
+    }
+    destination = t;
   }
 
   @Override
@@ -55,7 +59,7 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
   public void delete() throws IOException {
     if (isArchived) {
       super.delete();
-      FileHelper.delete(destination);
+      FileHelper.delete(destination+File.separator+fileName+"_zip", true, false);
     } else {
       physicalStore.delete();
     }
@@ -100,7 +104,6 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
           throw new IOException("File has been changed, MD5 hash does not match");
         }
       }
-      FileHelper.delete(from);
       physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
       isArchived = false;
     } catch (NoSuchAlgorithmException e) {
