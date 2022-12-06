@@ -26,9 +26,9 @@ import java.util.ServiceLoader;
 
 public class PartitionDataManagerFactory<T extends Storable> {
 
-  private static final PartitionDataManagerFactory<?> instance = new PartitionDataManagerFactory<>();
+  private static final PartitionDataManagerFactory instance = new PartitionDataManagerFactory<>();
 
-  public static PartitionDataManagerFactory getInstance(){
+  public static <T extends Storable> PartitionDataManagerFactory<T> getInstance(){
     return instance;
   }
 
