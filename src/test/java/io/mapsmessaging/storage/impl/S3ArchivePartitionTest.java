@@ -29,6 +29,7 @@ import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.file.PartitionStorage;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,10 +50,11 @@ class S3ArchivePartitionTest extends BaseTest {
   }
 
   void doTest(boolean compress, String digest) throws IOException, InterruptedException {
-    String accessKeyId = System.getProperty("accessKeyId");
-    String secretAccessKey = System.getProperty("secretAccessKey");
-    String region = System.getProperty("regionName");
-    String bucketName = System.getProperty("bucketName");
+    Properties envProperties = S3Helper.getProperties();
+    String accessKeyId = envProperties.getProperty("accessKeyId");
+    String secretAccessKey = envProperties.getProperty("secretAccessKey");
+    String region = envProperties.getProperty("regionName");
+    String bucketName = envProperties.getProperty("bucketName");
 
     if(accessKeyId != null && secretAccessKey != null && region != null && bucketName != null) {
       AmazonS3 amazonS3 = createAmazonId(accessKeyId, secretAccessKey, region);
@@ -93,10 +95,12 @@ class S3ArchivePartitionTest extends BaseTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void s3ArchiveAndDeleteStore(boolean compress) throws IOException, InterruptedException {
-    String accessKeyId = System.getProperty("accessKeyId");
-    String secretAccessKey = System.getProperty("secretAccessKey");
-    String region = System.getProperty("regionName");
-    String bucketName = System.getProperty("bucketName");
+    Properties envProperties = S3Helper.getProperties();
+
+    String accessKeyId = envProperties.getProperty("accessKeyId");
+    String secretAccessKey = envProperties.getProperty("secretAccessKey");
+    String region = envProperties.getProperty("regionName");
+    String bucketName = envProperties.getProperty("bucketName");
     if(accessKeyId != null && secretAccessKey != null && region != null && bucketName != null) {
       AmazonS3 amazonS3 = createAmazonId(accessKeyId, secretAccessKey, region);
 

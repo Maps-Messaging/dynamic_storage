@@ -23,6 +23,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import io.mapsmessaging.storage.impl.S3Helper;
 import io.mapsmessaging.storage.impl.file.partition.archive.s3tier.S3Record;
 import io.mapsmessaging.storage.impl.file.partition.archive.s3tier.S3TransferApi;
 import java.io.FileInputStream;
@@ -30,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Properties;
 import java.util.function.BooleanSupplier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -46,11 +48,12 @@ class SimpleS3Test {
   private String bucketName;
 
   @BeforeEach
-  void loadS3Details(){
-    accessKeyId = System.getProperty("accessKeyId");
-    secretAccessKey = System.getProperty("secretAccessKey");
-    region = System.getProperty("regionName");
-    bucketName = System.getProperty("bucketName");
+  void loadS3Details() throws IOException {
+    Properties envProperties = S3Helper.getProperties();
+    accessKeyId = envProperties.getProperty("accessKeyId");
+    secretAccessKey = envProperties.getProperty("secretAccessKey");
+    region = envProperties.getProperty("regionName");
+    bucketName = envProperties.getProperty("bucketName");
   }
 
   @Test
