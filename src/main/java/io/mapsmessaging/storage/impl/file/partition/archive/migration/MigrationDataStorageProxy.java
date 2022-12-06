@@ -55,7 +55,7 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
   public void delete() throws IOException {
     if (isArchived) {
       super.delete();
-      FileHelper.delete(digestName);
+      FileHelper.delete(destination);
     } else {
       physicalStore.delete();
     }
