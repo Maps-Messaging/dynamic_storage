@@ -55,7 +55,7 @@
 
   </properties>
 
-  <name>Maps Dynamic Storage</name>
+  <name>Dynamic Storage</name>
   <description>A generic data store keyed by a Long</description>
   <url>http://www.mapsmessaging.io</url>
 
