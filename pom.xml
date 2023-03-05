@@ -23,13 +23,47 @@
 
   <groupId>io.mapsmessaging</groupId>
   <artifactId>DynamicStorage</artifactId>
-  <version>2.4.5</version>
+  <version>2.4.6</version>
   <packaging>jar</packaging>
+
+  <name>Dynamic Storage</name>
+  <description>A generic data store keyed by a Long</description>
+  <url>http://www.mapsmessaging.io</url>
+
+  <developers>
+    <developer>
+      <id>mbuckton</id>
+      <name>Matthew Buckton</name>
+      <organization>Maps Messaging</organization>
+      <organizationUrl>http://mapsmessaging.io/</organizationUrl>
+      <roles>
+        <role>founder</role>
+      </roles>
+      <timezone>Australia/Sydney</timezone>
+    </developer>
+  </developers>
+
+  <licenses>
+    <license>
+      <name>Mozilla Public License Version 2.0</name>
+      <url>https://www.mozilla.org/en-US/MPL/2.0/</url>
+      <distribution>repo</distribution>
+    </license>
+    <license>
+      <name>CommonsClause</name>
+      <url>https://commonsclause.com/</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <scm>
+    <url>https://github.com/Maps-Messaging/dynamicStorage</url>
+  </scm>
 
   <properties>
     <maven.compiler.source>13</maven.compiler.source>
     <maven.compiler.target>13</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <gpg.keyname>matthew.buckton@mapsmessaging.io</gpg.keyname>
 
     <runSuite>**/*Suite.class</runSuite>
     <!-- Below property indicates the pattern of the test suite -->
@@ -55,28 +89,49 @@
 
   </properties>
 
-  <name>Dynamic Storage</name>
-  <description>A generic data store keyed by a Long</description>
-  <url>http://www.mapsmessaging.io</url>
+  <distributionManagement>
+    <snapshotRepository>
+      <id>mapsmessaging.io</id>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>mapsmessaging.io</id>
+      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
 
-  <licenses>
-    <license>
-      <name>Mozilla Public License Version 2.0</name>
-      <url>https://www.mozilla.org/en-US/MPL/2.0/</url>
-      <distribution>repo</distribution>
-    </license>
-    <license>
-      <name>CommonsClause</name>
-      <url>https://commonsclause.com/</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
-  <scm>
-    <url>https://github.com/Maps-Messaging/dynamicStorage</url>
-  </scm>
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>3.0.1</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+            <configuration>
+              <keyname>${gpg.keyname}</keyname>
+              <passphraseServerId>${gpg.keyname}</passphraseServerId>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.8</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>mapsmessaging.io</serverId>
+          <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+        </configuration>
+      </plugin>
+
       <!-- Allow JDKs greater than 1.8 to be used by maven -->
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -143,7 +198,6 @@
         <executions>
           <execution>
             <id>attach-sources</id>
-            <phase>verify</phase>
             <goals>
               <goal>jar-no-fork</goal>
             </goals>
@@ -175,41 +229,25 @@
     </plugins>
   </build>
 
-  <repositories>
-    <!-- Repo for java stomp client used for testing Artifactory server -->
-    <repository>
-      <id>mapsmessaging.io</id>
-      <name>artifactory-releases</name>
-      <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-prod</url>
-    </repository>
-
-    <repository>
-      <id>snaphsot.mapsmessaging.io</id>
-      <name>artifactory-snapshot</name>
-      <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-snapshot</url>
-    </repository>
-  </repositories>
-
-
   <dependencies>
 
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Simple_Logging</artifactId>
-      <version>2.0.6</version>
+      <version>2.0.7</version>
     </dependency>
     <!-- Naturally order long collection -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Naturally_Ordered_Long_Collections</artifactId>
-      <version>1.1.4</version>
+      <version>1.1.5</version>
     </dependency>
 
     <!-- Non Blocking Task Queue module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Non_Block_Task_Scheduler</artifactId>
-      <version>2.1.3</version>
+      <version>2.1.4</version>
     </dependency>
 
     <!-- Add annotations for not null -->
