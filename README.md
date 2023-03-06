@@ -17,23 +17,15 @@ The storage API supports asynchronous access, meaning you can request an operati
 
 # pom.xml setup
 
-Add the repository configuration into the pom.xml
-``` xml
-    <!-- MapsMessaging jfrog server --> 
-    <repository>
-      <id>mapsmessaging.io</id>
-      <name>artifactory-releases</name>
-      <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-prod</url>
-    </repository>
-```    
+All MapsMessaging libraries are hosted on the [maven central server.](https://central.sonatype.com/search?smo=true&q=mapsmessaging)
 
-Then include the dependency
+Include the dependency
 ``` xml
      <!-- Non Blocking Task Queue module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>DynamicStorage</artifactId>
-      <version>2.4.5</version>
+      <version>2.4.6</version>
     </dependency>
 ```   
 
