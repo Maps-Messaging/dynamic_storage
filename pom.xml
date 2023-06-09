@@ -247,7 +247,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Non_Block_Task_Scheduler</artifactId>
-      <version>2.1.6</version>
+      <version>2.1.7</version>
     </dependency>
 
     <!-- Add annotations for not null -->
