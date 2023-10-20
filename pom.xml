@@ -280,7 +280,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.12.555</version>
+      <version>1.12.570</version>
     </dependency>
 
 
