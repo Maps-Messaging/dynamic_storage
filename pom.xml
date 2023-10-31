@@ -93,6 +93,27 @@
     <profile>
       <!-- Default profile for regular releases -->
       <id>release</id>
+      <dependencies>
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>simple_logging</artifactId>
+          <version>2.0.9</version>
+        </dependency>
+        <!-- Naturally order long collection -->
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>naturally_ordered_long_collections</artifactId>
+          <version>1.1.7</version>
+        </dependency>
+
+        <!-- Non Blocking Task Queue module -->
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>non_block_task_scheduler</artifactId>
+          <version>2.1.7</version>
+        </dependency>
+
+      </dependencies>
       <distributionManagement>
         <repository>
           <id>ossrh</id>
@@ -119,31 +140,48 @@
       </build>
     </profile>
 
+
     <profile>
       <id>snapshot</id>
       <repositories>
         <repository>
-          <id>github2</id>
-          <url>https://maven.pkg.github.com/Maps-Messaging/simple_logging</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </repository>
-        <repository>
-          <id>github</id>
-          <url>https://maven.pkg.github.com/Maps-Messaging/non_block_task_scheduler</url>
+          <id>maps_snapshots</id>
+          <name>maps_snapshot_repository</name>
+          <url>https://repository.mapsmessaging.io:8081/repository/maps_snapshots/</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>
         </repository>
       </repositories>
+      <dependencies>
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>simple_logging</artifactId>
+          <version>2.0.10-SNAPSHOT</version>
+        </dependency>
+        <!-- Naturally order long collection -->
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>naturally_ordered_long_collections</artifactId>
+          <version>1.1.8-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Non Blocking Task Queue module -->
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>non_block_task_scheduler</artifactId>
+          <version>2.1.8-SNAPSHOT</version>
+        </dependency>
+
+      </dependencies>
     </profile>
   </profiles>
 
   <distributionManagement>
     <snapshotRepository>
-      <id>github</id>
-      <url>https://maven.pkg.github.com/Maps-Messaging/dynamic_storage</url>
+      <id>maps_snapshots</id>
+      <name>maps_snapshot_repository</name>
+      <url>https://repository.mapsmessaging.io:8081/repository/maps_snapshots/</url>
     </snapshotRepository>
     <repository>
       <id>ossrh</id>
@@ -281,25 +319,6 @@
   </build>
 
   <dependencies>
-
-    <dependency>
-      <groupId>io.mapsmessaging</groupId>
-      <artifactId>simple_logging</artifactId>
-      <version>2.0.10-SNAPSHOT</version>
-    </dependency>
-    <!-- Naturally order long collection -->
-    <dependency>
-      <groupId>io.mapsmessaging</groupId>
-      <artifactId>naturally_ordered_long_collections</artifactId>
-      <version>1.1.8-SNAPSHOT</version>
-    </dependency>
-
-    <!-- Non Blocking Task Queue module -->
-    <dependency>
-      <groupId>io.mapsmessaging</groupId>
-      <artifactId>non_block_task_scheduler</artifactId>
-      <version>2.1.8-SNAPSHOT</version>
-    </dependency>
 
     <!-- Add annotations for not null -->
     <dependency>
