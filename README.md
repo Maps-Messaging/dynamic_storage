@@ -21,11 +21,10 @@ All MapsMessaging libraries are hosted on the [maven central server.](https://ce
 
 Include the dependency
 ``` xml
-     <!-- Non Blocking Task Queue module -->
+     <!-- Dynamic Storage Module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>DynamicStorage</artifactId>
-      <version>2.4.6</version>
     </dependency>
 ```   
 
