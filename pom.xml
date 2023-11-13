@@ -276,7 +276,7 @@
           </includes>
         </configuration>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.2.1</version>
+        <version>3.2.2</version>
       </plugin>
 
       <!-- build the source jar as well -->
@@ -313,7 +313,7 @@
           </execution>
         </executions>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.6.0</version>
+        <version>3.6.2</version>
       </plugin>
     </plugins>
   </build>
@@ -350,7 +350,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.12.580</version>
+      <version>1.12.587</version>
     </dependency>
 
 
@@ -359,13 +359,13 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
-      <version>5.10.0</version>
+      <version>5.10.1</version>
     </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
-      <version>5.10.0</version>
+      <version>5.10.1</version>
       <scope>test</scope>
     </dependency>
 
