@@ -89,7 +89,15 @@ How to contribute to the Dynamic Storage project.
 
 ## License
 
-[![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/summary/new_code?id=dynamic_storage)
+The Maps Messaging Dynamic Storage is dual-licensed under the Mozilla Public License Version 2.0 (MPL 2.0) and the Apache License 2.0 with Commons Clause License Condition v1.0.
+
+Under the MPL 2.0 license, the software is provided for use, modification, and distribution under the terms of the MPL 2.0.
+
+Additionally, the "Commons Clause" restricts the selling of the software, which means you may not sell the software or services whose value derives entirely or substantially from the software's functionality.
+
+For full license terms, see the [LICENSE](LICENSE) file in the repository.
+
+
 
 Include the Maven dependency to use Dynamic Storage in your project:
 
@@ -98,8 +106,9 @@ Include the Maven dependency to use Dynamic Storage in your project:
 <dependency>
   <groupId>io.mapsmessaging</groupId>
   <artifactId>DynamicStorage</artifactId>
-  <version>2.4.6</version>
 </dependency>
 ```
 
 For a full guide on getting started, configuration, and extending the library, please see the [Wiki](LINK_TO_WIKI) or [GitHub Pages](LINK_TO_GITHUB_PAGES) for detailed documentation.
+
+[![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/summary/new_code?id=dynamic_storage)
