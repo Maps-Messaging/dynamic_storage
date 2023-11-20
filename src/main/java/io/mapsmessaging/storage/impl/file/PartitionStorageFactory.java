@@ -17,11 +17,10 @@
 
 package io.mapsmessaging.storage.impl.file;
 
-import io.mapsmessaging.storage.ExpiredStorableHandler;
-import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.StorableFactory;
-import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +42,11 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
   @Override
   public String getName() {
     return "Partition";
+  }
+
+  @Override
+  public StorageFactory<T> getInstance(@NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, @NotNull ExpiredStorableHandler expiredHandler) {
+    return new PartitionStorageFactory(properties, storableFactory, expiredHandler);
   }
 
   @Override

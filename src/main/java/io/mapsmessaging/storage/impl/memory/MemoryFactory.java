@@ -17,11 +17,10 @@
 
 package io.mapsmessaging.storage.impl.memory;
 
-import io.mapsmessaging.storage.ExpiredStorableHandler;
-import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.StorableFactory;
-import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +39,11 @@ public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
   @Override
   public String getName() {
     return "Memory";
+  }
+
+  @Override
+  public StorageFactory<T> getInstance(@NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, @NotNull ExpiredStorableHandler expiredHandler) {
+    return new MemoryFactory(properties, storableFactory, expiredHandler);
   }
 
   @Override
