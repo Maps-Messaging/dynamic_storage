@@ -19,12 +19,13 @@ package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-@SuppressWarnings("java:S6548") // yes it is a singleton
+@SuppressWarnings({"java:S6548", "java:S3740"})
 public class PartitionDataManagerFactory<T extends Storable> {
 
   private static class Holder {

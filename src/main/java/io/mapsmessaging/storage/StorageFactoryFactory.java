@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
-@SuppressWarnings({"java:S6548", "java:S3740"}) // yes it is a singleton
+@SuppressWarnings({"java:S6548", "java:S3740"})
 class StorageFactoryFactory {
 
   private static class Holder {
