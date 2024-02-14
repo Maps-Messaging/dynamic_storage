@@ -64,27 +64,19 @@ public class FileHelper {
 
       }
       else{
-        int retry = 0;
-        boolean loop = true;
-        while(loop) {
-          try {
-            Files.deleteIfExists(file.toPath());
-            loop = false;
-          } catch (IOException e) {
-            retry++;
-            if(retry == 5){
-              throw e;
-            }
-            System.gc();
-          }
-        }
-        logger.log(FILE_HELPER_DELETED_FILE, file.toString());
+        return deleteExistingFile(file);
       }
     }
     else{
       logger.log(FILE_HELPER_FILE_DOES_NOT_EXIST, file.toString());
       throw new IOException("File does not exist");
     }
+    return true;
+  }
+
+  private static boolean deleteExistingFile(File file) throws IOException {
+    Files.deleteIfExists(file.toPath());
+    logger.log(FILE_HELPER_DELETED_FILE, file.toString());
     return true;
   }
 
