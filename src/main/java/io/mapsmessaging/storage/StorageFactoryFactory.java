@@ -22,26 +22,30 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.impl.cache.Cache;
 import io.mapsmessaging.storage.impl.cache.CacheLayer;
 import io.mapsmessaging.storage.logging.StorageLogMessages;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.util.*;
+
 @SuppressWarnings("java:S3740") // This is not how ServiceLoaders work, we can not get a generic load
 class StorageFactoryFactory {
 
+  private static class Holder {
+    static final StorageFactoryFactory INSTANCE = new StorageFactoryFactory();
+  }
+
+  public static StorageFactoryFactory getInstance() {
+    return Holder.INSTANCE;
+  }
+
+
   private static final Logger logger = LoggerFactory.getLogger(StorageFactoryFactory.class);
 
-  private static final StorageFactoryFactory instance = new StorageFactoryFactory();
-
-  private final List<StorageFactory> storageFactories;
-  private final List<Cache> caches;
+  private final List<StorageFactory<? extends Storable>> storageFactories;
+  private final List<Cache<? extends Storable>> caches;
   private final List<String> layered = new ArrayList<>();
   private final List<String> known = new ArrayList<>();
 
@@ -63,10 +67,6 @@ class StorageFactoryFactory {
     storageFactories.forEach(storageFactory -> known.add(storageFactory.getName()));
   }
 
-  public static StorageFactoryFactory getInstance() {
-    return instance;
-  }
-
   public List<String> getKnownStorages() {
     return known;
   }
@@ -79,7 +79,7 @@ class StorageFactoryFactory {
   @SneakyThrows
   @Nullable <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory,
       ExpiredStorableHandler expiredStorableHandler) {
-    Optional<StorageFactory> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(name)).findFirst();
+    Optional<StorageFactory<? extends Storable>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_FACTORY, first.get().getClass().getName());
       StorageFactory<?> found = first.get();
@@ -111,7 +111,7 @@ class StorageFactoryFactory {
   @SuppressWarnings("java:S2293")
   @SneakyThrows
   @NotNull <T extends Storable> CacheLayer<T> createCache(@NotNull String name, boolean enableWriteThrough, @NotNull Storage<T> baseStore) {
-    Optional<Cache> first = caches.stream().filter(layer -> layer.getName().equals(name)).findFirst();
+    Optional<Cache<? extends Storable>> first = caches.stream().filter(layer -> layer.getName().equals(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_CACHE_FACTORY, name);
       Cache<?> found = first.get();
