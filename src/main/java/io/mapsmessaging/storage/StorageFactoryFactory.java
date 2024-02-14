@@ -82,24 +82,8 @@ class StorageFactoryFactory {
     Optional<StorageFactory<? extends Storable>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_FACTORY, first.get().getClass().getName());
-      StorageFactory<?> found = first.get();
-      Class<T> clazz = (Class<T>) found.getClass();
-      Constructor<T>[] constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
-      Constructor<T> constructor = null;
-      for (Constructor<T> cstr : constructors) {
-        if (cstr.getParameters().length == 3) {
-          constructor = cstr;
-          logger.log(StorageLogMessages.FOUND_CONSTRUCTOR, name);
-          break;
-        }
-      }
-      if (constructor != null) {
-        return (StorageFactory<T>) constructor.newInstance(properties, storableFactory, expiredStorableHandler);
-      }
-      else{
-        logger.log(StorageLogMessages.NO_CONSTRUCTOR_FOUND, name);
-
-      }
+      StorageFactory<T> found = first.get();
+      return found.getInstance(properties, storableFactory, expiredStorableHandler);
     }
     else {
       logger.log(StorageLogMessages.NO_MATCHING_FACTORY, name);

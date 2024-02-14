@@ -17,13 +17,12 @@
 
 package io.mapsmessaging.storage.impl.tier.memory;
 
-import io.mapsmessaging.storage.ExpiredStorableHandler;
-import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.StorableFactory;
-import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
 import io.mapsmessaging.storage.impl.file.PartitionStorageFactory;
 import io.mapsmessaging.storage.impl.memory.MemoryFactory;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +51,11 @@ public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T>
   @Override
   public String getName() {
     return "MemoryTier";
+  }
+
+  @Override
+  public StorageFactory<T> getInstance(@NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, @NotNull ExpiredStorableHandler expiredHandler) {
+    return new MemoryTierFactory(properties, storableFactory, expiredHandler);
   }
 
   @SuppressWarnings("java:S2095") // The allocation of both stores is required and can not be closed in a "finally" clause here, else bad things will happen
