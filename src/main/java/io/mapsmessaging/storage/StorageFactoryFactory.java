@@ -44,8 +44,8 @@ class StorageFactoryFactory {
 
   private static final Logger logger = LoggerFactory.getLogger(StorageFactoryFactory.class);
 
-  private final List<StorageFactory<? extends Storable>> storageFactories;
-  private final List<Cache<? extends Storable>> caches;
+  private final List<StorageFactory> storageFactories;
+  private final List<Cache> caches;
   private final List<String> layered = new ArrayList<>();
   private final List<String> known = new ArrayList<>();
 
@@ -79,7 +79,7 @@ class StorageFactoryFactory {
   @SneakyThrows
   @Nullable <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory,
       ExpiredStorableHandler expiredStorableHandler) {
-    Optional<StorageFactory<? extends Storable>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(name)).findFirst();
+    Optional<StorageFactory> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_FACTORY, first.get().getClass().getName());
       StorageFactory<T> found = first.get();
@@ -95,7 +95,7 @@ class StorageFactoryFactory {
   @SuppressWarnings("java:S2293")
   @SneakyThrows
   @NotNull <T extends Storable> CacheLayer<T> createCache(@NotNull String name, boolean enableWriteThrough, @NotNull Storage<T> baseStore) {
-    Optional<Cache<? extends Storable>> first = caches.stream().filter(layer -> layer.getName().equals(name)).findFirst();
+    Optional<Cache> first = caches.stream().filter(layer -> layer.getName().equals(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_CACHE_FACTORY, name);
       Cache<?> found = first.get();
