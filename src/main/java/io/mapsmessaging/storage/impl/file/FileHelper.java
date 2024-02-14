@@ -17,15 +17,14 @@
 
 package io.mapsmessaging.storage.impl.file;
 
-import static io.mapsmessaging.storage.logging.StorageLogMessages.FILE_HELPER_DELETED_FILE;
-import static io.mapsmessaging.storage.logging.StorageLogMessages.FILE_HELPER_EXCEPTION_RAISED;
-import static io.mapsmessaging.storage.logging.StorageLogMessages.FILE_HELPER_FILE_DOES_NOT_EXIST;
-
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+
+import static io.mapsmessaging.storage.logging.StorageLogMessages.*;
 
 public class FileHelper {
 
@@ -65,7 +64,20 @@ public class FileHelper {
 
       }
       else{
-        Files.deleteIfExists(file.toPath());
+        int retry = 0;
+        boolean loop = true;
+        while(loop) {
+          try {
+            Files.deleteIfExists(file.toPath());
+            loop = false;
+          } catch (IOException e) {
+            retry++;
+            if(retry == 5){
+              throw e;
+            }
+            System.gc();
+          }
+        }
         logger.log(FILE_HELPER_DELETED_FILE, file.toString());
       }
     }

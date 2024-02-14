@@ -21,6 +21,7 @@ import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,8 +43,8 @@ public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
   }
 
   @Override
-  public StorageFactory<T> getInstance(@NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, @NotNull ExpiredStorableHandler expiredHandler) {
-    return new MemoryFactory(properties, storableFactory, expiredHandler);
+  public StorageFactory<T> getInstance(@NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, @Nullable ExpiredStorableHandler expiredHandler) {
+    return new MemoryFactory<>(properties, storableFactory, expiredHandler);
   }
 
   @Override

@@ -22,6 +22,7 @@ import io.mapsmessaging.storage.impl.BaseStorageFactory;
 import io.mapsmessaging.storage.impl.file.PartitionStorageFactory;
 import io.mapsmessaging.storage.impl.memory.MemoryFactory;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,8 +55,8 @@ public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T>
   }
 
   @Override
-  public StorageFactory<T> getInstance(@NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, @NotNull ExpiredStorableHandler expiredHandler) {
-    return new MemoryTierFactory(properties, storableFactory, expiredHandler);
+  public StorageFactory<T> getInstance(@NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, @Nullable ExpiredStorableHandler expiredHandler) {
+    return new MemoryTierFactory<>(properties, storableFactory, expiredHandler);
   }
 
   @SuppressWarnings("java:S2095") // The allocation of both stores is required and can not be closed in a "finally" clause here, else bad things will happen

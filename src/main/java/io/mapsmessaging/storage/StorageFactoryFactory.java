@@ -77,8 +77,7 @@ class StorageFactoryFactory {
 
   @SuppressWarnings("java:S2293")
   @SneakyThrows
-  @Nullable <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory,
-      ExpiredStorableHandler expiredStorableHandler) {
+  @Nullable <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, ExpiredStorableHandler expiredStorableHandler) {
     Optional<StorageFactory> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_FACTORY, first.get().getClass().getName());
