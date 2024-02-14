@@ -24,12 +24,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class PartitionDataManagerFactory<T extends Storable> {
 
-  private static final PartitionDataManagerFactory instance = new PartitionDataManagerFactory<>();
+  private static class Holder {
+    static final PartitionDataManagerFactory INSTANCE = new PartitionDataManagerFactory<>();
+  }
 
-  public static <T extends Storable> PartitionDataManagerFactory<T> getInstance(){
-    return instance;
+  public static PartitionDataManagerFactory getInstance() {
+    return Holder.INSTANCE;
   }
 
   private final Map<String, DataStorageFactory<T>> dataStorageManagers;
