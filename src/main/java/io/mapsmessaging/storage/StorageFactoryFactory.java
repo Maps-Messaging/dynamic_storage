@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
-@SuppressWarnings("java:S6548") // yes it is a singleton
+@SuppressWarnings({"java:S6548", "java:S3740"}) // yes it is a singleton
 class StorageFactoryFactory {
 
   private static class Holder {
@@ -43,9 +43,7 @@ class StorageFactoryFactory {
 
   private static final Logger logger = LoggerFactory.getLogger(StorageFactoryFactory.class);
 
-  @SuppressWarnings("java:S3740")
   private final List<StorageFactory> storageFactories;
-  @SuppressWarnings("java:S3740")
   private final List<Cache> caches;
   private final List<String> layered = new ArrayList<>();
   private final List<String> known = new ArrayList<>();
