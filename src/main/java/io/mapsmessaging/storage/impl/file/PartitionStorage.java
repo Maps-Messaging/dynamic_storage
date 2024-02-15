@@ -17,13 +17,7 @@
 
 package io.mapsmessaging.storage.impl.file;
 
-import io.mapsmessaging.storage.BaseExpiredHandler;
-import io.mapsmessaging.storage.ExpiredMonitor;
-import io.mapsmessaging.storage.ExpiredStorableHandler;
-import io.mapsmessaging.storage.Statistics;
-import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.StorageStatistics;
+import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
 import io.mapsmessaging.storage.impl.file.partition.IndexGet;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
@@ -36,23 +30,18 @@ import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
-import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class PartitionStorage<T extends Storable> implements Storage<T>, ExpiredMonitor {
 
@@ -445,7 +434,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
       if (!partitions.isEmpty()) {
         start = partitions.get(partitions.size() - 1).getEnd() + 1;
       }
-      if (key < start || key > (start + itemCount)) {
+      if (key < start || key >= (start + itemCount)) {
         start = key;
       }
       partition = new IndexStorage<>(config, partitionName, start, taskScheduler);
