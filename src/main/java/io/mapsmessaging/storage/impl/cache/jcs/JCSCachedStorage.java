@@ -75,4 +75,9 @@ public class JCSCachedStorage<T extends Storable> implements Cache<T> {
   public int size() {
     return 0;
   }
+
+  @Override
+  public Cache<T> getInstance(String name) {
+    return new JCSCachedStorage<>(name);
+  }
 }
