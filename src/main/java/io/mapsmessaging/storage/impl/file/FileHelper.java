@@ -17,15 +17,14 @@
 
 package io.mapsmessaging.storage.impl.file;
 
-import static io.mapsmessaging.storage.logging.StorageLogMessages.FILE_HELPER_DELETED_FILE;
-import static io.mapsmessaging.storage.logging.StorageLogMessages.FILE_HELPER_EXCEPTION_RAISED;
-import static io.mapsmessaging.storage.logging.StorageLogMessages.FILE_HELPER_FILE_DOES_NOT_EXIST;
-
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+
+import static io.mapsmessaging.storage.logging.StorageLogMessages.*;
 
 public class FileHelper {
 
@@ -65,14 +64,19 @@ public class FileHelper {
 
       }
       else{
-        Files.deleteIfExists(file.toPath());
-        logger.log(FILE_HELPER_DELETED_FILE, file.toString());
+        return deleteExistingFile(file);
       }
     }
     else{
       logger.log(FILE_HELPER_FILE_DOES_NOT_EXIST, file.toString());
       throw new IOException("File does not exist");
     }
+    return true;
+  }
+
+  private static boolean deleteExistingFile(File file) throws IOException {
+    Files.deleteIfExists(file.toPath());
+    logger.log(FILE_HELPER_DELETED_FILE, file.toString());
     return true;
   }
 

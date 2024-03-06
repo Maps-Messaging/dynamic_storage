@@ -20,6 +20,7 @@ package io.mapsmessaging.storage.impl.file;
 import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,8 +46,8 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
   }
 
   @Override
-  public StorageFactory<T> getInstance(@NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, @NotNull ExpiredStorableHandler expiredHandler) {
-    return new PartitionStorageFactory(properties, storableFactory, expiredHandler);
+  public StorageFactory<T> getInstance(@NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, @Nullable ExpiredStorableHandler expiredHandler) {
+    return new PartitionStorageFactory<>(properties, storableFactory, expiredHandler);
   }
 
   @Override

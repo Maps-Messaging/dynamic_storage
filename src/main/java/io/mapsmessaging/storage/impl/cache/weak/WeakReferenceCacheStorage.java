@@ -19,6 +19,7 @@ package io.mapsmessaging.storage.impl.cache.weak;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.cache.Cache;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -77,5 +78,10 @@ public class WeakReferenceCacheStorage<T extends Storable> implements Cache<T> {
   @Override
   public int size() {
     return weakMap.size();
+  }
+
+  @Override
+  public Cache<T> getInstance(String name) {
+    return new WeakReferenceCacheStorage<>(name);
   }
 }

@@ -22,49 +22,55 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.impl.cache.Cache;
 import io.mapsmessaging.storage.impl.cache.CacheLayer;
 import io.mapsmessaging.storage.logging.StorageLogMessages;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@SuppressWarnings("java:S3740") // This is not how ServiceLoaders work, we can not get a generic load
+import java.io.IOException;
+import java.util.*;
+
+@SuppressWarnings({"java:S6548", "java:S3740"})
 class StorageFactoryFactory {
+
+  private static class Holder {
+    static final StorageFactoryFactory INSTANCE = new StorageFactoryFactory();
+  }
+
+  public static StorageFactoryFactory getInstance() {
+    return Holder.INSTANCE;
+  }
 
   private static final Logger logger = LoggerFactory.getLogger(StorageFactoryFactory.class);
 
-  private static final StorageFactoryFactory instance = new StorageFactoryFactory();
-
-  private final List<StorageFactory> storageFactories;
-  private final List<Cache> caches;
+  private final List<StorageFactory<? extends Storable>> storageFactories;
+  private final List<Cache<? extends Storable>> caches;
   private final List<String> layered = new ArrayList<>();
   private final List<String> known = new ArrayList<>();
 
   private StorageFactoryFactory() {
-    ServiceLoader<StorageFactory> serviceLoader = ServiceLoader.load(StorageFactory.class);
-    ServiceLoader<Cache> serviceCaches = ServiceLoader.load(Cache.class);
-
-    storageFactories = new ArrayList<>();
-    for(StorageFactory storageFactory:serviceLoader){
-      storageFactories.add(storageFactory);
-    }
-
-    caches = new ArrayList<>();
-    for(Cache cache:serviceCaches){
-      caches.add(cache);
-    }
-
-    caches.forEach(layer -> layered.add(layer.getName()));
-    storageFactories.forEach(storageFactory -> known.add(storageFactory.getName()));
+    storageFactories = loadStorageFactory();
+    caches = loadCaches();
   }
 
-  public static StorageFactoryFactory getInstance() {
-    return instance;
+  private List<StorageFactory<? extends Storable>> loadStorageFactory(){
+    ServiceLoader<StorageFactory> serviceLoader = ServiceLoader.load(StorageFactory.class);
+    List<StorageFactory<? extends Storable>> list = new ArrayList<>();
+    for(StorageFactory storageFactory:serviceLoader){
+      list.add(storageFactory);
+    }
+    list.forEach(storageFactory -> known.add(storageFactory.getName()));
+    return list;
+  }
+
+  private List<Cache<? extends Storable>> loadCaches(){
+    ServiceLoader<Cache> serviceCaches = ServiceLoader.load(Cache.class);
+    List<Cache<? extends Storable>> list = new ArrayList<>();
+    for(Cache cache:serviceCaches){
+      list.add(cache);
+    }
+
+    list.forEach(layer -> layered.add(layer.getName()));
+    return list;
   }
 
   public List<String> getKnownStorages() {
@@ -77,48 +83,30 @@ class StorageFactoryFactory {
 
   @SuppressWarnings("java:S2293")
   @SneakyThrows
-  @Nullable <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory,
-      ExpiredStorableHandler expiredStorableHandler) {
-    Optional<StorageFactory> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(name)).findFirst();
+  @Nullable <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, ExpiredStorableHandler expiredStorableHandler) {
+    Optional<StorageFactory<? extends Storable>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_FACTORY, first.get().getClass().getName());
-      StorageFactory<T> found = first.get();
-      return found.getInstance(properties, storableFactory, expiredStorableHandler);
+      return ((StorageFactory<T>) first.get()).getInstance(properties, storableFactory, expiredStorableHandler);
     }
     else {
       logger.log(StorageLogMessages.NO_MATCHING_FACTORY, name);
     }
-
     return null;
   }
 
   @SuppressWarnings("java:S2293")
   @SneakyThrows
   @NotNull <T extends Storable> CacheLayer<T> createCache(@NotNull String name, boolean enableWriteThrough, @NotNull Storage<T> baseStore) {
-    Optional<Cache> first = caches.stream().filter(layer -> layer.getName().equals(name)).findFirst();
+    Optional<Cache<? extends Storable>> first = caches.stream().filter(layer -> layer.getName().equals(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_CACHE_FACTORY, name);
-      Cache<?> found = first.get();
-      Class<T> clazz = (Class<T>) found.getClass();
-      Constructor<T>[] constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
-      Constructor<T> constructor = null;
-      for (Constructor<T> cstr : constructors) {
-        if (cstr.getParameters().length == 1) {
-          logger.log(StorageLogMessages.FOUND_CACHE_CONSTRUCTOR, name);
-          constructor = cstr;
-          break;
-        }
-      }
-      if (constructor != null) {
-        Cache<T> cache = (Cache<T>) constructor.newInstance(baseStore.getName());
-        logger.log(StorageLogMessages.CREATED_NEW_CACHE_INSTANCE, name);
-        return new CacheLayer<T>(enableWriteThrough, cache, baseStore);
-      }
+      Cache<T> cache =  ((Cache<T>) first.get()).getInstance(name);
+      logger.log(StorageLogMessages.CREATED_NEW_CACHE_INSTANCE, name);
+      return new CacheLayer<>(enableWriteThrough, cache, baseStore);
     }
     logger.log(StorageLogMessages.NO_CACHE_FOUND, name);
 
     throw new IOException("Unknown layered storage declared");
   }
-
-
 }

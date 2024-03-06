@@ -32,4 +32,6 @@ public interface Cache<T> {
   void cacheDelete();
 
   int size();
+
+  Cache<T> getInstance(String name);
 }

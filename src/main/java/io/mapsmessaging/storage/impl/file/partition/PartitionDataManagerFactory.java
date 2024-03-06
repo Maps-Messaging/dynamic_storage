@@ -19,17 +19,21 @@ package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
+@SuppressWarnings({"java:S6548", "java:S3740"})
 public class PartitionDataManagerFactory<T extends Storable> {
 
-  private static final PartitionDataManagerFactory instance = new PartitionDataManagerFactory<>();
+  private static class Holder {
+    static final PartitionDataManagerFactory INSTANCE = new PartitionDataManagerFactory<>();
+  }
 
-  public static <T extends Storable> PartitionDataManagerFactory<T> getInstance(){
-    return instance;
+  public static PartitionDataManagerFactory getInstance() {
+    return Holder.INSTANCE;
   }
 
   private final Map<String, DataStorageFactory<T>> dataStorageManagers;

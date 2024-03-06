@@ -18,6 +18,7 @@
 package io.mapsmessaging.storage;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,7 +31,7 @@ public interface StorageFactory<T extends Storable> {
   StorageFactory<T> getInstance(
       @NotNull Map<String, String> properties,
       @NotNull StorableFactory<T> storableFactory,
-      @NotNull ExpiredStorableHandler expiredHandler
+      @Nullable ExpiredStorableHandler expiredHandler
   );
 
   Storage<T> create(String name) throws IOException;

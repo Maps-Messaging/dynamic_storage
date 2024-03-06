@@ -20,13 +20,14 @@ package io.mapsmessaging.storage.impl;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public abstract class BaseStoreTest extends BaseTest {
@@ -56,6 +57,29 @@ public abstract class BaseStoreTest extends BaseTest {
         Assertions.assertNotNull(message);
       }
       Assertions.assertTrue(storage.isEmpty());
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void testAddAndThenDelete(boolean sync) throws IOException {
+    Storage<MappedData> storage = null;
+    try {
+      storage = createStore(testName+"_addDelete", sync);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      for (int x = 0; x < 10_000; x++) {
+        storage.add(createMessageBuilder(x));
+        Assertions.assertNotNull(storage.get(x));
+        Assertions.assertEquals(1, storage.size() );
+        storage.remove(x);
+        Assertions.assertTrue(storage.isEmpty());
+      }
     } finally {
       if (storage != null) {
         storage.delete();
