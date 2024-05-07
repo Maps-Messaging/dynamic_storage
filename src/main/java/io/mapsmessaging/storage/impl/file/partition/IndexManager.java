@@ -20,24 +20,21 @@ package io.mapsmessaging.storage.impl.file.partition;
 import io.mapsmessaging.storage.impl.file.tasks.MemoryMapLoadTask;
 import io.mapsmessaging.utilities.collections.MappedBufferHelper;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
-import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class IndexManager implements Closeable {
 
@@ -180,7 +177,9 @@ public class IndexManager implements Closeable {
     ByteBuffer header = ByteBuffer.allocate(8);
     header.putLong(key);
     header.flip();
-    channel.write(header);
+    if(channel.write(header) != 8){
+      throw new IOException("Unable to write to channel");
+    }
   }
 
   public int size() {

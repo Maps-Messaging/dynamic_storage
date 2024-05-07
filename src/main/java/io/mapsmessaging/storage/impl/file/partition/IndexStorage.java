@@ -17,18 +17,14 @@
 
 package io.mapsmessaging.storage.impl.file.partition;
 
-import static io.mapsmessaging.storage.impl.file.partition.PartitionDataManagerFactory.getInstance;
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
-import static java.nio.file.StandardOpenOption.DSYNC;
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.SPARSE;
-import static java.nio.file.StandardOpenOption.WRITE;
-
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -40,9 +36,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
-import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import static io.mapsmessaging.storage.impl.file.partition.PartitionDataManagerFactory.getInstance;
+import static java.nio.file.StandardOpenOption.*;
 
 public class IndexStorage<T extends Storable> {
 
@@ -138,7 +134,7 @@ public class IndexStorage<T extends Storable> {
       paused = false;
       File file = new File(this.fileName);
       mapChannel = openChannel(file);
-      indexManager.resume(mapChannel);
+      indexManager = reload();
       dataStorage.resume();
     }
   }
@@ -167,7 +163,9 @@ public class IndexStorage<T extends Storable> {
     headerValidation.putLong(Double.doubleToLongBits(VERSION));
     headerValidation.putLong(itemCount);
     headerValidation.flip();
-    mapChannel.write(headerValidation);
+    if(mapChannel.write(headerValidation) != HEADER_SIZE) {
+      throw new IOException("Failed to write header");
+    }
     IndexManager idx = new IndexManager(start, itemCount, mapChannel);
     scheduler.scheduleNow(idx.queueTask(false));
     mapChannel.force(false);
@@ -200,6 +198,9 @@ public class IndexStorage<T extends Storable> {
   }
 
   public void compact() throws IOException {
+    if(paused){
+      resume();
+    }
     long size = ((indexManager.getEnd() - indexManager.getStart() + 2) * IndexRecord.HEADER_SIZE) + 24 + 16;
     long mapSize = mapChannel.size();
     if (size <mapSize) {
@@ -221,6 +222,7 @@ public class IndexStorage<T extends Storable> {
       Files.copy(tmpIndex.toPath(), currentIndex.toPath(), StandardCopyOption.REPLACE_EXISTING);
       Files.deleteIfExists(tmpIndex.toPath());
       mapChannel = openChannel(currentIndex);
+      mapChannel.position(0);
       indexManager = reload();
     }
   }
@@ -260,6 +262,10 @@ public class IndexStorage<T extends Storable> {
   }
 
   public IndexRecord add(@NotNull T object) throws IOException {
+    if(paused){
+      resume();
+    }
+
     if (indexManager.contains(object.getKey())) {
       throw new IOException("Key already exists");
     }
@@ -274,6 +280,13 @@ public class IndexStorage<T extends Storable> {
   }
 
   public boolean remove(long key) {
+    if(paused){
+      try {
+        resume();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
     lastAccess = System.currentTimeMillis();
     return indexManager.delete(key);
   }

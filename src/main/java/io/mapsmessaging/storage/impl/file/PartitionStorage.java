@@ -199,8 +199,10 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     long time = System.currentTimeMillis();
     IndexStorage<T> partition = locateOrCreatePartition(object.getKey());
     IndexRecord indexRecord = partition.add(object);
-    if (partition.isFull()) {
-      partition.setEnd(object.getKey());
+    if (partition.isFull()){
+      if(object.getKey() < partition.getEnd()) {
+        partition.setEnd(object.getKey());
+      }
     }
     expiredMonitor.added(object);
     byteReads.add(IndexRecord.HEADER_SIZE); // We read the header to check for duplicates
