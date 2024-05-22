@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 
-public class PartitionStorage<T extends Storable> implements Storage<T>, ExpiredMonitor {
+public class PartitionStorage<T extends Storable> implements Storage<T>, ExpiredMonitor, TierMigrationMonitor {
 
   private static final String PARTITION_FILE_NAME = "partition_";
 
@@ -391,9 +391,11 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   }
 
   public @NotNull Statistics getStatistics() {
-    long length;
+    long length = 0;
     try {
-      length = length();
+      if(!paused) {
+        length = length();
+      }
     } catch (IOException e) {
       length = -1;
     }

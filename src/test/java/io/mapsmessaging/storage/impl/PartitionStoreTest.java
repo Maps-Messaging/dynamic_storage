@@ -25,14 +25,14 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import io.mapsmessaging.storage.AsyncStorage;
-import io.mapsmessaging.storage.Statistics;
-import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.StorageBuilder;
-import io.mapsmessaging.storage.StorageStatistics;
-import io.mapsmessaging.storage.impl.file.PartitionStorage;
+import io.mapsmessaging.storage.*;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,10 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 class PartitionStoreTest extends BasePartitionStoreTest {
 
@@ -218,7 +214,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
 
     // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
     TimeUnit.SECONDS.sleep(40);
-    ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
+    ((TierMigrationMonitor)storage).scanForArchiveMigration();
 
     // They should now be archived
     for (int x = 0; x < 1100; x++) {
@@ -243,7 +239,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
 
     // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
     TimeUnit.SECONDS.sleep(40);
-    ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
+    ((TierMigrationMonitor)storage).scanForArchiveMigration();
     File file = new File("P:/migration/test_file" + File.separator+testName);
     // We should have 10 zip files
     int count =0;
@@ -270,7 +266,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
 
     // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
     TimeUnit.SECONDS.sleep(40);
-    ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
+    ((TierMigrationMonitor)storage).scanForArchiveMigration();
 
     // They should now be archived
     for (int x = 0; x < 1100; x++) {
@@ -295,7 +291,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
 
     // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
     TimeUnit.SECONDS.sleep(40);
-    ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
+    ((TierMigrationMonitor)storage).scanForArchiveMigration();
     File file = new File("test_file" + File.separator+testName);
     // We should have 10 zip files
     int count =0;
@@ -337,7 +333,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
 
       // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
       TimeUnit.SECONDS.sleep(5);
-      ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
+      ((TierMigrationMonitor)storage).scanForArchiveMigration();
       Assertions.assertEquals(10, getBucketEntityCount(amazonS3, bucketName), "S3 bucket should have ten entries");
 
       // They should now be archived
@@ -379,7 +375,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
 
       // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
       TimeUnit.SECONDS.sleep(40);
-      ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
+      ((TierMigrationMonitor)storage).scanForArchiveMigration();
       Assertions.assertEquals(10, getBucketEntityCount(amazonS3, bucketName), "S3 bucket should have ten entries");
       storage.delete();
       Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty when the test finishes");

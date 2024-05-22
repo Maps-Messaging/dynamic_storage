@@ -80,6 +80,9 @@ public enum StorageLogMessages implements LogMessage {
   FILE_HELPER_DELETED_FILE(LEVEL.INFO, STORAGE_CATEGORY.FILE, "Deleted file {}"),
   FILE_HELPER_EXCEPTION_RAISED(LEVEL.INFO, STORAGE_CATEGORY.FILE, "Exception raised while deleting {}"),
 
+  DEBUG_LOGGING(LEVEL.DEBUG, STORAGE_CATEGORY.MONITOR, "{}"),
+  DEBUG_THREAD_MONITOR_LOGGING(LEVEL.FATAL, STORAGE_CATEGORY.MONITOR, "{}"),
+
   CACHE_ALREADY_CONFIGURED(LEVEL.WARN, STORAGE_CATEGORY.FACTORY, "The cache has already been configured"),
   NO_SUCH_CACHE_FOUND(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "No such cache implementation found {}"),
   DEFAULTING_CACHE(LEVEL.INFO, STORAGE_CATEGORY.FACTORY, "Defaulting the cache implementation to {}");
@@ -110,6 +113,7 @@ public enum StorageLogMessages implements LogMessage {
     TIER("Tier"),
     CACHE("Cache"),
     ASYNC("Async"),
+    MONITOR("Monitor"),
     FACTORY("Factory");
 
     private final @Getter String description;

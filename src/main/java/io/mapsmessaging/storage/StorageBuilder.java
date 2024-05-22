@@ -19,13 +19,15 @@ package io.mapsmessaging.storage;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.storage.impl.debug.DebugStorage;
 import io.mapsmessaging.storage.logging.StorageLogMessages;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 @ToString
 public class StorageBuilder<T extends Storable> {
@@ -119,6 +121,8 @@ public class StorageBuilder<T extends Storable> {
 
 
   public Storage<T> build() throws IOException {
+    boolean debugEnabled = properties.containsKey("debug") && Boolean.parseBoolean(properties.get("debug"));
+
     StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, storableFactory, expiredStorableHandler);
     if (storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
@@ -126,6 +130,9 @@ public class StorageBuilder<T extends Storable> {
         baseStore = StorageFactoryFactory.getInstance().createCache(cacheName, enableWriteThrough, baseStore);
       }
       logger.log(StorageLogMessages.BUILT_STORAGE, this);
+      if(debugEnabled){
+        baseStore =  new DebugStorage<>(baseStore);
+      }
       return baseStore;
     } else {
       logger.log(StorageLogMessages.NO_STORAGE_FACTORY_FOUND);

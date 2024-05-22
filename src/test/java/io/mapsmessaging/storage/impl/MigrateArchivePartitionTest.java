@@ -18,15 +18,16 @@
 package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.impl.file.PartitionStorage;
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import io.mapsmessaging.storage.TierMigrationMonitor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 class MigrateArchivePartitionTest  extends BaseTest {
   @ParameterizedTest
@@ -45,7 +46,7 @@ class MigrateArchivePartitionTest  extends BaseTest {
 
     // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
     TimeUnit.SECONDS.sleep(5);
-    ((PartitionStorage<MappedData>) storage).scanForArchiveMigration();
+    ((TierMigrationMonitor) storage).scanForArchiveMigration();
 
     // They should now be archived
     for (int x = 0; x < 1100; x++) {
@@ -70,7 +71,7 @@ class MigrateArchivePartitionTest  extends BaseTest {
 
     // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
     TimeUnit.SECONDS.sleep(5);
-    ((PartitionStorage<MappedData>) storage).scanForArchiveMigration();
+    ((TierMigrationMonitor) storage).scanForArchiveMigration();
     File file = new File("test_file_archive" + File.separator+"test_file"+File.separator+testName);
     // We should have 10 zip files
     int count = 0;

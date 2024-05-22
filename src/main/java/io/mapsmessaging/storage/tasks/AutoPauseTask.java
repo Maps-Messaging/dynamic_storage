@@ -18,7 +18,12 @@
 package io.mapsmessaging.storage.tasks;
 
 import io.mapsmessaging.storage.AsyncStorage;
+
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class AutoPauseTask implements Runnable {
 
@@ -32,14 +37,17 @@ public class AutoPauseTask implements Runnable {
 
   @Override
   public void run() {
-    long lastAccess = System.currentTimeMillis() - storage.getLastAccess();
-    if (lastAccess > pauseTimeout) {
-      try {
+    try {
+      Future<Long> future = storage.getLastAccessAsync();
+      long lastAccess = System.currentTimeMillis() - future.get(1000, TimeUnit.MILLISECONDS);
+      if (lastAccess > pauseTimeout) {
         storage.pause();
-      } catch (IOException e) {
-        // Log required here
-
       }
+    }
+    catch (IOException| ExecutionException | TimeoutException e) {
+      Thread.currentThread().interrupt();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
 }

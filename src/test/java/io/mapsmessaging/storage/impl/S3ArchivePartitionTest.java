@@ -26,14 +26,15 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.impl.file.PartitionStorage;
+import io.mapsmessaging.storage.TierMigrationMonitor;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 class S3ArchivePartitionTest extends BaseTest {
 
@@ -77,7 +78,7 @@ class S3ArchivePartitionTest extends BaseTest {
 
       // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
       TimeUnit.SECONDS.sleep(5);
-      ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
+      ((TierMigrationMonitor)storage).scanForArchiveMigration();
       Assertions.assertEquals(10, getBucketEntityCount(amazonS3, bucketName), "S3 bucket should have ten entries");
 
       // They should now be archived
@@ -121,7 +122,7 @@ class S3ArchivePartitionTest extends BaseTest {
 
       // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
       TimeUnit.SECONDS.sleep(5);
-      ((PartitionStorage<MappedData>)storage).scanForArchiveMigration();
+      ((TierMigrationMonitor)storage).scanForArchiveMigration();
       Assertions.assertEquals(10, getBucketEntityCount(amazonS3, bucketName), "S3 bucket should have ten entries");
       storage.delete();
       Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty when the test finishes");
