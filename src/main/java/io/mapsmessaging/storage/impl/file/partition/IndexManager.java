@@ -120,9 +120,11 @@ public class IndexManager implements Closeable {
     if (!closed) {
       waitForLoad();
       closed = true;
-      index.force();
-      MappedBufferHelper.closeDirectBuffer(index);
-      index = null; // ensure NPE rather than a full-blown JVM crash!!!
+      if(index != null) {
+        index.force();
+        MappedBufferHelper.closeDirectBuffer(index);
+        index = null;
+      }
     }
   }
 

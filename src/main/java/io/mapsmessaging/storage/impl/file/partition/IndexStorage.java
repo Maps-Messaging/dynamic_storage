@@ -175,6 +175,7 @@ public class IndexStorage<T extends Storable> {
 
   private IndexManager reload() throws IOException {
     ByteBuffer headerValidation = ByteBuffer.allocate(HEADER_SIZE);
+    mapChannel.read(headerValidation);
     headerValidation.flip();
     requiresValidation = headerValidation.getLong() != CLOSE_STATE;
     if (headerValidation.getLong() != UNIQUE_ID) {
