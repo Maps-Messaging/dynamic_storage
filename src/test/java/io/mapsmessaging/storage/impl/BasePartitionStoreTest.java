@@ -41,7 +41,7 @@ public class BasePartitionStoreTest extends BaseStoreTest {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + sync);
     properties.put("ItemCount", "" + 100);
-    properties.put("debug", "true");
+    properties.put("debug", "false");
     properties.put("MaxPartitionSize", "" + (512L * 1024L * 1024L)); // set to 5MB data limit
     return properties;
   }
