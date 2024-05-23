@@ -18,23 +18,18 @@
 package io.mapsmessaging.storage.impl.file;
 
 import io.mapsmessaging.storage.impl.file.tasks.FileTask;
+import lombok.ToString;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
-import org.jetbrains.annotations.NotNull;
 
+@ToString
 public class TaskQueue {
 
   private static final long TIMEOUT = 60;

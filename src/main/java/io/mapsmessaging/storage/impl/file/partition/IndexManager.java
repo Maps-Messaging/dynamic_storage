@@ -21,6 +21,7 @@ import io.mapsmessaging.storage.impl.file.tasks.MemoryMapLoadTask;
 import io.mapsmessaging.utilities.collections.MappedBufferHelper;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import lombok.Getter;
+import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,6 +37,7 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
+@ToString
 public class IndexManager implements Closeable {
 
   private static final int HEADER_SIZE = 16;
@@ -130,8 +132,8 @@ public class IndexManager implements Closeable {
 
   public void pause() {
     if (!paused) {
-      waitForLoad();
       paused = true;
+      waitForLoad();
       index.force();
       MappedBufferHelper.closeDirectBuffer(index);
       index = null; // ensure NPE rather than a full-blown JVM crash!!!
@@ -140,8 +142,8 @@ public class IndexManager implements Closeable {
 
   public void resume(FileChannel channel) throws IOException {
     if (paused) {
-      waitForLoad();
       paused = false;
+      waitForLoad();
       int totalSize = (int) ((end - start) + 1) * IndexRecord.HEADER_SIZE;
       index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
       index.load(); // Ensure the file contents are loaded

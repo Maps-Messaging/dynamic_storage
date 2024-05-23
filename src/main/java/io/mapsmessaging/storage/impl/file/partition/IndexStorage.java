@@ -17,11 +17,14 @@
 
 package io.mapsmessaging.storage.impl.file.partition;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
 import lombok.Getter;
+import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,8 +41,11 @@ import java.util.List;
 import java.util.Queue;
 
 import static io.mapsmessaging.storage.impl.file.partition.PartitionDataManagerFactory.getInstance;
+import static io.mapsmessaging.storage.logging.StorageLogMessages.INDEX_STORAGE_RELOAD_ERROR;
+import static io.mapsmessaging.storage.logging.StorageLogMessages.INDEX_STORAGE_RELOAD_STATE;
 import static java.nio.file.StandardOpenOption.*;
 
+@ToString
 public class IndexStorage<T extends Storable> {
 
   private static final int HEADER_SIZE = 32;
@@ -49,6 +55,7 @@ public class IndexStorage<T extends Storable> {
   private static final long OPEN_STATE = 0xEFFFFFFFFFFFFFFFL;
   private static final long CLOSE_STATE = 0x0000000000000000L;
 
+  private final Logger logger = LoggerFactory.getLogger(IndexStorage.class);
   private int itemCount;
   private final boolean sync;
   private final String fileName;
@@ -174,8 +181,12 @@ public class IndexStorage<T extends Storable> {
   }
 
   private IndexManager reload() throws IOException {
+    mapChannel.position(0);
     ByteBuffer headerValidation = ByteBuffer.allocate(HEADER_SIZE);
-    mapChannel.read(headerValidation);
+    if(mapChannel.read(headerValidation) != HEADER_SIZE){
+      logger.log(INDEX_STORAGE_RELOAD_ERROR, headerValidation.position(), HEADER_SIZE );
+      logger.log(INDEX_STORAGE_RELOAD_STATE, this.toString());
+    }
     headerValidation.flip();
     requiresValidation = headerValidation.getLong() != CLOSE_STATE;
     if (headerValidation.getLong() != UNIQUE_ID) {
@@ -222,7 +233,6 @@ public class IndexStorage<T extends Storable> {
       Files.copy(tmpIndex.toPath(), currentIndex.toPath(), StandardCopyOption.REPLACE_EXISTING);
       Files.deleteIfExists(tmpIndex.toPath());
       mapChannel = openChannel(currentIndex);
-      mapChannel.position(0);
       indexManager = reload();
     }
   }
