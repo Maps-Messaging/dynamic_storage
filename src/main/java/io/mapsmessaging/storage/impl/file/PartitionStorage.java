@@ -182,12 +182,20 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   public void resume() throws IOException {
     if (paused) {
       paused = false;
+      List<IndexStorage<T>> closedPartitions = new ArrayList<>();
       for (IndexStorage<T> partition : partitions) {
-        partition.resume();
+        if(partition.isDeleted()){
+          closedPartitions.add(partition);
+        }
+        else {
+          partition.resume();
+        }
+      }
+      for(IndexStorage<T> partition : closedPartitions){
+        partitions.remove(partition);
       }
       expiredMonitor.resume();
     }
-
   }
 
   @Override
@@ -199,10 +207,8 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     long time = System.currentTimeMillis();
     IndexStorage<T> partition = locateOrCreatePartition(object.getKey());
     IndexRecord indexRecord = partition.add(object);
-    if (partition.isFull()){
-      if(object.getKey() < partition.getEnd()) {
-        partition.setEnd(object.getKey());
-      }
+    if (partition.isFull() && object.getKey() < partition.getEnd()) {
+      partition.setEnd(object.getKey());
     }
     expiredMonitor.added(object);
     byteReads.add(IndexRecord.HEADER_SIZE); // We read the header to check for duplicates

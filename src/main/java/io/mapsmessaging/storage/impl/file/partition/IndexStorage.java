@@ -68,7 +68,10 @@ public class IndexStorage<T extends Storable> {
   @Getter
   private long lastAccess;
 
+  @Getter
   private volatile boolean closed;
+  @Getter
+  private volatile boolean deleted;
   private volatile boolean paused;
   private boolean requiresValidation;
 
@@ -100,6 +103,7 @@ public class IndexStorage<T extends Storable> {
     }
     closed = false;
     paused = false;
+    deleted = false;
   }
 
   public void close() throws IOException {
@@ -118,8 +122,12 @@ public class IndexStorage<T extends Storable> {
   }
 
   public void delete() throws IOException {
+    closed = true;
+    deleted = true;
     indexManager.close();
-    mapChannel.close();
+    if(!paused){
+      mapChannel.close();
+    }
     dataStorage.delete();
     File path = new File(fileName);
     Files.delete(path.toPath());
@@ -137,11 +145,20 @@ public class IndexStorage<T extends Storable> {
   }
 
   public void resume() throws IOException {
+    if(closed){
+      return;
+    }
     if (paused) {
       paused = false;
       File file = new File(this.fileName);
+      boolean recreate = !file.exists();
       mapChannel = openChannel(file);
-      indexManager = reload();
+      if(recreate){
+        indexManager = initialise(this.getStart());
+      }
+      else {
+        indexManager = reload();
+      }
       dataStorage.resume();
     }
   }
