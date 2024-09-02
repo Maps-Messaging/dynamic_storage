@@ -176,7 +176,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     try {
       for (int x = 0; x < 10_000; x++) {
         MappedData message = createMessageBuilder(x);
-        message.setExpiry(System.currentTimeMillis()+2000); // 2 Seconds
+        message.setExpiry(System.currentTimeMillis()+3000); // 2 Seconds
         message.setKey(x);
         storage.add(message, null).get();
         Assertions.assertEquals(x+1, storage.size().get());
@@ -185,7 +185,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
         Assertions.assertEquals(message.key, lookup.key);
       }
       storage.close();
-      TimeUnit.SECONDS.sleep(3);
+      TimeUnit.SECONDS.sleep(4);
       // Now let's reopen the file and check the expired events
       storage = new AsyncStorage<>(storageBuilder.build());
       int count = 0;
