@@ -44,10 +44,8 @@ public class AutoPauseTask implements Runnable {
         storage.pause();
       }
     }
-    catch (IOException| ExecutionException | TimeoutException e) {
+    catch (IOException | ExecutionException | TimeoutException | InterruptedException e) {
       Thread.currentThread().interrupt();
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
     }
   }
 }

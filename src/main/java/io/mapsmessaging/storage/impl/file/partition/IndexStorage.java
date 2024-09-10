@@ -41,8 +41,7 @@ import java.util.List;
 import java.util.Queue;
 
 import static io.mapsmessaging.storage.impl.file.partition.PartitionDataManagerFactory.getInstance;
-import static io.mapsmessaging.storage.logging.StorageLogMessages.INDEX_STORAGE_RELOAD_ERROR;
-import static io.mapsmessaging.storage.logging.StorageLogMessages.INDEX_STORAGE_RELOAD_STATE;
+import static io.mapsmessaging.storage.logging.StorageLogMessages.*;
 import static java.nio.file.StandardOpenOption.*;
 
 @ToString
@@ -311,7 +310,8 @@ public class IndexStorage<T extends Storable> {
       try {
         resume();
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        logger.log(INDEX_STORAGE_RESUME_ERROR, this.fileName, e);
+        return false;
       }
     }
     lastAccess = System.currentTimeMillis();

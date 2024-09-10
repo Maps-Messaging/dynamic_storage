@@ -22,6 +22,9 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.storage.tasks.Completion;
+import org.jetbrains.annotations.NotNull;
+import org.openjdk.jmh.annotations.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,16 +36,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
-import org.jetbrains.annotations.NotNull;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
-import org.openjdk.jmh.annotations.Threads;
 
 @State(Scope.Benchmark)
 public class SimpleBenchmark extends BaseTest {
@@ -149,6 +142,7 @@ public class SimpleBenchmark extends BaseTest {
 
     @Override
     public void onCompletion(Boolean result) {
+      // There is nothing to do here,
     }
 
     @Override

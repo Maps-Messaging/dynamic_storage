@@ -23,6 +23,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.concurrent.locks.LockSupport;
 
 import static io.mapsmessaging.storage.logging.StorageLogMessages.*;
 
@@ -75,7 +76,20 @@ public class FileHelper {
   }
 
   private static boolean deleteExistingFile(File file) throws IOException {
-    Files.deleteIfExists(file.toPath());
+    int count =0;
+    while(count < 10){
+      if(file.exists()){
+        try {
+          Files.deleteIfExists(file.toPath());
+          count = 10;
+        } catch (IOException e) {
+          count++;
+          System.err.println("Failed to delete file: " + file.getAbsolutePath()+" attempt number "+count);
+          LockSupport.parkNanos(1000000);
+          if(count > 10)throw e;
+        }
+      }
+    }
     logger.log(FILE_HELPER_DELETED_FILE, file.toString());
     return true;
   }

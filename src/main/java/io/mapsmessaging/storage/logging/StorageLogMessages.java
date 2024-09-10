@@ -81,6 +81,7 @@ public enum StorageLogMessages implements LogMessage {
   FILE_HELPER_EXCEPTION_RAISED(LEVEL.INFO, STORAGE_CATEGORY.FILE, "Exception raised while deleting {}"),
 
   INDEX_STORAGE_RELOAD_ERROR(LEVEL.FATAL, STORAGE_CATEGORY.FILE, "Failed to read header : {} expected {}"),
+  INDEX_STORAGE_RESUME_ERROR(LEVEL.FATAL, STORAGE_CATEGORY.FILE, "Failed to resume store while suspended {}"),
   INDEX_STORAGE_RELOAD_STATE(LEVEL.FATAL, STORAGE_CATEGORY.FILE, "{}"),
 
   DEBUG_LOGGING(LEVEL.DEBUG, STORAGE_CATEGORY.MONITOR, "{}"),

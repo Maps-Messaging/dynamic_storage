@@ -27,6 +27,7 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
+
 import java.io.IOException;
 
 public class S3DataStorageFactory<T extends Storable> implements DataStorageFactory<T> {
@@ -47,7 +48,7 @@ public class S3DataStorageFactory<T extends Storable> implements DataStorageFact
         config.getS3AccessKeyId(),
         config.getS3SecretAccessKey()
     );
-    Regions regions = Regions.fromName(config.getS3RegionName());
+    Regions regions = Regions.valueOf(config.getS3RegionName());
     AmazonS3 amazonS3 = AmazonS3ClientBuilder.standard()
         .withRegion(regions)
         .withCredentials(new AWSStaticCredentialsProvider(credentials))
