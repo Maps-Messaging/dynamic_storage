@@ -224,7 +224,7 @@ public class DebugStorage<T extends Storable> implements Storage<T>, ExpiredMoni
   public void add(@NotNull T object) throws IOException {
     try {
       enterFunction("add");
-      logger.log(DEBUG_LOGGING, "Add object to " + physicalStorage.getName() + ": " + object);
+      logger.log(DEBUG_LOGGING, "Add object to " + physicalStorage.getName() + ": key:" + object.getKey());
       physicalStorage.add(object);
     } finally {
       exitFunction();
