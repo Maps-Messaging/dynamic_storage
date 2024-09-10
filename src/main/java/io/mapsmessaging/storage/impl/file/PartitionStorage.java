@@ -369,7 +369,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   }
 
   @Override
-  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) {
+  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) throws IOException {
     for (IndexStorage<T> partition : partitions) {
       listToKeep = partition.keepOnly(listToKeep);
     }
@@ -377,7 +377,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   }
 
   @Override
-  public int removeAll(@NotNull Collection<Long> listToRemove) {
+  public int removeAll(@NotNull Collection<Long> listToRemove) throws IOException {
     int counter = 0;
     for (IndexStorage<T> partition : partitions) {
       counter += partition.removeAll(listToRemove);

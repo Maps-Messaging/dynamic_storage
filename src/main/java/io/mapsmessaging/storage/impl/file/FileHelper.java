@@ -84,9 +84,8 @@ public class FileHelper {
           count = 10;
         } catch (IOException e) {
           count++;
-          System.err.println("Failed to delete file: " + file.getAbsolutePath()+" attempt number "+count);
           LockSupport.parkNanos(1000000);
-          if(count > 10)throw e;
+          if(count == 10)throw e;
         }
       }
     }

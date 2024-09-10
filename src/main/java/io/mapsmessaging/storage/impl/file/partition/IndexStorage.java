@@ -305,13 +305,13 @@ public class IndexStorage<T extends Storable> {
     return dataStorage.isFull();
   }
 
-  public boolean remove(long key) {
+  public boolean remove(long key) throws IOException {
     if(paused){
       try {
         resume();
       } catch (IOException e) {
         logger.log(INDEX_STORAGE_RESUME_ERROR, this.fileName, e);
-        return false;
+        throw new IOException(e);
       }
     }
     lastAccess = System.currentTimeMillis();
@@ -353,7 +353,7 @@ public class IndexStorage<T extends Storable> {
     return indexManager.size() == 0;
   }
 
-  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) {
+  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) throws IOException {
     lastAccess = System.currentTimeMillis();
     List<Long> itemsToRemove = indexManager.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
@@ -371,7 +371,7 @@ public class IndexStorage<T extends Storable> {
     return new ArrayList<>();
   }
 
-  public int removeAll(@NotNull Collection<Long> listToRemove) {
+  public int removeAll(@NotNull Collection<Long> listToRemove) throws IOException {
     int count =0;
     if (!listToRemove.isEmpty()) {
       for (long key : listToRemove) {
