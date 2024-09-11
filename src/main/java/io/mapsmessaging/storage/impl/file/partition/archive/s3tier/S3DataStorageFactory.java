@@ -48,12 +48,19 @@ public class S3DataStorageFactory<T extends Storable> implements DataStorageFact
         config.getS3AccessKeyId(),
         config.getS3SecretAccessKey()
     );
-    Regions regions = Regions.valueOf(config.getS3RegionName());
+    Regions regions = fromRegionName(config.getS3RegionName());
     AmazonS3 amazonS3 = AmazonS3ClientBuilder.standard()
         .withRegion(regions)
         .withCredentials(new AWSStaticCredentialsProvider(credentials))
         .build();
     S3TransferApi transferApi = new S3TransferApi(amazonS3, config.getS3BucketName(), config.isS3Compression());
     return new S3DataStorageProxy<>(transferApi, config);
+  }
+
+  private Regions fromRegionName(String regionName) {
+    return java.util.Arrays.stream(Regions.values())
+        .filter(region -> region.getName().equals(regionName))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Unknown region: " + regionName));
   }
 }
