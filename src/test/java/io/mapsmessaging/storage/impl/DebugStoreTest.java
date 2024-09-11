@@ -19,7 +19,6 @@ package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
-import io.mapsmessaging.storage.impl.debug.DebugStorage;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -42,13 +41,14 @@ public class DebugStoreTest extends BaseStoreTest {
   public static Storage<MappedData> build(String testName, boolean sync) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + sync);
+    properties.put("debug", "true");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setStorageType("Memory")
         .setFactory(getFactory())
         .setCache()
         .setName(testName)
         .setProperties(properties);
-    return new DebugStorage<>(storageBuilder.build());
+    return storageBuilder.build();
   }
 
 }
