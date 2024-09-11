@@ -21,6 +21,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.impl.debug.DebugStorage;
 import io.mapsmessaging.storage.logging.StorageLogMessages;
+import lombok.Getter;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,14 +31,17 @@ import java.util.List;
 import java.util.Map;
 
 @ToString
+@Getter
 public class StorageBuilder<T extends Storable> {
 
   public static void initialiseLayer(){
     StorageFactoryFactory.getInstance().getKnownStorages();
     StorageFactoryFactory.getInstance().getKnownLayers();
   }
+
   private final Logger logger = LoggerFactory.getLogger(StorageBuilder.class);
 
+  private boolean enableWriteThrough = false;
   private String storeType;
   private String cacheName;
   private String name;
@@ -45,7 +49,6 @@ public class StorageBuilder<T extends Storable> {
   private StorableFactory<T> storableFactory;
   private ExpiredStorableHandler expiredStorableHandler;
 
-  private boolean enableWriteThrough = false;
 
   public @NotNull StorageBuilder<T> setName(@NotNull String name) {
     this.name = name;
