@@ -20,12 +20,10 @@ package io.mapsmessaging.storage.impl;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
-import io.mapsmessaging.storage.ExpiredMonitor;
-import io.mapsmessaging.storage.Statistics;
-import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.debug.DebugStorage;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
+import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +36,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 class DebugStoreApiTest {
 
@@ -63,6 +62,14 @@ class DebugStoreApiTest {
     storage.shutdown();
     Assertions.assertFalse(testLogAppender.getLogEvents().isEmpty());
     testLogAppender.clear();
+    storage.close();
+    Assertions.assertFalse(testLogAppender.getLogEvents().isEmpty());
+    testLogAppender.clear();
+    storage.scanForArchiveMigration();
+    Assertions.assertFalse(testLogAppender.getLogEvents().isEmpty());
+    testLogAppender.clear();
+
+
     storage.delete();
     Assertions.assertFalse(testLogAppender.getLogEvents().isEmpty());
     testLogAppender.clear();
@@ -106,6 +113,49 @@ class DebugStoreApiTest {
     storage.resume();
     Assertions.assertFalse(testLogAppender.getLogEvents().isEmpty());
     testLogAppender.clear();
+
+    storage.removeAll(list);
+    Assertions.assertFalse(testLogAppender.getLogEvents().isEmpty());
+    testLogAppender.clear();
+
+    storage.isEmpty();
+    Assertions.assertFalse(testLogAppender.getLogEvents().isEmpty());
+    testLogAppender.clear();
+
+    TaskScheduler taskScheduler = new PriorityConcurrentTaskScheduler("test",16);
+    storage.setExecutor( taskScheduler);
+    Assertions.assertFalse(testLogAppender.getLogEvents().isEmpty());
+    testLogAppender.clear();
+
+    Assertions.assertNull(storage.getTaskScheduler());
+
+    Assertions.assertFalse(storage.supportPause());
+
+    Assertions.assertFalse(storage.isCacheable());
+    Assertions.assertEquals("Debug Test Storage", storage.getName());
+    Assertions.assertNotNull(storage.getStatistics());
+
+  }
+
+  @Test
+  void testThreadAccessLogging() throws IOException {
+    DebugTestStorage<BaseTest.MappedData> base = new DebugTestStorage<>();
+    DebugStorage<BaseTest.MappedData> storage = new DebugStorage<>(base);
+    base.pauseCall.set(true);
+    Thread t = new Thread(() -> {
+      try {
+        storage.close(); // this should block
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
+    t.start();
+
+    testLogAppender.clear();
+    storage.size();
+    base.pauseCall.set(false);
+    Assertions.assertFalse(testLogAppender.getLogEvents().isEmpty());
+    testLogAppender.clear();
   }
 
 
@@ -126,8 +176,9 @@ class DebugStoreApiTest {
     }
   }
 
-  static class DebugTestStorage <T extends Storable> implements Storage<T>, ExpiredMonitor {
+  static class DebugTestStorage <T extends Storable> implements Storage<T>, ExpiredMonitor, TierMigrationMonitor {
 
+    public AtomicBoolean pauseCall = new AtomicBoolean(false);
     @Override
     public void scanForExpired() throws IOException {
       // these are no op functions,
@@ -136,6 +187,13 @@ class DebugStoreApiTest {
     @Override
     public void delete() throws IOException {
       // these are no op functions,
+      while(pauseCall.get()){
+        try {
+          Thread.sleep(10);
+        } catch (InterruptedException e) {
+          throw new IOException();
+        }
+      }
 
     }
 
@@ -165,6 +223,11 @@ class DebugStoreApiTest {
     }
 
     @Override
+    public boolean supportPause(){
+      return false;
+    }
+
+    @Override
     public TaskQueue getTaskScheduler() {
       return null;
     }
@@ -179,6 +242,10 @@ class DebugStoreApiTest {
       return 0;
     }
 
+    @Override
+    public boolean isCacheable() {
+      return false;
+    }
     @Override
     public @NotNull Statistics getStatistics() {
       return new Statistics() {
@@ -221,6 +288,11 @@ class DebugStoreApiTest {
 
     @Override
     public void close() throws IOException {
+
+    }
+
+    @Override
+    public void scanForArchiveMigration() throws IOException {
 
     }
   }
