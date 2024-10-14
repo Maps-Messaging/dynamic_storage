@@ -112,3 +112,5 @@ Include the Maven dependency to use Dynamic Storage in your project:
 For a full guide on getting started, configuration, and extending the library, please see the [Wiki](LINK_TO_WIKI) or [GitHub Pages](LINK_TO_GITHUB_PAGES) for detailed documentation.
 
 [![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/summary/new_code?id=dynamic_storage)
+
+[![Mutable.ai Auto Wiki](https://img.shields.io/badge/Auto_Wiki-Mutable.ai-blue)](https://wiki.mutable.ai/Maps-Messaging/dynamic_storage)
