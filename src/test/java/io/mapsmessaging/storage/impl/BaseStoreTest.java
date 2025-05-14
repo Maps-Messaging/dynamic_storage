@@ -1,9 +1,10 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
+ *    Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ *    Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *     Licensed under the Apache License, Version 2.0 (the "License");
+ *     you may not use this file except in compliance with the License.
+ *     You may obtain a copy of the License at
  *
  *        http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -79,6 +80,35 @@ public abstract class BaseStoreTest extends BaseTest {
         Assertions.assertEquals(1, storage.size() );
         storage.remove(x);
         Assertions.assertTrue(storage.isEmpty());
+      }
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void testAdd10AndThenDelete(boolean sync) throws IOException {
+    Storage<MappedData> storage = null;
+    try {
+      storage = createStore(testName+"_add10Delete", sync);
+      ThreadStateContext context = new ThreadStateContext();
+      context.add("domain", "ResourceAccessKey");
+      ThreadLocalContext.set(context);
+      long idx = 0;
+      for (int x = 0; x < 10_000; x++) {
+        storage.add(createMessageBuilder(x));
+        Assertions.assertNotNull(storage.get(x));
+        if(storage.size() > 101){
+          storage.remove(idx);
+          idx++;
+        }
+      }
+      while(idx< 10_000){
+        storage.remove(idx);
+        idx++;
       }
     } finally {
       if (storage != null) {
