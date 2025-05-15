@@ -386,7 +386,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.5.17</version>
+      <version>1.5.18</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-access -->
