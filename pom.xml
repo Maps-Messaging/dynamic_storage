@@ -280,7 +280,7 @@
           </includes>
         </configuration>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.5.2</version>
+        <version>3.5.3</version>
       </plugin>
 
       <!-- build the source jar as well -->
@@ -368,7 +368,7 @@
     <dependency>
       <artifactId>lombok</artifactId>
       <groupId>org.projectlombok</groupId>
-      <version>1.18.36</version>
+      <version>1.18.38</version>
       <scope>provided</scope>
     </dependency>
 
@@ -397,7 +397,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.5.17</version>
+      <version>1.5.18</version>
       <scope>test</scope>
     </dependency>
 
@@ -405,7 +405,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.5.17</version>
+      <version>1.5.18</version>
       <scope>test</scope>
     </dependency>
 
