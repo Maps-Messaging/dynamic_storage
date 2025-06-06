@@ -35,7 +35,7 @@ import java.util.concurrent.locks.LockSupport;
 public class TaskQueue {
 
   private static final long TIMEOUT = 60;
-  private static final ScheduledThreadPoolExecutor SCHEDULER_EXECUTOR = (ScheduledThreadPoolExecutor)Executors.newScheduledThreadPool(2);
+  private static final ScheduledThreadPoolExecutor SCHEDULER_EXECUTOR = (ScheduledThreadPoolExecutor)Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
 
   static {
     Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
