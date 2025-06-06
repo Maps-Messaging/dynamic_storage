@@ -85,6 +85,7 @@ public class IndexStorage<T extends Storable> {
     scheduler = taskScheduler;
 
     long length = 0;
+    Files.createDirectories(file.getParentFile().toPath());
     if (file.exists()) {
       length = file.length();
     }
