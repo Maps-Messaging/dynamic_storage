@@ -1,0 +1,18 @@
+steps:
+  - label: ":maven: Build and Deploy"
+    command:
+      - echo "accessKeyId=$(buildkite-agent secret get aws_access_key)" > s3.properties
+      - echo "secretAccessKey=$(buildkite-agent secret get aws_secret_key)" >> s3.properties
+      - echo "regionName=ap-southeast-2" >> s3.properties
+      - echo "bucketName=maps-messaging" >> s3.properties
+      - export NVD_API_KEY=$(buildkite-agent secret get nvd_api_key)
+      - mvn -Dgpg.skip=true clean deploy -Psnapshot
+      - mvn sonar:sonar -Dsonar.login=$(buildkite-agent secret get SONAR_TOKEN)
+    plugins:
+      - test-collector#v1.0.0:
+          files: "target/surefire-reports/*.xml"
+          format: "junit"
+    env:
+      BUILDKITE_ANALYTICS_TOKEN: "$(buildkite-agent secret get DynamicStorageBuildkiteAnalytics)"
+    agents:
+      queue: "raspberrypi_build_agent"
