@@ -220,6 +220,9 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     if (getLastKey() < object.getKey()) {
       lastKeyStored = object.getKey();
     }
+    if(config.getCapacity()>0){
+      scanCapacity();
+    }
   }
 
   @Override
@@ -341,6 +344,38 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
       }
     }
     return true;
+  }
+
+  private void scanCapacity(){
+    if(config.getCapacity() >= 0) {
+      long size = size();
+      try (BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)) {
+        Queue<Long> expiredList = new NaturalOrderedLongQueue(0, bitSetFactory);
+        while (size > config.getCapacity()) {
+          for (IndexStorage<T> partition : partitions) {
+            List<Long> keys = new ArrayList<>(partition.getKeys());
+
+            Iterator<Long> iterator = keys.iterator();
+            while (iterator.hasNext() && size > config.getCapacity()) {
+              Long key = iterator.next();
+              remove(key);
+              expiredList.add(key);
+              size--;
+            }
+            if (size <= config.getCapacity()) {
+              break;
+            }
+          }
+          if (!expiredList.isEmpty()) {
+            expiredHandler.expired(expiredList);
+            expiredMonitor.schedulePoll();
+          }
+        }
+      }
+      catch (IOException e) {
+        // log this
+      }
+    }
   }
 
   public void scanForExpired() throws IOException {

@@ -248,7 +248,7 @@ public class IndexManager implements Closeable {
         emptySpace.add(item.getLength());
         setMapPosition(key, true);
         // Mark it as deleted, so on reload we can get the total length and key
-        IndexRecord indexRecord = new IndexRecord(key, 0, -1, 0, item.getLength());
+        IndexRecord indexRecord = new IndexRecord(key, 0, 0, 0, item.getLength());
         indexRecord.update(index);
         return true;
       }
@@ -309,7 +309,7 @@ public class IndexManager implements Closeable {
     waitForLoad();
     List<Long> keys = new NaturalOrderedLongList();
     getIterator().forEachRemaining(indexRecord -> {
-      if (indexRecord != null && indexRecord.getLength() != 0 && indexRecord.getPosition() >= 0) {
+      if (indexRecord != null && indexRecord.getLength() != 0 && indexRecord.getPosition() > 0) {
         keys.add(indexRecord.getKey());
       }
     });

@@ -71,6 +71,12 @@ public class PartitionStorageFactory<T extends Storable> extends BaseStorageFact
     }
     config.setItemCount(itemCount);
 
+    int capacity = -1;
+    if(properties.containsKey("Capacity")) {
+      capacity = Integer.parseInt(properties.get("Capacity"));
+    }
+    config.setCapacity(capacity);
+
     long maxPartitionSize = MAXIMUM_DATA_SIZE;
     if (properties.containsKey("MaxPartitionSize")) {
       maxPartitionSize = Long.parseLong(properties.get("MaxPartitionSize"));

@@ -22,77 +22,28 @@ package io.mapsmessaging.storage.impl.file;
 import io.mapsmessaging.storage.ExpiredStorableHandler;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
+@Data
 public class PartitionStorageConfig<T extends Storable> {
 
-  @Getter
-  @Setter
   private String fileName;
-
-  @Getter
-  @Setter
   private StorableFactory<T> storableFactory;
-
-  @Getter
-  @Setter
   private ExpiredStorableHandler expiredHandler;
-
-  @Getter
-  @Setter
   private boolean sync;
-
-  @Getter
-  @Setter
   private int itemCount;
-
-  @Getter
-  @Setter
+  private int capacity;
   private long maxPartitionSize;
-
-  @Getter
-  @Setter
   private int expiredEventPoll;
-
-  @Getter
-  @Setter
   private TaskQueue taskQueue;
-
-  @Getter
-  @Setter
   private String archiveName = "None";
-
-  @Getter
-  @Setter
   private long archiveIdleTime = -1;
-
-  @Getter
-  @Setter
   private boolean s3Compression;
-
-  @Getter
-  @Setter
   private String s3AccessKeyId;
-
-  @Getter
-  @Setter
   private String s3SecretAccessKey;
-
-  @Getter
-  @Setter
   private String s3RegionName;
-
-  @Getter
-  @Setter
   private String s3BucketName;
-
-  @Getter
-  @Setter
   private String migrationDestination;
-
-  @Getter
-  @Setter
   private String digestName = "";
 
   public PartitionStorageConfig(){
@@ -104,6 +55,7 @@ public class PartitionStorageConfig<T extends Storable> {
     this.fileName = lhs.getFileName();
     this.storableFactory = lhs.storableFactory;
     this.sync = lhs.isSync();
+    this.capacity = lhs.getCapacity();
     this.expiredHandler = lhs.expiredHandler;
     this.itemCount = lhs.itemCount;
     this.maxPartitionSize = lhs.maxPartitionSize;

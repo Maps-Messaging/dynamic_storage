@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 class PartitionStoreTest extends BasePartitionStoreTest {
 
@@ -201,6 +202,60 @@ class PartitionStoreTest extends BasePartitionStoreTest {
       storage.delete().get();
     }
   }
+
+  @Test
+  void fileStorageCapacityEvictionTest() throws IOException, InterruptedException {
+    File file = new File("test_file" + File.separator + "capacityEvictionTest");
+    Files.deleteIfExists(file.toPath());
+
+    AtomicLong expired = new AtomicLong();
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("Sync", "false");
+    properties.put("Capacity", "10"); // enforce max retained messages
+    properties.put("ItemCount", "1000"); // optional: avoid premature rollover
+    properties.put("MaxPartitionSize", String.valueOf(1024 * 1024)); // avoid rollover side effects
+    properties.put("ExpiredEventPoll", "1");
+
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder.setStorageType("Partition")
+        .setFactory(getFactory())
+        .setName(file.getPath())
+        .setExpiredHandler(listOfExpiredEntries -> expired.incrementAndGet())
+        .setProperties(properties);
+
+    Storage<MappedData> storage = storageBuilder.build();
+
+    try {
+      // Add more than capacity
+      for (int i = 0; i < 25; i++) {
+        storage.add(createMessageBuilder(i));
+      }
+      int count = 0;
+      while(count < 30 && storage.size() == 25){
+        Thread.sleep(100);
+        count++;
+      }
+
+
+      Assertions.assertEquals(15, expired.get());
+
+      // Should retain only the last 10 items
+      Assertions.assertEquals(10, storage.size(), "Storage should retain only the most recent 10 messages");
+
+      for (int i = 0; i < 15; i++) {
+        Assertions.assertTrue(storage.get(0) == null);
+        Assertions.assertFalse(storage.contains(i), "Key " + i + " should have been evicted");
+      }
+
+      for (int i = 15; i < 25; i++) {
+        Assertions.assertTrue(storage.contains(i), "Key " + i + " should still be present");
+      }
+
+    } finally {
+      storage.delete();
+    }
+  }
+
 
 
   void migrateArchiveAndRestorePartition() throws IOException, InterruptedException {

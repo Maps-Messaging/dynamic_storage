@@ -44,6 +44,8 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   private final LongAdder reads;
   private final LongAdder writes;
   private final LongAdder deletes;
+  private final LongAdder evictions;
+  private final int capacity;
   private final ExpiredStorableHandler expiredStorableHandler;
   private final ExpireStorableTaskManager<T> expireStorableTaskManager;
   @Getter
@@ -52,8 +54,27 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   private long lastKeyStored;
   private long lastAccess;
 
-  public MemoryStorage(ExpiredStorableHandler expiredStorableHandler, int expiredEventPoll) {
-    memoryMap = new LinkedHashMap<>();
+  public MemoryStorage(ExpiredStorableHandler expiredStorableHandler, int expiredEventPoll, int capacity) {
+    memoryMap = new LinkedHashMap<>() {
+      @Override
+      protected boolean removeEldestEntry(Map.Entry<Long, T> eldest) {
+        if ((capacity > 0) && size() > MemoryStorage.this.capacity) {
+          if(expiredStorableHandler != null) {
+            Queue<Long> evicted = new LinkedList<>();
+            evicted.add(eldest.getKey());
+            try {
+              expiredStorableHandler.expired(evicted);
+            } catch (IOException e) {
+              // log and ignore
+            }
+          }
+          evictions.increment();
+          return true;
+        }
+        return false;
+      }
+    };
+    this.capacity = capacity;
     this.expiredStorableHandler = Objects.requireNonNullElseGet(expiredStorableHandler, () -> new BaseExpiredHandler<>(this));
     taskScheduler = new TaskQueue();
     this.expireStorableTaskManager = new ExpireStorableTaskManager<>(this, taskScheduler, expiredEventPoll);
@@ -61,6 +82,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
     reads = new LongAdder();
     writes = new LongAdder();
     deletes = new LongAdder();
+    evictions = new LongAdder();
     lastKeyStored = 0;
     lastAccess = System.currentTimeMillis();
   }
@@ -129,6 +151,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
       for (Map.Entry<Long, T> entry : memoryMap.entrySet()) {
         if (entry.getValue().getExpiry() != 0 && entry.getValue().getExpiry() < now) {
           expired.add(entry.getKey());
+          evictions.increment();
         }
       }
       if (!expired.isEmpty()) {

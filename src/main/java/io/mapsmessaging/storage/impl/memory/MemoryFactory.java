@@ -52,10 +52,14 @@ public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
   @Override
   public Storage<T> create(String name) {
     int expiredEventPoll = EXPIRED_EVENT_MONITOR_TIME;
+    int capacity = -1;
     if (properties.containsKey("ExpiredEventPoll")) {
       expiredEventPoll = Integer.parseInt(properties.get("ExpiredEventPoll"));
     }
-    return new MemoryStorage<>(expiredHandler, expiredEventPoll);
+    if (properties.containsKey("Capacity")) {
+      capacity = Integer.parseInt(properties.get("Capacity"));
+    }
+    return new MemoryStorage<>(expiredHandler, expiredEventPoll, capacity);
   }
 
   @Override

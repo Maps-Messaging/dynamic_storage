@@ -48,7 +48,7 @@ public class IndexRecord {
     position = 0;
     expiry = 0;
 
-    locationId = 0;
+    locationId = -1;
     length = 0;
     key = 0;
   }
