@@ -84,7 +84,7 @@ public class StorageBuilder<T extends Storable> {
     }
     List<String> known = StorageFactoryFactory.getInstance().getKnownStorages();
     for (String type : known) {
-      if (storeType.equals(type)) {
+      if (storeType.equalsIgnoreCase(type)) {
         this.storeType = type;
         break;
       }
