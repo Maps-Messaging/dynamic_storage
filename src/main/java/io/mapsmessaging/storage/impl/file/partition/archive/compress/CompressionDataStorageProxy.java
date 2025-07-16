@@ -35,7 +35,7 @@ import java.util.Base64;
 
 public class CompressionDataStorageProxy<T extends Storable> extends DataStorageProxy<T> {
 
-  public CompressionDataStorageProxy(PartitionStorageConfig<T> config) throws IOException {
+  public CompressionDataStorageProxy(PartitionStorageConfig config) throws IOException {
     super(config);
   }
 

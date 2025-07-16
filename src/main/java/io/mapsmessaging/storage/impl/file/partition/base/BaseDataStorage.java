@@ -38,10 +38,10 @@ public class BaseDataStorage <T extends Storable> implements ArchivedDataStorage
 
   private DataStorage<T> physicalStore;
 
-  public BaseDataStorage(PartitionStorageConfig<T> config) throws IOException {
+  public BaseDataStorage(PartitionStorageConfig config) throws IOException {
     this.fileName = config.getFileName()+ "_data";
-    this.sync = config.isSync();
     this.storableFactory = config.getStorableFactory();
+    this.sync = config.isSync();
     this.maxPartitionSize = config.getMaxPartitionSize();
     physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
   }

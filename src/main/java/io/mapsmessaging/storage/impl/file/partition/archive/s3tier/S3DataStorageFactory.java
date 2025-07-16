@@ -27,6 +27,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.S3Config;
 import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
 
@@ -44,18 +45,19 @@ public class S3DataStorageFactory<T extends Storable> implements DataStorageFact
   }
 
   @Override
-  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config)
+  public ArchivedDataStorage<T> create(PartitionStorageConfig config)
       throws IOException {
+    S3Config s3Config = config.getS3Config();
     AWSCredentials credentials = new BasicAWSCredentials(
-        config.getS3AccessKeyId(),
-        config.getS3SecretAccessKey()
+        s3Config.getAccessKeyId(),
+        s3Config.getSecretAccessKey()
     );
-    Regions regions = fromRegionName(config.getS3RegionName());
+    Regions regions = fromRegionName(s3Config.getRegionName());
     AmazonS3 amazonS3 = AmazonS3ClientBuilder.standard()
         .withRegion(regions)
         .withCredentials(new AWSStaticCredentialsProvider(credentials))
         .build();
-    S3TransferApi transferApi = new S3TransferApi(amazonS3, config.getS3BucketName(), config.isS3Compression());
+    S3TransferApi transferApi = new S3TransferApi(amazonS3, s3Config.getBucketName(), s3Config.isCompression());
     return new S3DataStorageProxy<>(transferApi, config);
   }
 

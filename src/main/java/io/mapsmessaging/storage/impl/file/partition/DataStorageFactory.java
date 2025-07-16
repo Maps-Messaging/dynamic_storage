@@ -28,6 +28,6 @@ public interface DataStorageFactory<T extends Storable> {
 
   String getName();
 
-  ArchivedDataStorage<T> create(PartitionStorageConfig<T> config) throws IOException;
+  ArchivedDataStorage<T> create(PartitionStorageConfig config) throws IOException;
 
 }

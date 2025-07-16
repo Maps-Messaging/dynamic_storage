@@ -48,9 +48,9 @@ public class PartitionDataManagerFactory<T extends Storable> {
     }
   }
 
-  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config) throws IOException {
+  public ArchivedDataStorage<T> create(PartitionStorageConfig config) throws IOException {
     String archiveName = "None";
-    if(config != null){
+    if(config != null && config.getArchiveName() != null){
       archiveName = config.getArchiveName();
     }
     DataStorageFactory<T> factory = dataStorageManagers.get(archiveName);

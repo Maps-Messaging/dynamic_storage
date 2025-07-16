@@ -19,24 +19,19 @@
 
 package io.mapsmessaging.storage.impl;
 
-import io.mapsmessaging.storage.ExpiredStorableHandler;
-import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.StorableFactory;
-import io.mapsmessaging.storage.StorageFactory;
-
-import java.util.Map;
+import io.mapsmessaging.storage.*;
 
 public abstract class BaseStorageFactory<T extends Storable> implements StorageFactory<T> {
 
-  protected Map<String, String> properties;
+  protected StorageConfig config;
   protected StorableFactory<T> storableFactory;
   protected ExpiredStorableHandler expiredHandler;
 
   protected BaseStorageFactory() {
   }
 
-  protected BaseStorageFactory(Map<String, String> properties, StorableFactory<T> storableFactory, ExpiredStorableHandler expiredHandler) {
-    this.properties = properties;
+  protected BaseStorageFactory(StorageConfig config, StorableFactory<T> storableFactory, ExpiredStorableHandler expiredHandler) {
+    this.config = config;
     this.storableFactory = storableFactory;
     this.expiredHandler = expiredHandler;
   }

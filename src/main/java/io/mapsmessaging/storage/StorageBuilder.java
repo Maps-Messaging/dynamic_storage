@@ -22,6 +22,9 @@ package io.mapsmessaging.storage;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.impl.debug.DebugStorage;
+import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.memory.MemoryStorageConfig;
+import io.mapsmessaging.storage.impl.tier.memory.MemoryTierConfig;
 import io.mapsmessaging.storage.logging.StorageLogMessages;
 import lombok.Getter;
 import lombok.ToString;
@@ -31,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+
 
 @ToString
 @Getter
@@ -47,7 +51,7 @@ public class StorageBuilder<T extends Storable> {
   private String storeType;
   private String cacheName;
   private String name;
-  private Map<String, String> properties;
+  private StorageConfig config;
   private StorableFactory<T> storableFactory;
   private ExpiredStorableHandler expiredStorableHandler;
 
@@ -62,8 +66,30 @@ public class StorageBuilder<T extends Storable> {
     return this;
   }
 
+  /**
+   * This function is depricated, please use the setConfig() to ensure accurate mapping of values in the config
+   * @param properties
+   */
+  @Deprecated ( since = "2.4.13", forRemoval = true)
   public @NotNull StorageBuilder<T> setProperties(@NotNull Map<String, String> properties) {
-    this.properties = properties;
+    if(storeType.equalsIgnoreCase("partition")){
+      config = new PartitionStorageConfig();
+    }
+    else if(storeType.equalsIgnoreCase("memory")){
+      config = new MemoryStorageConfig();
+    }
+    else if(storeType.equalsIgnoreCase("memorytier")){
+      config = new MemoryTierConfig();
+    }
+    else{
+      throw new IllegalArgumentException("Unknown storage type: " + storeType);
+    }
+    config.fromMap(name, properties);
+    return this;
+  }
+
+  public @NotNull StorageBuilder<T> setConfig(@NotNull StorageConfig config) {
+    this.config = config;
     return this;
   }
 
@@ -126,16 +152,14 @@ public class StorageBuilder<T extends Storable> {
 
 
   public Storage<T> build() throws IOException {
-    boolean debugEnabled = properties.containsKey("debug") && Boolean.parseBoolean(properties.get("debug"));
-
-    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, storableFactory, expiredStorableHandler);
+    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, config, storableFactory, expiredStorableHandler);
     if (storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
       if (baseStore.isCacheable() && cacheName != null) {
         baseStore = StorageFactoryFactory.getInstance().createCache(cacheName, enableWriteThrough, baseStore);
       }
       logger.log(StorageLogMessages.BUILT_STORAGE, this);
-      if(debugEnabled){
+      if(config.isDebug()){
         baseStore =  new DebugStorage<>(baseStore);
       }
       return baseStore;

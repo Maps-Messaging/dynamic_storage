@@ -26,17 +26,14 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
-
-  private static final int EXPIRED_EVENT_MONITOR_TIME = 1;
 
   public MemoryFactory() {
   }
 
-  public MemoryFactory(Map<String, String> properties, StorableFactory<T> storableFactory, ExpiredStorableHandler expiredHandler) {
-    super(properties, storableFactory, expiredHandler);
+  public MemoryFactory(MemoryStorageConfig config, StorableFactory<T> storableFactory, ExpiredStorableHandler expiredHandler) {
+    super(config, storableFactory, expiredHandler);
   }
 
   @Override
@@ -45,21 +42,13 @@ public class MemoryFactory<T extends Storable> extends BaseStorageFactory<T> {
   }
 
   @Override
-  public StorageFactory<T> getInstance(@NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, @Nullable ExpiredStorableHandler expiredHandler) {
-    return new MemoryFactory<>(properties, storableFactory, expiredHandler);
+  public StorageFactory<T> getInstance(@NotNull StorageConfig config, @NotNull StorableFactory<T> storableFactory, @Nullable ExpiredStorableHandler expiredHandler) {
+    return new MemoryFactory<>((MemoryStorageConfig)config, storableFactory, expiredHandler);
   }
 
   @Override
   public Storage<T> create(String name) {
-    int expiredEventPoll = EXPIRED_EVENT_MONITOR_TIME;
-    int capacity = -1;
-    if (properties.containsKey("ExpiredEventPoll")) {
-      expiredEventPoll = Integer.parseInt(properties.get("ExpiredEventPoll"));
-    }
-    if (properties.containsKey("Capacity")) {
-      capacity = Integer.parseInt(properties.get("Capacity"));
-    }
-    return new MemoryStorage<>(expiredHandler, expiredEventPoll, capacity);
+    return new MemoryStorage<>(expiredHandler, (MemoryStorageConfig) config);
   }
 
   @Override

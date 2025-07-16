@@ -16,59 +16,115 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package io.mapsmessaging.storage.impl.file;
 
-import io.mapsmessaging.storage.ExpiredStorableHandler;
-import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
+import io.mapsmessaging.storage.StorageConfig;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+import java.util.Map;
+
+@EqualsAndHashCode(callSuper = false)
 @Data
-public class PartitionStorageConfig<T extends Storable> {
+@Schema(description = "File-based partitioned storage configuration")
+public class PartitionStorageConfig extends StorageConfig {
 
+  private static final int ITEM_COUNT = 524_288;
+  private static final long MAXIMUM_DATA_SIZE = 1L << 32; // 4GB
+  private static final int EXPIRED_EVENT_MONITOR_TIME = 1;
+
+  @Schema(description = "Storage file name (typically derived from the logical name)")
   private String fileName;
-  private StorableFactory<T> storableFactory;
-  private ExpiredStorableHandler expiredHandler;
+
+  @Schema(description = "Enable synchronous writes to disk", defaultValue = "false")
   private boolean sync;
+
+  @Schema(description = "Number of items per partition", defaultValue = "524288")
   private int itemCount;
+
+  @Schema(description = "Maximum number of events to hold", defaultValue = "-1")
   private int capacity;
+
+  @Schema(description = "Maximum size of a single partition in bytes", defaultValue = "4294967296")
   private long maxPartitionSize;
+
+  @Schema(description = "Polling interval (in seconds) for expired events", defaultValue = "1")
   private int expiredEventPoll;
+
+  @Schema(description = "Task queue identifier used for expired message handling")
   private TaskQueue taskQueue;
+
+  @Schema(description = "Optional archive name for rotated partitions", defaultValue = "None")
   private String archiveName = "None";
+
+  @Schema(description = "Time in milliseconds after which data should be archived", defaultValue = "-1")
   private long archiveIdleTime = -1;
-  private boolean s3Compression;
-  private String s3AccessKeyId;
-  private String s3SecretAccessKey;
-  private String s3RegionName;
-  private String s3BucketName;
+
+  @Schema(description = "Optional S3 configuration parameters to use to push stale partitions to")
+  private S3Config s3Config;
+
+  @Schema(description = "Destination directory or location for data migration")
   private String migrationDestination;
+
+  @Schema(description = "Digest algorithm name for checksums (e.g., SHA-256)")
   private String digestName = "";
 
-  public PartitionStorageConfig(){
-    // Default constructor
-  }
+  private transient StorableFactory storableFactory;
 
+  public PartitionStorageConfig() {}
 
-  public PartitionStorageConfig(PartitionStorageConfig<T> lhs){
-    this.fileName = lhs.getFileName();
-    this.storableFactory = lhs.storableFactory;
-    this.sync = lhs.isSync();
-    this.capacity = lhs.getCapacity();
-    this.expiredHandler = lhs.expiredHandler;
+  public PartitionStorageConfig(PartitionStorageConfig lhs) {
+    super(lhs);
+    this.fileName = lhs.fileName;
+    this.sync = lhs.sync;
+    this.capacity = lhs.capacity;
     this.itemCount = lhs.itemCount;
     this.maxPartitionSize = lhs.maxPartitionSize;
     this.expiredEventPoll = lhs.expiredEventPoll;
     this.taskQueue = lhs.taskQueue;
     this.archiveName = lhs.archiveName;
     this.archiveIdleTime = lhs.archiveIdleTime;
-    this.s3Compression = lhs.s3Compression;
-    this.s3AccessKeyId = lhs.s3AccessKeyId;
-    this.s3SecretAccessKey = lhs.s3SecretAccessKey;
-    this.s3RegionName = lhs.s3RegionName;
-    this.s3BucketName = lhs.s3BucketName;
+    if(lhs.s3Config != null) {
+      this.s3Config = new S3Config(lhs.s3Config);
+    }
+    else{
+      this.s3Config = null;
+    }
     this.migrationDestination = lhs.migrationDestination;
     this.digestName = lhs.digestName;
+    this.storableFactory = lhs.storableFactory;
+  }
+
+  @Override
+  public void fromMap(String name, Map<String, String> properties) {
+    super.fromMap(name, properties);
+
+    sync = Boolean.parseBoolean(properties.getOrDefault("Sync", "false"));
+    itemCount = Integer.parseInt(properties.getOrDefault("ItemCount", String.valueOf(ITEM_COUNT)));
+    capacity = Integer.parseInt(properties.getOrDefault("Capacity", "-1"));
+    maxPartitionSize = Long.parseLong(properties.getOrDefault("MaxPartitionSize", String.valueOf(MAXIMUM_DATA_SIZE)));
+    expiredEventPoll = Integer.parseInt(properties.getOrDefault("ExpiredEventPoll", String.valueOf(EXPIRED_EVENT_MONITOR_TIME)));
+
+    setFileName(name);
+    setTaskQueue(taskQueue); // Note: taskQueue remains null unless set elsewhere
+
+    if (properties.containsKey("archiveName")) {
+      archiveName = properties.get("archiveName");
+    }
+    if (properties.containsKey("archiveIdleTime")) {
+      archiveIdleTime = Long.parseLong(properties.get("archiveIdleTime"));
+    }
+    if (properties.containsKey("digestName")) {
+      digestName = properties.get("digestName");
+    }
+
+    migrationDestination = properties.get("migrationPath");
+
+    if(s3Config == null) {
+      s3Config = new S3Config();
+    }
+    s3Config.fromMap(properties);
   }
 }

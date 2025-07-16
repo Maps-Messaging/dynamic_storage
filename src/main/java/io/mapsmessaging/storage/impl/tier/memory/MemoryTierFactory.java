@@ -23,19 +23,15 @@ import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
 import io.mapsmessaging.storage.impl.file.PartitionStorageFactory;
 import io.mapsmessaging.storage.impl.memory.MemoryFactory;
+import io.mapsmessaging.storage.impl.memory.MemoryStorageConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T> {
-
-  private static final long MIGRATION_TIME = 60_000;
-  private static final long SCAN_INTERVAL = 10_000;
-  private static final long TIER_1_SIZE = 0;
 
   private final PartitionStorageFactory<T> partitionStorageFactory;
   private final MemoryFactory<ObjectMonitor<T>> memoryFactory;
@@ -45,10 +41,11 @@ public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T>
     memoryFactory = null;
   }
 
-  public MemoryTierFactory(Map<String, String> properties, StorableFactory<T> storableFactory, ExpiredStorableHandler expiredHandler) {
-    super(properties, storableFactory, expiredHandler);
-    partitionStorageFactory = new PartitionStorageFactory<>(properties, storableFactory, expiredHandler);
-    memoryFactory = new MemoryFactory<>(properties, new ObjectMonitorFactory<>(), expiredHandler);
+  public MemoryTierFactory(MemoryTierConfig config, StorableFactory<T> storableFactory, ExpiredStorableHandler expiredHandler) {
+    super(config, storableFactory, expiredHandler);
+    partitionStorageFactory = new PartitionStorageFactory<>(config.getPartitionStorageConfig(), storableFactory, expiredHandler);
+    MemoryStorageConfig storageConfig = config.getMemoryStorageConfig();
+    memoryFactory = new MemoryFactory<>(storageConfig, new ObjectMonitorFactory<>(), expiredHandler);
   }
 
   @Override
@@ -57,8 +54,8 @@ public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T>
   }
 
   @Override
-  public StorageFactory<T> getInstance(@NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, @Nullable ExpiredStorableHandler expiredHandler) {
-    return new MemoryTierFactory<>(properties, storableFactory, expiredHandler);
+  public StorageFactory<T> getInstance(@NotNull StorageConfig config, @NotNull StorableFactory<T> storableFactory, @Nullable ExpiredStorableHandler expiredHandler) {
+    return new MemoryTierFactory<>((MemoryTierConfig)config, storableFactory, expiredHandler);
   }
 
   @SuppressWarnings("java:S2095") // The allocation of both stores is required and can not be closed in a "finally" clause here, else bad things will happen
@@ -67,25 +64,12 @@ public class MemoryTierFactory<T extends Storable> extends BaseStorageFactory<T>
     if (memoryFactory == null || partitionStorageFactory == null) {
       throw new IOException("Uninitialised factory being used.. not supported");
     }
-    long migrationTime = MIGRATION_TIME;
-    if (properties.containsKey("MigrationPeriod")) {
-      migrationTime = Long.parseLong(properties.get("MigrationPeriod"));
-    }
 
-    long scanInterval = SCAN_INTERVAL;
-    if (properties.containsKey("ScanInterval")) {
-      scanInterval = Long.parseLong(properties.get("ScanInterval"));
-    }
-
-    long maximumCount = TIER_1_SIZE;
-    if (properties.containsKey("Tier1Size")) {
-      maximumCount = Long.parseLong(properties.get("Tier1Size"));
-    }
 
     Storage<ObjectMonitor<T>> memoryStorage = memoryFactory.create(name);
     Storage<T> fileStorage = partitionStorageFactory.create(name, memoryStorage.getTaskScheduler());
-
-    return new MemoryTierStorage<>(memoryStorage, fileStorage, scanInterval, migrationTime, maximumCount);
+    MemoryTierConfig memoryTierConfig = (MemoryTierConfig)config;
+    return new MemoryTierStorage<>(memoryStorage, fileStorage, memoryTierConfig);
   }
 
   @Override

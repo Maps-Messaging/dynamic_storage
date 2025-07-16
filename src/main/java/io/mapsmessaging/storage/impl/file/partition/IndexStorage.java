@@ -76,7 +76,7 @@ public class IndexStorage<T extends Storable> {
   private volatile boolean paused;
   private boolean requiresValidation;
 
-  public IndexStorage(PartitionStorageConfig<T> config, String name, long start, TaskQueue taskScheduler) throws IOException {
+  public IndexStorage(PartitionStorageConfig config, String name, long start, TaskQueue taskScheduler) throws IOException {
     this.itemCount = config.getItemCount();
     this.sync = config.isSync();
 
@@ -95,7 +95,7 @@ public class IndexStorage<T extends Storable> {
     } else {
       indexManager = initialise(start);
     }
-    PartitionStorageConfig<T> partitionConfig = new PartitionStorageConfig<>(config);
+    PartitionStorageConfig partitionConfig = new PartitionStorageConfig(config);
     partitionConfig.setFileName(this.fileName);
     PartitionDataManagerFactory<T> partitionDataManagerFactory = getInstance();
     dataStorage = partitionDataManagerFactory.create(partitionConfig);

@@ -46,10 +46,10 @@ public abstract class DataStorageProxy<T extends Storable> implements ArchivedDa
   protected DataStorage<T> physicalStore;
   protected boolean isArchived;
 
-  protected DataStorageProxy(PartitionStorageConfig<T> config) throws IOException {
+  protected DataStorageProxy(PartitionStorageConfig config) throws IOException {
+    this.storableFactory = config.getStorableFactory();
     fileName = config.getFileName()+ "_data";
     sync = config.isSync();
-    storableFactory = config.getStorableFactory();
     maxPartitionSize = config.getMaxPartitionSize();
     digestName = config.getDigestName();
     File file = new File(fileName);

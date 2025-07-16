@@ -54,7 +54,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   private long lastKeyStored;
   private long lastAccess;
 
-  public MemoryStorage(ExpiredStorableHandler expiredStorableHandler, int expiredEventPoll, int capacity) {
+  public MemoryStorage(ExpiredStorableHandler expiredStorableHandler, MemoryStorageConfig config) {
     memoryMap = new LinkedHashMap<>() {
       @Override
       protected boolean removeEldestEntry(Map.Entry<Long, T> eldest) {
@@ -74,10 +74,10 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
         return false;
       }
     };
-    this.capacity = capacity;
+    this.capacity = config.getCapacity();
     this.expiredStorableHandler = Objects.requireNonNullElseGet(expiredStorableHandler, () -> new BaseExpiredHandler<>(this));
     taskScheduler = new TaskQueue();
-    this.expireStorableTaskManager = new ExpireStorableTaskManager<>(this, taskScheduler, expiredEventPoll);
+    this.expireStorableTaskManager = new ExpireStorableTaskManager<>(this, taskScheduler, config.getExpiredEventPoll());
     name = "memory" + counter.get();
     reads = new LongAdder();
     writes = new LongAdder();

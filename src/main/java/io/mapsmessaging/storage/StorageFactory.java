@@ -24,14 +24,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 public interface StorageFactory<T extends Storable> {
 
   String getName();
 
   StorageFactory<T> getInstance(
-      @NotNull Map<String, String> properties,
+      @NotNull StorageConfig storage,
       @NotNull StorableFactory<T> storableFactory,
       @Nullable ExpiredStorableHandler expiredHandler
   );

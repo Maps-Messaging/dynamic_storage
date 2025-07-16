@@ -72,7 +72,7 @@ public class FileHelper {
     }
     else{
       logger.log(FILE_HELPER_FILE_DOES_NOT_EXIST, file.toString());
-      throw new IOException("File does not exist");
+      throw new IOException("File does not exist "+file.toString());
     }
     return true;
   }

@@ -56,7 +56,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
 
   private final int itemCount;
   private final ExpireStorableTaskManager<T> expiredMonitor;
-  private final PartitionStorageConfig<T> config;
+  private final PartitionStorageConfig config;
 
   private final List<IndexStorage<T>> partitions;
   private final String fileName;
@@ -79,14 +79,15 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private long lastKeyStored;
   private long lastAccess;
 
-  public PartitionStorage(PartitionStorageConfig<T> config) throws IOException{
+  public PartitionStorage(PartitionStorageConfig config, ExpiredStorableHandler expiredHandler) throws IOException{
     this.config = config;
+    this.expiredHandler = Objects.requireNonNullElseGet(expiredHandler, () -> new BaseExpiredHandler<>(this));
+    this.itemCount = config.getItemCount();
+    this.fileName = config.getFileName() + File.separator + PARTITION_FILE_NAME;
+
     partitions = new ArrayList<>();
     taskScheduler = config.getTaskQueue();
     rootDirectory = config.getFileName();
-    this.expiredHandler = Objects.requireNonNullElseGet(config.getExpiredHandler(), () -> new BaseExpiredHandler<>(this));
-    this.itemCount = config.getItemCount();
-    this.fileName = config.getFileName() + File.separator + PARTITION_FILE_NAME;
     archiveIdleTime = config.getArchiveIdleTime();
     partitionCounter = 0;
     shutdown = false;

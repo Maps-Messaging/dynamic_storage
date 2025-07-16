@@ -29,7 +29,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.ServiceLoader;
 
 @SuppressWarnings({"java:S6548", "java:S3740"})
 class StorageFactoryFactory {
@@ -85,11 +88,11 @@ class StorageFactoryFactory {
 
   @SuppressWarnings("java:S2293")
   @SneakyThrows
-  @Nullable <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull Map<String, String> properties, @NotNull StorableFactory<T> storableFactory, ExpiredStorableHandler expiredStorableHandler) {
+  @Nullable <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull StorageConfig config, @NotNull StorableFactory<T> storableFactory, ExpiredStorableHandler expiredStorableHandler) {
     Optional<StorageFactory<? extends Storable>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_FACTORY, first.get().getClass().getName());
-      return ((StorageFactory<T>) first.get()).getInstance(properties, storableFactory, expiredStorableHandler);
+      return ((StorageFactory<T>) first.get()).getInstance(config, storableFactory, expiredStorableHandler);
     }
     else {
       logger.log(StorageLogMessages.NO_MATCHING_FACTORY, name);

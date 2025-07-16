@@ -28,10 +28,11 @@ import java.io.IOException;
 
 public class BaseDataStorageFactory<T extends Storable>  implements DataStorageFactory<T> {
 
-
   public BaseDataStorageFactory(){
     // Only needed for service loading
   }
+
+
 
   @Override
   public String getName() {
@@ -39,9 +40,8 @@ public class BaseDataStorageFactory<T extends Storable>  implements DataStorageF
   }
 
   @Override
-  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config)
+  public ArchivedDataStorage<T> create(PartitionStorageConfig config)
       throws IOException {
-
-    return new BaseDataStorage<>(config );
+    return new BaseDataStorage<>(config);
   }
 }

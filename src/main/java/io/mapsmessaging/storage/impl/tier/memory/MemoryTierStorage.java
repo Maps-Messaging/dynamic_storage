@@ -59,12 +59,12 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   private long lastKey;
 
-  public MemoryTierStorage(Storage<ObjectMonitor<T>> primary, Storage<T> secondary, long scanInterval, long migrationTime, long memorySize) {
+  public MemoryTierStorage(Storage<ObjectMonitor<T>> primary, Storage<T> secondary, MemoryTierConfig config) {
     this.primary = primary;
     this.secondary = secondary;
-    this.memorySize = memorySize;
-    this.migrationTime =migrationTime;
-    this.scanInterval = scanInterval;
+    this.memorySize = config.getMaximumCount();
+    this.migrationTime = config.getMigrationTime();
+    this.scanInterval = config.getScanInterval();
 
     memoryList = new NaturalOrderedLongQueue();
     lastKey = -2;

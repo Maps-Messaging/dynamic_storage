@@ -38,7 +38,7 @@ public class MigrationDataStorageFactory<T extends Storable> implements DataStor
   }
 
   @Override
-  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config)
+  public ArchivedDataStorage<T> create(PartitionStorageConfig config)
       throws IOException {
     return new MigrationDataStorageProxy<>(config);
   }

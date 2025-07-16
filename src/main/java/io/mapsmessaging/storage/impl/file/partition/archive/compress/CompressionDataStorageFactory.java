@@ -38,7 +38,7 @@ public class CompressionDataStorageFactory<T extends Storable> implements DataSt
   }
 
   @Override
-  public ArchivedDataStorage<T> create(PartitionStorageConfig<T> config)
+  public ArchivedDataStorage<T> create(PartitionStorageConfig config)
       throws IOException {
     return new CompressionDataStorageProxy<>(config);
   }

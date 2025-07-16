@@ -39,7 +39,7 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
 
   private final String destination;
 
-  public MigrationDataStorageProxy(PartitionStorageConfig<T> config) throws IOException {
+  public MigrationDataStorageProxy(PartitionStorageConfig config) throws IOException {
     super(config);
     String t = config.getMigrationDestination();
     if(t.endsWith(File.separator)){

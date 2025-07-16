@@ -35,7 +35,7 @@ public class S3DataStorageProxy<T extends Storable> extends DataStorageProxy<T> 
 
   private final S3TransferApi s3TransferApi;
 
-  public S3DataStorageProxy(S3TransferApi transferApi, PartitionStorageConfig<T> config) throws IOException {
+  public S3DataStorageProxy(S3TransferApi transferApi, PartitionStorageConfig config) throws IOException {
     super(config);
     this.s3TransferApi = transferApi;
   }
