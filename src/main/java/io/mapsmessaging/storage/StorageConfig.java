@@ -69,4 +69,8 @@ public class StorageConfig {
     debug = properties.containsKey("debug") && Boolean.parseBoolean(properties.get("debug"));
   }
 
+  public StorageConfig getCopy(){
+    return new StorageConfig(this);
+  }
+
 }

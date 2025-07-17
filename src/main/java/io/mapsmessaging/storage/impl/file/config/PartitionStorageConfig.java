@@ -76,6 +76,10 @@ public class PartitionStorageConfig extends StorageConfig {
     this.deferredConfig = new DeferredConfig(lhs.deferredConfig);
     this.storableFactory = lhs.storableFactory;
   }
+  @Override
+  public StorageConfig getCopy(){
+    return new PartitionStorageConfig(this);
+  }
 
   @Override
   public void fromMap(String name, Map<String, String> properties) {

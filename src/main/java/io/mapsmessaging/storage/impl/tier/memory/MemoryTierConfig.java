@@ -63,6 +63,11 @@ public class MemoryTierConfig extends StorageConfig {
   }
 
   @Override
+  public StorageConfig getCopy(){
+    return new MemoryTierConfig(this);
+  }
+
+  @Override
   public void fromMap(String name, Map<String, String> properties) {
     super.fromMap(name, properties);
 

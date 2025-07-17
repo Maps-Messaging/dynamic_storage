@@ -48,7 +48,10 @@ public class MemoryStorageConfig extends StorageConfig {
     expiredEventPoll = lhs.expiredEventPoll;
     capacity = lhs.capacity;
   }
-
+  @Override
+  public StorageConfig getCopy(){
+    return new MemoryStorageConfig(this);
+  }
   @Override
   public void fromMap(String name, Map<String, String> properties){
     super.fromMap(name, properties);
