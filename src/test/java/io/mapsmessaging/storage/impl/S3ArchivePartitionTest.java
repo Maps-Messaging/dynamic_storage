@@ -19,8 +19,27 @@
 
 package io.mapsmessaging.storage.impl;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.TierMigrationMonitor;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
 class S3ArchivePartitionTest extends BaseTest {
-/*
+
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void s3ArchiveAndRestoreCompressDigestPartition(boolean compress) throws IOException, InterruptedException {
@@ -131,5 +150,5 @@ class S3ArchivePartitionTest extends BaseTest {
     ListObjectsV2Result listing = amazonS3.listObjectsV2(req);
     return listing.getKeyCount();
   }
-*/
+
 }

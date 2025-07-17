@@ -59,7 +59,7 @@ class SimpleS3Test {
     bucketName = envProperties.getProperty("bucketName");
   }
 
-//  @Test
+  @Test
   void archiveAndDelete() throws IOException {
     Assumptions.assumeTrue(new ConfigurationCheck(), "AWS Configuration not preset");
     AmazonS3 amazonS3 = createAmazonId();
