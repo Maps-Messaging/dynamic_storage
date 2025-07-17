@@ -91,6 +91,15 @@ public class StorageBuilder<T extends Storable> {
 
   public @NotNull StorageBuilder<T> setConfig(@NotNull StorageConfig config) {
     this.config = config;
+    if(config instanceof PartitionStorageConfig){
+      storeType = "partition";
+    }
+    else if(config instanceof MemoryStorageConfig){
+      storeType = "memory";
+    }
+    else if(config instanceof MemoryTierConfig){
+      storeType = "memorytier";
+    }
     return this;
   }
 
@@ -151,7 +160,6 @@ public class StorageBuilder<T extends Storable> {
     return this;
   }
 
-
   public Storage<T> build() throws IOException {
     StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, config, storableFactory, expiredStorableHandler);
     if (storeFactory != null) {
@@ -173,7 +181,6 @@ public class StorageBuilder<T extends Storable> {
   public static List<String> getKnownStorages() {
     return StorageFactoryFactory.getInstance().getKnownStorages();
   }
-
 
   public static List<String> getKnownLayers() {
     return StorageFactoryFactory.getInstance().getKnownLayers();

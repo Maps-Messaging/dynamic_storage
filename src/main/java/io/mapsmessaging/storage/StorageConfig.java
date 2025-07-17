@@ -27,6 +27,7 @@ import io.mapsmessaging.storage.impl.tier.memory.MemoryTierConfig;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Map;
 
@@ -52,6 +53,7 @@ import java.util.Map;
 )
 
 @Getter
+@Setter
 public class StorageConfig {
 
   @Schema(description = "Enable debug logging for this storage component", defaultValue = "false")
