@@ -73,7 +73,9 @@ public class PartitionStorageConfig extends StorageConfig {
     this.maxPartitionSize = lhs.maxPartitionSize;
     this.expiredEventPoll = lhs.expiredEventPoll;
     this.taskQueue = lhs.taskQueue;
-    this.deferredConfig = new DeferredConfig(lhs.deferredConfig);
+    if(lhs.getDeferredConfig() != null) {
+      this.deferredConfig = new DeferredConfig(lhs.deferredConfig);
+    }
     this.storableFactory = lhs.storableFactory;
   }
   @Override
