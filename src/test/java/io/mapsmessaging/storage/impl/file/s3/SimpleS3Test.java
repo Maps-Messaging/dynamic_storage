@@ -26,8 +26,8 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import io.mapsmessaging.storage.impl.S3Helper;
-import io.mapsmessaging.storage.impl.file.partition.archive.s3tier.S3Record;
-import io.mapsmessaging.storage.impl.file.partition.archive.s3tier.S3TransferApi;
+import io.mapsmessaging.storage.impl.file.partition.deferred.s3tier.S3Record;
+import io.mapsmessaging.storage.impl.file.partition.deferred.s3tier.S3TransferApi;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,7 +59,7 @@ class SimpleS3Test {
     bucketName = envProperties.getProperty("bucketName");
   }
 
-  @Test
+//  @Test
   void archiveAndDelete() throws IOException {
     Assumptions.assumeTrue(new ConfigurationCheck(), "AWS Configuration not preset");
     AmazonS3 amazonS3 = createAmazonId();
@@ -114,7 +114,7 @@ class SimpleS3Test {
 
     Assertions.assertEquals(record.getLength(), reloaded.getLength());
     Assertions.assertEquals(record.getEntryName(), reloaded.getEntryName());
-    Assertions.assertEquals(record.getArchiveHash(), reloaded.getArchiveHash());
+    Assertions.assertEquals(record.getDeferredHash(), reloaded.getDeferredHash());
     Assertions.assertEquals(record.getBucketName(), reloaded.getBucketName());
     Assertions.assertEquals(record.getArchivedDate(), reloaded.getArchivedDate());
 

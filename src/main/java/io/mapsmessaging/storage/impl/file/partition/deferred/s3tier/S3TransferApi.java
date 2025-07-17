@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.s3tier;
+package io.mapsmessaging.storage.impl.file.partition.deferred.s3tier;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -25,9 +25,9 @@ import com.amazonaws.services.s3.model.S3Object;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.impl.file.FileHelper;
-import io.mapsmessaging.storage.impl.file.partition.archive.StreamProcessor;
-import io.mapsmessaging.storage.impl.file.partition.archive.compress.FileCompressionProcessor;
-import io.mapsmessaging.storage.impl.file.partition.archive.compress.StreamCompressionHelper;
+import io.mapsmessaging.storage.impl.file.partition.deferred.StreamProcessor;
+import io.mapsmessaging.storage.impl.file.partition.deferred.compress.FileCompressionProcessor;
+import io.mapsmessaging.storage.impl.file.partition.deferred.compress.StreamCompressionHelper;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -78,9 +78,9 @@ public class S3TransferApi {
       if(messageDigest != null) {
         byte[] hash = messageDigest.digest();
         String base = Base64.getEncoder().encodeToString(hash);
-        if(!base.equals(s3Record.getArchiveHash())){
-          LOGGER.log(S3_MD5_HASH_FAILED, localFileName, s3Record.getArchiveHash(), base);
-          throw new IOException(s3Record.getDigestName()+" mismatch Computed:"+base+" original "+s3Record.getArchiveHash());
+        if(!base.equals(s3Record.getDeferredHash())){
+          LOGGER.log(S3_MD5_HASH_FAILED, localFileName, s3Record.getDeferredHash(), base);
+          throw new IOException(s3Record.getDigestName()+" mismatch Computed:"+base+" original "+s3Record.getDeferredHash());
         }
       }
       amazonS3.deleteObject(s3Record.getBucketName(), s3Record.getEntryName());

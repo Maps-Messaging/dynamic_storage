@@ -17,15 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.compress;
+package io.mapsmessaging.storage.impl.file.partition.deferred.compress;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.FileHelper;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
-import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
-import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageProxy;
-import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageStub;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DataStorageProxy;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DataStorageStub;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DeferredRecord;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,13 +40,8 @@ public class CompressionDataStorageProxy<T extends Storable> extends DataStorage
   }
 
   @Override
-  protected ArchiveRecord buildArchiveRecord() {
+  protected DeferredRecord buildArchiveRecord() {
     return new CompressionRecord();
-  }
-
-  @Override
-  public String getArchiveName() {
-    return "Compress";
   }
 
   @Override
@@ -86,12 +81,12 @@ public class CompressionDataStorageProxy<T extends Storable> extends DataStorage
     File zipped = new File(fileName+"_zip");
     File destination = new File(fileName);
     try {
-      CompressionRecord compressionRecord = (CompressionRecord) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
+      CompressionRecord compressionRecord = (CompressionRecord) ((DataStorageStub<T>)physicalStore).getDeferredRecord();
       MessageDigest messageDigest = getMessageDigest(compressionRecord.getDigestName());
       compressionHelper.out(zipped, destination, messageDigest);
       if(messageDigest != null) {
         String computed = Base64.getEncoder().encodeToString(messageDigest.digest());
-        if (!computed.equals(compressionRecord.getArchiveHash())) {
+        if (!computed.equals(compressionRecord.getDeferredHash())) {
           throw new IOException("MD5 hash does not match");
         }
       }

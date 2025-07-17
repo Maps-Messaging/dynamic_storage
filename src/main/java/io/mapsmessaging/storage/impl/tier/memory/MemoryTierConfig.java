@@ -19,7 +19,7 @@
 package io.mapsmessaging.storage.impl.tier.memory;
 
 import io.mapsmessaging.storage.StorageConfig;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.memory.MemoryStorageConfig;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

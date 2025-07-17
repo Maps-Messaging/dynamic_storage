@@ -20,7 +20,7 @@
 package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 
 import java.io.IOException;
 
@@ -28,6 +28,6 @@ public interface DataStorageFactory<T extends Storable> {
 
   String getName();
 
-  ArchivedDataStorage<T> create(PartitionStorageConfig config) throws IOException;
+  DeferredDataStorage<T> create(PartitionStorageConfig config) throws IOException;
 
 }

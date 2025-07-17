@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive;
+package io.mapsmessaging.storage.impl.file.partition.deferred;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

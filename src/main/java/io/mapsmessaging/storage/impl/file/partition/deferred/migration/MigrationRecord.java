@@ -17,47 +17,27 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.s3tier;
+package io.mapsmessaging.storage.impl.file.partition.deferred.migration;
 
-import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
-import lombok.Getter;
-import lombok.Setter;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DeferredRecord;
 
 import java.io.*;
 
-public class S3Record extends ArchiveRecord {
+public class MigrationRecord extends DeferredRecord {
 
-  private static final String HEADER = "# s3 bucket place holder";
+  private static final String HEADER = "# Migration file place holder";
 
-  @Getter
-  @Setter
-  private String bucketName;
-
-  @Getter
-  @Setter
-  private String entryName;
-
-  @Getter
-  @Setter
-  private boolean compressed;
-
-  public S3Record() {
+  public MigrationRecord() {
   }
 
-  public S3Record(String bucketName, String entryName, String contentMd5, long length, boolean compressed ) {
-    super("", contentMd5, length);
-    this.bucketName = bucketName;
-    this.entryName = entryName;
-    this.compressed = compressed;
+  public MigrationRecord(long length, String hash, String digestName) {
+    super(digestName, hash, length);
   }
 
   public void write(String fileName) throws IOException {
-    try(FileOutputStream fileOutputStream = new FileOutputStream(fileName, false)) {
+    try (FileOutputStream fileOutputStream = new FileOutputStream(fileName, false)) {
       try (OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream)) {
         writer.write(HEADER + "\n");
-        writer.write(bucketName + "\n");
-        writer.write(entryName + "\n");
-        writer.write(compressed + "\n");
         writeOut(writer);
       }
     }
@@ -69,9 +49,6 @@ public class S3Record extends ArchiveRecord {
         if (!reader.readLine().equals(HEADER)) {
           throw new IOException("Invalid place holder");
         }
-        bucketName = reader.readLine();
-        entryName = reader.readLine();
-        compressed = Boolean.parseBoolean(reader.readLine());
         readIn(reader);
       }
     }

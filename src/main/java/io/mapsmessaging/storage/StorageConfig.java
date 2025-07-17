@@ -21,7 +21,7 @@ package io.mapsmessaging.storage;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.memory.MemoryStorageConfig;
 import io.mapsmessaging.storage.impl.tier.memory.MemoryTierConfig;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;

@@ -38,7 +38,7 @@ class CompressionArchivePartitionTest  extends BaseTest {
   @ValueSource(strings = {"None", "MD5", "SHA-1", "SHA-256"})
   void compressArchiveAndRestorePartition(String digestName) throws IOException, InterruptedException {
     Map<String, String> properties = BasePartitionStoreTest.buildProperties(false);
-    properties.put("archiveName", "Compress");
+    properties.put("deferredName", "Compress");
     properties.put("archiveIdleTime", ""+ TimeUnit.SECONDS.toMillis(4));
     properties.put("digestName", digestName);
     Storage<MappedData> storage = BasePartitionStoreTest.build(properties, testName);
@@ -65,7 +65,7 @@ class CompressionArchivePartitionTest  extends BaseTest {
   @Test
   void compressArchiveAndDeleteStore() throws IOException, InterruptedException {
     Map<String, String> properties = BasePartitionStoreTest.buildProperties(false);
-    properties.put("archiveName", "Compress");
+    properties.put("deferredName", "Compress");
     properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(4));
     Storage<MappedData> storage = BasePartitionStoreTest.build(properties, testName);
     for (int x = 0; x < 1100; x++) {

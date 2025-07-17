@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.s3tier;
+package io.mapsmessaging.storage.impl.file.partition.deferred.s3tier;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -26,10 +26,10 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
-import io.mapsmessaging.storage.impl.file.S3Config;
-import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.S3Config;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
+import io.mapsmessaging.storage.impl.file.partition.DeferredDataStorage;
 
 import java.io.IOException;
 
@@ -45,9 +45,10 @@ public class S3DataStorageFactory<T extends Storable> implements DataStorageFact
   }
 
   @Override
-  public ArchivedDataStorage<T> create(PartitionStorageConfig config)
+  public DeferredDataStorage<T> create(PartitionStorageConfig config)
       throws IOException {
-    S3Config s3Config = config.getS3Config();
+
+    S3Config s3Config = config.getDeferredConfig().getS3Config();
     AWSCredentials credentials = new BasicAWSCredentials(
         s3Config.getAccessKeyId(),
         s3Config.getSecretAccessKey()

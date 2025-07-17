@@ -21,6 +21,7 @@ package io.mapsmessaging.storage.impl.file;
 
 import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.IndexGet;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
@@ -88,7 +89,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     partitions = new ArrayList<>();
     taskScheduler = config.getTaskQueue();
     rootDirectory = config.getFileName();
-    archiveIdleTime = config.getArchiveIdleTime();
+    archiveIdleTime = config.getDeferredConfig().getIdleTime();
     partitionCounter = 0;
     shutdown = false;
     File location = new File(config.getFileName());

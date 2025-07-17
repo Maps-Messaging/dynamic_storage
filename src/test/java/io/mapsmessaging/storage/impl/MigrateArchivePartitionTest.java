@@ -36,7 +36,7 @@ class MigrateArchivePartitionTest  extends BaseTest {
   @ValueSource(strings = {"None", "MD5", "SHA-1", "SHA-256"})
   void migrateArchiveAndRestorePartition(String digestName) throws IOException, InterruptedException {
     Map<String, String> properties = BasePartitionStoreTest.buildProperties(false);
-    properties.put("archiveName", "Migrate");
+    properties.put("deferredName", "Migrate");
     properties.put("archiveIdleTime", "" + TimeUnit.SECONDS.toMillis(4));
     properties.put("migrationPath", "test_file_archive" + File.separator);
     properties.put("digestName", digestName);
@@ -62,7 +62,7 @@ class MigrateArchivePartitionTest  extends BaseTest {
   @Test
   void migrateArchiveAndDeleteStore() throws IOException, InterruptedException {
     Map<String, String> properties = BasePartitionStoreTest.buildProperties(false);
-    properties.put("archiveName", "Migrate");
+    properties.put("deferredName", "Migrate");
     properties.put("archiveIdleTime", "" + TimeUnit.SECONDS.toMillis(4));
     properties.put("migrationPath", "test_file_archive" + File.separator);
     Storage<MappedData> storage = BasePartitionStoreTest.build(properties, testName);

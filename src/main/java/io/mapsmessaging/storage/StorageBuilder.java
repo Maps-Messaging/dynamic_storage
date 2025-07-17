@@ -22,7 +22,7 @@ package io.mapsmessaging.storage;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.impl.debug.DebugStorage;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.memory.MemoryStorageConfig;
 import io.mapsmessaging.storage.impl.tier.memory.MemoryTierConfig;
 import io.mapsmessaging.storage.logging.StorageLogMessages;
@@ -85,6 +85,7 @@ public class StorageBuilder<T extends Storable> {
       throw new IllegalArgumentException("Unknown storage type: " + storeType);
     }
     config.fromMap(name, properties);
+
     return this;
   }
 

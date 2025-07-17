@@ -18,6 +18,6 @@
 #
 
 io.mapsmessaging.storage.impl.file.partition.base.BaseDataStorageFactory
-io.mapsmessaging.storage.impl.file.partition.archive.s3tier.S3DataStorageFactory
-io.mapsmessaging.storage.impl.file.partition.archive.compress.CompressionDataStorageFactory
-io.mapsmessaging.storage.impl.file.partition.archive.migration.MigrationDataStorageFactory
+io.mapsmessaging.storage.impl.file.partition.deferred.s3tier.S3DataStorageFactory
+io.mapsmessaging.storage.impl.file.partition.deferred.compress.CompressionDataStorageFactory
+io.mapsmessaging.storage.impl.file.partition.deferred.migration.MigrationDataStorageFactory

@@ -22,8 +22,8 @@ package io.mapsmessaging.storage.impl.file.partition;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
 import lombok.Getter;
 import lombok.ToString;
@@ -61,7 +61,7 @@ public class IndexStorage<T extends Storable> {
   private final boolean sync;
   private final String fileName;
   private final TaskQueue scheduler;
-  private final ArchivedDataStorage<T> dataStorage;
+  private final DeferredDataStorage<T> dataStorage;
 
   private IndexManager indexManager;
   private FileChannel mapChannel;

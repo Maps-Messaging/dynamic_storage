@@ -21,15 +21,15 @@ package io.mapsmessaging.storage.impl.file.partition.base;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
-import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
+import io.mapsmessaging.storage.impl.file.partition.DeferredDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 
 import java.io.IOException;
 
-public class BaseDataStorage <T extends Storable> implements ArchivedDataStorage<T> {
+public class BaseDataStorage <T extends Storable> implements DeferredDataStorage<T> {
 
   private final String fileName;
   private final StorableFactory<T> storableFactory;
@@ -57,11 +57,6 @@ public class BaseDataStorage <T extends Storable> implements ArchivedDataStorage
 
   public void resume() throws IOException {
     physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
-  }
-
-  @Override
-  public String getArchiveName(){
-    return "None";
   }
 
   @Override

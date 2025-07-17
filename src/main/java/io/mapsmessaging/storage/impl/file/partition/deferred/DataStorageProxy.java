@@ -17,15 +17,16 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive;
+package io.mapsmessaging.storage.impl.file.partition.deferred;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.impl.file.FileHelper;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
-import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
+import io.mapsmessaging.storage.impl.file.config.DeferredConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
+import io.mapsmessaging.storage.impl.file.partition.DeferredDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,7 +36,7 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public abstract class DataStorageProxy<T extends Storable> implements ArchivedDataStorage<T> {
+public abstract class DataStorageProxy<T extends Storable> implements DeferredDataStorage<T> {
 
   protected final String digestName;
   protected final String fileName;
@@ -51,7 +52,8 @@ public abstract class DataStorageProxy<T extends Storable> implements ArchivedDa
     fileName = config.getFileName()+ "_data";
     sync = config.isSync();
     maxPartitionSize = config.getMaxPartitionSize();
-    digestName = config.getDigestName();
+    DeferredConfig aConfig = config.getDeferredConfig();
+    digestName = aConfig.getDigestName();
     File file = new File(fileName);
     isArchived = false;
     if (!file.exists()) {
@@ -146,7 +148,7 @@ public abstract class DataStorageProxy<T extends Storable> implements ArchivedDa
     return null;
   }
 
-  protected abstract ArchiveRecord buildArchiveRecord();
+  protected abstract DeferredRecord buildArchiveRecord();
 
   private DataStorage<T> detectAndLoad() throws IOException {
     try (FileInputStream fileInputStream = new FileInputStream(fileName)) {
@@ -157,8 +159,8 @@ public abstract class DataStorageProxy<T extends Storable> implements ArchivedDa
     if (!isArchived) {
       return new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
     }
-    ArchiveRecord archiveRecord = buildArchiveRecord();
-    archiveRecord.read(fileName);
-    return new DataStorageStub<>(archiveRecord);
+    DeferredRecord deferredRecord = buildArchiveRecord();
+    deferredRecord.read(fileName);
+    return new DataStorageStub<>(deferredRecord);
   }
 }

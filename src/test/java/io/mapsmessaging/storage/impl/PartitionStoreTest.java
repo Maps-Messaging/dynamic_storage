@@ -179,7 +179,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     try {
       for (int x = 0; x < 10_000; x++) {
         MappedData message = createMessageBuilder(x);
-        message.setExpiry(System.currentTimeMillis()+3000); // 2 Seconds
+        message.setExpiry(System.currentTimeMillis()+3000); // 3 Seconds
         message.setKey(x);
         storage.add(message, null).get();
         Assertions.assertEquals(x+1, storage.size().get());
@@ -260,7 +260,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
 
   void migrateArchiveAndRestorePartition() throws IOException, InterruptedException {
     Map<String, String> properties = buildProperties(false);
-    properties.put("archiveName", "Migrate");
+    properties.put("deferredName", "Migrate");
     properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
     properties.put("migrationPath", "P:/migration/");
     Storage<MappedData> storage = build(properties, testName);
@@ -285,7 +285,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
 
   void migrateArchiveAndDeleteStore() throws IOException, InterruptedException {
     Map<String, String> properties = buildProperties(false);
-    properties.put("archiveName", "Migrate");
+    properties.put("deferredName", "Migrate");
     properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
     properties.put("migrationPath", "P:/migration/");
     Storage<MappedData> storage = build(properties, testName);
@@ -313,7 +313,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
   @Test
   void compressArchiveAndRestorePartition() throws IOException, InterruptedException {
     Map<String, String> properties = buildProperties(false);
-    properties.put("archiveName", "Compress");
+    properties.put("deferredName", "Compress");
     properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
     Storage<MappedData> storage = build(properties, testName);
     for (int x = 0; x < 1100; x++) {
@@ -338,7 +338,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
   @Test
   void compressArchiveAndDeleteStore() throws IOException, InterruptedException {
     Map<String, String> properties = buildProperties(false);
-    properties.put("archiveName", "Compress");
+    properties.put("deferredName", "Compress");
     properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
     Storage<MappedData> storage = build(properties, testName);
     for (int x = 0; x < 1100; x++) {
@@ -375,7 +375,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
 
       Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty before the test starts");
       Map<String, String> properties = buildProperties(false);
-      properties.put("archiveName", "S3");
+      properties.put("deferredName", "S3");
       properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(4));
       properties.put("S3AccessKeyId", accessKeyId);
       properties.put("S3SecretAccessKey",secretAccessKey);
@@ -417,7 +417,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
 
       Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty before the test starts");
       Map<String, String> properties = buildProperties(false);
-      properties.put("archiveName", "S3");
+      properties.put("deferredName", "S3");
       properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
       properties.put("S3AccessKeyId", accessKeyId);
       properties.put("S3SecretAccessKey",secretAccessKey);

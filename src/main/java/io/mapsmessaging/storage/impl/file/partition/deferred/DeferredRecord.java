@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive;
+package io.mapsmessaging.storage.impl.file.partition.deferred;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -28,7 +28,7 @@ import java.io.OutputStreamWriter;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public abstract class ArchiveRecord {
+public abstract class DeferredRecord {
 
   @Getter
   @Setter
@@ -36,7 +36,7 @@ public abstract class ArchiveRecord {
 
   @Getter
   @Setter
-  protected String archiveHash;
+  protected String deferredHash;
 
   @Getter
   @Setter
@@ -46,11 +46,11 @@ public abstract class ArchiveRecord {
   @Setter
   protected LocalDateTime archivedDate;
 
-  protected ArchiveRecord(){}
+  protected DeferredRecord(){}
 
-  protected ArchiveRecord(String digestName, String archiveHash, long length){
+  protected DeferredRecord(String digestName, String arcdeferredHash, long length){
     this.digestName = digestName;
-    this.archiveHash = Objects.requireNonNullElse(archiveHash, "");
+    this.deferredHash = Objects.requireNonNullElse(arcdeferredHash, "");
     this.length = length;
     this.archivedDate = LocalDateTime.now();
   }
@@ -59,14 +59,14 @@ public abstract class ArchiveRecord {
 
   protected void readIn(BufferedReader reader) throws IOException {
     digestName = reader.readLine();
-    archiveHash = reader.readLine();
+    deferredHash = reader.readLine();
     setLength(Long.parseLong(reader.readLine()));
     archivedDate = LocalDateTime.parse(reader.readLine());
   }
 
   protected void writeOut(OutputStreamWriter writer) throws IOException{
     writer.write(digestName+"\n");
-    writer.write(archiveHash + "\n");
+    writer.write(deferredHash + "\n");
     writer.write(""+getLength()+"\n");
     writer.write(archivedDate.toString() + "\n");
   }

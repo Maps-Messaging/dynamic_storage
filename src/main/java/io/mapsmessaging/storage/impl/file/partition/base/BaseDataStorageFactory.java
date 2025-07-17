@@ -20,9 +20,9 @@
 package io.mapsmessaging.storage.impl.file.partition.base;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
-import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
+import io.mapsmessaging.storage.impl.file.partition.DeferredDataStorage;
 
 import java.io.IOException;
 
@@ -40,7 +40,7 @@ public class BaseDataStorageFactory<T extends Storable>  implements DataStorageF
   }
 
   @Override
-  public ArchivedDataStorage<T> create(PartitionStorageConfig config)
+  public DeferredDataStorage<T> create(PartitionStorageConfig config)
       throws IOException {
     return new BaseDataStorage<>(config);
   }

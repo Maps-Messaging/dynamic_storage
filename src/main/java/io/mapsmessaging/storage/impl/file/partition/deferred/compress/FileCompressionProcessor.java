@@ -17,10 +17,10 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.compress;
+package io.mapsmessaging.storage.impl.file.partition.deferred.compress;
 
 import io.mapsmessaging.storage.impl.file.FileHelper;
-import io.mapsmessaging.storage.impl.file.partition.archive.FileProcessor;
+import io.mapsmessaging.storage.impl.file.partition.deferred.FileProcessor;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
