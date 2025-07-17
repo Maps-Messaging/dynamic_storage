@@ -41,6 +41,7 @@ public class BasePartitionStoreTest extends BaseStoreTest {
       Files.createDirectory(file.toPath());
     }
     Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("storeType", "Partition");
     properties.put("Sync", "" + sync);
     properties.put("ItemCount", "" + 100);
     properties.put("debug", "false");
@@ -50,8 +51,7 @@ public class BasePartitionStoreTest extends BaseStoreTest {
 
   static Storage<MappedData> build(Map<String, String> properties, String testName) throws IOException {
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Partition")
-        .setFactory(getFactory())
+    storageBuilder.setFactory(getFactory())
         .setName("test_file" + File.separator + testName)
         .setProperties(properties);
     return storageBuilder.build();

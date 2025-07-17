@@ -54,11 +54,12 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     Files.deleteIfExists(file.toPath());
 
     Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("storeType", "Partition");
     properties.put("Sync", "" + false);
     properties.put("ItemCount", ""+ 1_000_000);
     properties.put("MaxPartitionSize", "" + (1024L * 1024L)); // set to 1MB data limit // force the index
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Partition")
+    storageBuilder
         .setFactory(getFactory())
         .setName("test_file" + File.separator + "testIndexCompaction")
         .setProperties(properties);
@@ -160,12 +161,13 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     Files.deleteIfExists(file.toPath());
 
     Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("storeType", "Partition");
     properties.put("Sync", "" + false);
     properties.put("ItemCount", ""+ 1_000);
     properties.put("ExpiredEventPoll", ""+2);
     properties.put("MaxPartitionSize", "" + (1024L * 1024L)); // set to 1MB data limit // force the index
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Partition")
+    storageBuilder
         .setFactory(getFactory())
         .setName("test_file" + File.separator + "testRestart")
         .setProperties(properties);
@@ -215,9 +217,10 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     properties.put("ItemCount", "1000"); // optional: avoid premature rollover
     properties.put("MaxPartitionSize", String.valueOf(1024 * 1024)); // avoid rollover side effects
     properties.put("ExpiredEventPoll", "1");
+    properties.put("storeType", "Partition");
 
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Partition")
+    storageBuilder
         .setFactory(getFactory())
         .setName(file.getPath())
         .setExpiredHandler(listOfExpiredEntries -> expired.incrementAndGet())

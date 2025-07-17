@@ -62,10 +62,13 @@ public class PartitionStorageConfig extends StorageConfig {
 
   private transient StorableFactory storableFactory;
 
-  public PartitionStorageConfig() {}
+  public PartitionStorageConfig() {
+    type = "Partition";
+  }
 
   public PartitionStorageConfig(PartitionStorageConfig lhs) {
     super(lhs);
+    type = "Partition";
     this.fileName = lhs.fileName;
     this.sync = lhs.sync;
     this.capacity = lhs.capacity;

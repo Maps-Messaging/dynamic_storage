@@ -38,8 +38,9 @@ public class JCSCacheTest extends BaseLayeredTest {
     }
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + sync);
+    properties.put("storeType", "Partition");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Partition")
+    storageBuilder
         .setFactory(getFactory())
         .setCache("JCS")
         .setName("test_file" + File.separator + testName)

@@ -44,8 +44,9 @@ public class DebugStoreTest extends BaseStoreTest {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + sync);
     properties.put("debug", "true");
+    properties.put("storeType", "Memory");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Memory")
+    storageBuilder
         .setFactory(getFactory())
         .setCache()
         .setName(testName)

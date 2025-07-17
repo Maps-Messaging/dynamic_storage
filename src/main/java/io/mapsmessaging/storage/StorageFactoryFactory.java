@@ -88,14 +88,14 @@ class StorageFactoryFactory {
 
   @SuppressWarnings("java:S2293")
   @SneakyThrows
-  @Nullable <T extends Storable> StorageFactory<T> create(@NotNull String name, @NotNull StorageConfig config, @NotNull StorableFactory<T> storableFactory, ExpiredStorableHandler expiredStorableHandler) {
-    Optional<StorageFactory<? extends Storable>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(name)).findFirst();
+  @Nullable <T extends Storable> StorageFactory<T> create(@NotNull StorageConfig config, @NotNull StorableFactory<T> storableFactory, ExpiredStorableHandler expiredStorableHandler) {
+    Optional<StorageFactory<? extends Storable>> first = storageFactories.stream().filter(storageFactoryProvider -> storageFactoryProvider.getName().equals(config.getType())).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_FACTORY, first.get().getClass().getName());
       return ((StorageFactory<T>) first.get()).getInstance(config, storableFactory, expiredStorableHandler);
     }
     else {
-      logger.log(StorageLogMessages.NO_MATCHING_FACTORY, name);
+      logger.log(StorageLogMessages.NO_MATCHING_FACTORY, config.getType());
     }
     return null;
   }
@@ -103,7 +103,7 @@ class StorageFactoryFactory {
   @SuppressWarnings("java:S2293")
   @SneakyThrows
   @NotNull <T extends Storable> CacheLayer<T> createCache(@NotNull String name, boolean enableWriteThrough, @NotNull Storage<T> baseStore) {
-    Optional<Cache<? extends Storable>> first = caches.stream().filter(layer -> layer.getName().equals(name)).findFirst();
+    Optional<Cache<? extends Storable>> first = caches.stream().filter(layer -> layer.getName().equalsIgnoreCase(name)).findFirst();
     if (first.isPresent()) {
       logger.log(StorageLogMessages.FOUND_CACHE_FACTORY, name);
       Cache<T> cache =  ((Cache<T>) first.get()).getInstance(name);

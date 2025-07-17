@@ -41,10 +41,13 @@ public class MemoryStorageConfig extends StorageConfig {
   @Schema(description = "Maximum number of messages that can be held in memory", example = "10000", defaultValue = "-1")
   private int capacity;
 
-  public MemoryStorageConfig() {}
+  public MemoryStorageConfig() {
+    type = "Memory";
+  }
 
   public MemoryStorageConfig(MemoryStorageConfig lhs){
     super(lhs);
+    type = "Memory";
     expiredEventPoll = lhs.expiredEventPoll;
     capacity = lhs.capacity;
   }

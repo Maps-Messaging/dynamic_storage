@@ -37,9 +37,9 @@ public class WeakReferenceTest extends BaseLayeredTest {
     }
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + sync);
+    properties.put("storeType", "partition");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Partition")
-        .setFactory(getFactory())
+    storageBuilder.setFactory(getFactory())
         .setCache()
         .setName("test_file" + File.separator + testName)
         .setProperties(properties);

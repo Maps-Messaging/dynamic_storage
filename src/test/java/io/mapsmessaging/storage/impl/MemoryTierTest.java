@@ -36,8 +36,9 @@ public class MemoryTierTest extends BaseStoreTest {
   public static Storage<MappedData> build(String testName, boolean sync) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + sync);
+    properties.put("storeType", "MemoryTier");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("MemoryTier")
+    storageBuilder
         .setFactory(getFactory())
         .setCache()
         .setName(testName)
@@ -56,8 +57,10 @@ public class MemoryTierTest extends BaseStoreTest {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "false");
     properties.put("Tier1Size", "100");
+    properties.put("storeType", "MemoryTier");
+
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("MemoryTier")
+    storageBuilder
         .setFactory(getFactory())
         .setCache()
         .setName(testName)
@@ -85,10 +88,11 @@ public class MemoryTierTest extends BaseStoreTest {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "false");
     properties.put("Capacity", "10"); // enforce max size of 10 in memory
+    properties.put("storeType", "MemoryTier");
 
     AtomicLong expired = new AtomicLong();
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("MemoryTier")
+    storageBuilder
         .setFactory(getFactory())
         .setCache()
         .setName(testName)

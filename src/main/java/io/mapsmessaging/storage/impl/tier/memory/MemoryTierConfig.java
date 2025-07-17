@@ -51,10 +51,14 @@ public class MemoryTierConfig extends StorageConfig {
   @Schema(description = "Configuration for the disk-backed partition tier")
   private PartitionStorageConfig partitionStorageConfig;
 
-  public MemoryTierConfig() {}
+  public MemoryTierConfig() {
+    type = "MemoryTier";
+
+  }
 
   public MemoryTierConfig(MemoryTierConfig lhs) {
     super(lhs);
+    type = "MemoryTier";
     this.migrationTime = lhs.migrationTime;
     this.scanInterval = lhs.scanInterval;
     this.maximumCount = lhs.maximumCount;

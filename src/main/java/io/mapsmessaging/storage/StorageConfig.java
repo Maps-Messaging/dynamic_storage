@@ -56,6 +56,8 @@ import java.util.Map;
 @Setter
 public class StorageConfig {
 
+  protected String type;
+
   @Schema(description = "Enable debug logging for this storage component", defaultValue = "false")
   private boolean debug;
 
