@@ -21,6 +21,7 @@ package io.mapsmessaging.storage.impl.file.tasks;
 
 import io.mapsmessaging.storage.impl.file.partition.IndexManager;
 
+@SuppressWarnings("javaarchitecture:S7091") // yes uses te IndexManager
 public class MemoryMapLoadTask  implements FileTask<Boolean> {
 
   private final IndexManager indexStorage;

@@ -21,6 +21,7 @@ package io.mapsmessaging.storage.impl.file;
 
 import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.BaseStorageFactory;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

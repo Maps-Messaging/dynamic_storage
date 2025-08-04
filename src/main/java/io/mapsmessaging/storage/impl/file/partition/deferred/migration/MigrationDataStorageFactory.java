@@ -17,18 +17,30 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive;
+package io.mapsmessaging.storage.impl.file.partition.deferred.migration;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.io.File;
+import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
+import io.mapsmessaging.storage.impl.file.partition.DeferredDataStorage;
+
 import java.io.IOException;
-import java.security.MessageDigest;
 
-public interface FileProcessor {
+public class MigrationDataStorageFactory<T extends Storable> implements DataStorageFactory<T> {
 
-  long in(@Nonnull File input, @Nonnull File output, @Nullable MessageDigest messageDigest) throws IOException;
+  public MigrationDataStorageFactory() {
+    // Only needed for service loading
+  }
 
-  long out(@Nonnull File input, @Nonnull File output, @Nullable MessageDigest messageDigest) throws IOException;
+  @Override
+  public String getName() {
+    return "Migrate";
+  }
+
+  @Override
+  public DeferredDataStorage<T> create(PartitionStorageConfig config)
+      throws IOException {
+    return new MigrationDataStorageProxy<>(config);
+  }
 
 }

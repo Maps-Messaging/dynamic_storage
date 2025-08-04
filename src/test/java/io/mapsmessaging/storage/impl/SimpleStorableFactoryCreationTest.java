@@ -45,8 +45,9 @@ public class SimpleStorableFactoryCreationTest {
     List<String> known = StorageBuilder.getKnownStorages();
     Assertions.assertFalse(known.isEmpty());
     for (String test : known) {
+      properties.put("storeType", test);
       StorageBuilder<StorableString> storageBuilder = new StorageBuilder<>();
-      storageBuilder.setStorageType(test)
+      storageBuilder
           .setFactory(new SimpleStorableFactory())
           .setName("Test")
           .setProperties(properties);
@@ -66,8 +67,10 @@ public class SimpleStorableFactoryCreationTest {
     Assertions.assertFalse(known.isEmpty());
     for (String layer : caches) {
       for (String test : known) {
+        properties.put("storeType", test);
+
         StorageBuilder<StorableString> storageBuilder = new StorageBuilder<>();
-        storageBuilder.setStorageType(test)
+        storageBuilder
             .setFactory(new SimpleStorableFactory())
             .setName("Test")
             .setCache(layer)
@@ -88,8 +91,10 @@ public class SimpleStorableFactoryCreationTest {
     List<String> known = StorageBuilder.getKnownStorages();
     Assertions.assertFalse(known.isEmpty());
     for (String test : known) {
+      properties.put("storeType", test);
+
       StorageBuilder<StorableString> storageBuilder = new StorageBuilder<>();
-      storageBuilder.setStorageType(test)
+      storageBuilder
           .setFactory(new SimpleStorableFactory())
           .setName("Test")
           .setCache()

@@ -20,7 +20,7 @@
 package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -48,10 +48,10 @@ public class PartitionDataManagerFactory<T extends Storable> {
     }
   }
 
-  public ArchivedDataStorage<T> create(PartitionStorageConfig config) throws IOException {
+  public DeferredDataStorage<T> create(PartitionStorageConfig config) throws IOException {
     String archiveName = "None";
-    if(config != null && config.getArchiveName() != null){
-      archiveName = config.getArchiveName();
+    if(config != null && config.getDeferredConfig() != null && config.getDeferredConfig().getDeferredName() != null){
+      archiveName = config.getDeferredConfig().getDeferredName() ;
     }
     DataStorageFactory<T> factory = dataStorageManagers.get(archiveName);
     return factory.create(config);

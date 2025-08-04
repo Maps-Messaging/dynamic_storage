@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive;
+package io.mapsmessaging.storage.impl.file.partition.deferred;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.partition.DataStorage;
@@ -31,10 +31,10 @@ public class DataStorageStub<T extends Storable> implements DataStorage<T> {
   private static final String ERROR_MESSAGE = "This should not be called, the file needs to be restored";
 
   @Getter
-  private final ArchiveRecord archiveRecord;
+  private final DeferredRecord deferredRecord;
 
-  public DataStorageStub(ArchiveRecord archiveRecord) {
-    this.archiveRecord = archiveRecord;
+  public DataStorageStub(DeferredRecord deferredRecord) {
+    this.deferredRecord = deferredRecord;
   }
 
   @Override
@@ -64,7 +64,7 @@ public class DataStorageStub<T extends Storable> implements DataStorage<T> {
 
   @Override
   public long length() throws IOException {
-    return archiveRecord.getLength();
+    return deferredRecord.getLength();
   }
 
   @Override

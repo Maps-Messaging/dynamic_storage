@@ -17,16 +17,16 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.migration;
+package io.mapsmessaging.storage.impl.file.partition.deferred.migration;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.FileHelper;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
-import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
-import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageProxy;
-import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageStub;
-import io.mapsmessaging.storage.impl.file.partition.archive.compress.FileCompressionProcessor;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DataStorageProxy;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DataStorageStub;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DeferredRecord;
+import io.mapsmessaging.storage.impl.file.partition.deferred.compress.FileCompressionProcessor;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,7 +41,7 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
 
   public MigrationDataStorageProxy(PartitionStorageConfig config) throws IOException {
     super(config);
-    String t = config.getMigrationDestination();
+    String t = config.getDeferredConfig().getMigrationDestination();
     if(t.endsWith(File.separator)){
       t = t.substring(0, t.length()-1);
     }
@@ -49,13 +49,8 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
   }
 
   @Override
-  protected ArchiveRecord buildArchiveRecord() {
+  protected DeferredRecord buildArchiveRecord() {
     return new MigrationRecord();
-  }
-
-  @Override
-  public String getArchiveName() {
-    return "Migrate";
   }
 
   @Override
@@ -97,13 +92,13 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
       File from = new File(destination+File.separator+fileName+"_zip");
       FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
       FileHelper.delete(to);
-      MigrationRecord migrationRecord = (MigrationRecord) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
+      MigrationRecord migrationRecord = (MigrationRecord) ((DataStorageStub<T>)physicalStore).getDeferredRecord();
       MessageDigest messageDigest = getMessageDigest(migrationRecord.getDigestName());
       compressionHelper.out(from, to, messageDigest);
       String digest = null;
       if(messageDigest != null) {
         digest = Base64.getEncoder().encodeToString(messageDigest.digest());
-        if(!digest.equals(migrationRecord.getArchiveHash())){
+        if(!digest.equals(migrationRecord.getDeferredHash())){
           throw new IOException("File has been changed, MD5 hash does not match");
         }
       }

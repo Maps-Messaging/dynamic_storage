@@ -47,8 +47,9 @@ public class FilePerformanceTest extends BaseTest {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + sync);
     properties.put("MaxPartitionSize", "" + (4L * 1024L * 1024L * 1024L)); // set to 4GB data limit
+    properties.put("storeType", "Partition");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Partition")
+    storageBuilder
         .setFactory(getFactory())
         .setName("test_file" + File.separator + testName)
         .setProperties(properties);

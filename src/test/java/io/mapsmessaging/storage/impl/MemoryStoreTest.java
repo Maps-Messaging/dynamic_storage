@@ -43,8 +43,9 @@ public class MemoryStoreTest extends BaseStoreTest {
   public static Storage<MappedData> build(String testName, boolean sync) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + sync);
+    properties.put("storeType", "Memory");
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
-    storageBuilder.setStorageType("Memory")
+    storageBuilder
         .setFactory(getFactory())
         .setCache()
         .setName(testName)

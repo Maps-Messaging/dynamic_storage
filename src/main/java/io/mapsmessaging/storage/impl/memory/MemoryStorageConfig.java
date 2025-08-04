@@ -41,17 +41,23 @@ public class MemoryStorageConfig extends StorageConfig {
   @Schema(description = "Maximum number of messages that can be held in memory", example = "10000", defaultValue = "-1")
   private int capacity;
 
-  public MemoryStorageConfig() {}
+  public MemoryStorageConfig() {
+    type = "Memory";
+  }
 
   public MemoryStorageConfig(MemoryStorageConfig lhs){
     super(lhs);
+    type = "Memory";
     expiredEventPoll = lhs.expiredEventPoll;
     capacity = lhs.capacity;
   }
-
   @Override
-  public void fromMap(String name, Map<String, String> properties){
-    super.fromMap(name, properties);
+  public StorageConfig getCopy(){
+    return new MemoryStorageConfig(this);
+  }
+  @Override
+  public void fromMap(Map<String, String> properties){
+    super.fromMap(properties);
     expiredEventPoll = Integer.parseInt(properties.getOrDefault("ExpiredEventPoll", String.valueOf(EXPIRED_EVENT_MONITOR_TIME)));
     capacity = Integer.parseInt(properties.getOrDefault("Capacity", "-1"));
   }

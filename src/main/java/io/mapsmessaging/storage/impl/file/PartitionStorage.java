@@ -21,6 +21,7 @@ package io.mapsmessaging.storage.impl.file;
 
 import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.IndexGet;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
@@ -45,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 
+@SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the ArchiveMonitorTask
 public class PartitionStorage<T extends Storable> implements Storage<T>, ExpiredMonitor, TierMigrationMonitor {
 
   private static final String PARTITION_FILE_NAME = "partition_";
@@ -79,6 +81,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private long lastKeyStored;
   private long lastAccess;
 
+  @SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the archive monitor task
   public PartitionStorage(PartitionStorageConfig config, ExpiredStorableHandler expiredHandler) throws IOException{
     this.config = config;
     this.expiredHandler = Objects.requireNonNullElseGet(expiredHandler, () -> new BaseExpiredHandler<>(this));
@@ -88,7 +91,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     partitions = new ArrayList<>();
     taskScheduler = config.getTaskQueue();
     rootDirectory = config.getFileName();
-    archiveIdleTime = config.getArchiveIdleTime();
+    archiveIdleTime = config.getDeferredConfig().getIdleTime();
     partitionCounter = 0;
     shutdown = false;
     File location = new File(config.getFileName());
@@ -347,37 +350,43 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     return true;
   }
 
-  private void scanCapacity(){
-    if(config.getCapacity() >= 0) {
-      long size = size();
-      try (BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)) {
-        Queue<Long> expiredList = new NaturalOrderedLongQueue(0, bitSetFactory);
-        while (size > config.getCapacity()) {
-          for (IndexStorage<T> partition : partitions) {
-            List<Long> keys = new ArrayList<>(partition.getKeys());
+  private void scanCapacity() {
+    if (config.getCapacity() < 0) return;
 
-            Iterator<Long> iterator = keys.iterator();
-            while (iterator.hasNext() && size > config.getCapacity()) {
-              Long key = iterator.next();
-              remove(key);
-              expiredList.add(key);
-              size--;
-            }
-            if (size <= config.getCapacity()) {
-              break;
-            }
-          }
-          if (!expiredList.isEmpty()) {
-            expiredHandler.expired(expiredList);
-            expiredMonitor.schedulePoll();
-          }
-        }
+    long size = size();
+    try (BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)) {
+      Queue<Long> expiredList = new NaturalOrderedLongQueue(0, bitSetFactory);
+
+      while (size > config.getCapacity()) {
+        size = removeExpiredKeys(size, expiredList);
+        handleExpired(expiredList);
       }
-      catch (IOException e) {
-        // log this
-      }
+    } catch (IOException e) {
+      // log this
     }
   }
+
+  private long removeExpiredKeys(long size, Queue<Long> expiredList) throws IOException {
+    for (IndexStorage<T> partition : partitions) {
+      for (Long key : new ArrayList<>(partition.getKeys())) {
+        if (size <= config.getCapacity()) break;
+        remove(key);
+        expiredList.add(key);
+        size--;
+      }
+      if (size <= config.getCapacity()) break;
+    }
+    return size;
+  }
+
+  private void handleExpired(Queue<Long> expiredList) throws IOException {
+    if (!expiredList.isEmpty()) {
+      expiredHandler.expired(expiredList);
+      expiredMonitor.schedulePoll();
+      expiredList.clear();
+    }
+  }
+
 
   public void scanForExpired() throws IOException {
     if (!paused) {

@@ -65,6 +65,7 @@ public class SimpleBenchmark extends BaseTest {
 
 
   @Setup
+  @SuppressWarnings("java:S5738")
   public void createState() throws IOException {
     System.err.println("Creating new stores :: ReadWriteQueues:" + readWriteQueues + " Sync:" + enableSync + " Cache:" + enableCache + " Drive:" + drive);
     for (int x = 0; x < storageArray.length; x++) {
@@ -75,8 +76,10 @@ public class SimpleBenchmark extends BaseTest {
       }
       Map<String, String> properties = new LinkedHashMap<>();
       properties.put("Sync", "" + enableSync);
+      properties.put("storeType", "SeekableChannel");
+
       StorageBuilder<BufferedData> storageBuilder = new StorageBuilder<>();
-      storageBuilder.setStorageType("SeekableChannel")
+      storageBuilder
           .setFactory(new DataStorableFactory())
           .setName(drive + "FileTest2_" + x)
           .setCache(enableCache)

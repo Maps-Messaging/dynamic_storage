@@ -17,30 +17,30 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.migration;
+package io.mapsmessaging.storage.impl.file.partition.deferred.compress;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
-import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
+import io.mapsmessaging.storage.impl.file.partition.DeferredDataStorage;
 
 import java.io.IOException;
 
-public class MigrationDataStorageFactory<T extends Storable> implements DataStorageFactory<T> {
+public class CompressionDataStorageFactory<T extends Storable> implements DataStorageFactory<T> {
 
-  public MigrationDataStorageFactory() {
+  public CompressionDataStorageFactory() {
     // Only needed for service loading
   }
 
   @Override
   public String getName() {
-    return "Migrate";
+    return "Compress";
   }
 
   @Override
-  public ArchivedDataStorage<T> create(PartitionStorageConfig config)
+  public DeferredDataStorage<T> create(PartitionStorageConfig config)
       throws IOException {
-    return new MigrationDataStorageProxy<>(config);
+    return new CompressionDataStorageProxy<>(config);
   }
 
 }

@@ -40,6 +40,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
 @ToString
+@SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the Memory Map Load task
 public class IndexManager implements Closeable {
 
   private static final int HEADER_SIZE = 16;

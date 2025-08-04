@@ -17,25 +17,25 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.migration;
+package io.mapsmessaging.storage.impl.file.partition.deferred.compress;
 
-import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DeferredRecord;
 
 import java.io.*;
 
-public class MigrationRecord extends ArchiveRecord {
+public class CompressionRecord extends DeferredRecord {
 
-  private static final String HEADER = "# Migration file place holder";
+  private static final String HEADER = "# Zip file place holder";
 
-  public MigrationRecord() {
+  public CompressionRecord() {
   }
 
-  public MigrationRecord(long length, String hash, String digestName) {
+  public CompressionRecord(long length, String hash, String digestName) {
     super(digestName, hash, length);
   }
 
   public void write(String fileName) throws IOException {
-    try (FileOutputStream fileOutputStream = new FileOutputStream(fileName, false)) {
+    try(FileOutputStream fileOutputStream = new FileOutputStream(fileName, false)) {
       try (OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream)) {
         writer.write(HEADER + "\n");
         writeOut(writer);

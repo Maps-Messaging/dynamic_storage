@@ -22,8 +22,8 @@ package io.mapsmessaging.storage.impl.file.partition;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
 import lombok.Getter;
 import lombok.ToString;
@@ -47,6 +47,7 @@ import static io.mapsmessaging.storage.logging.StorageLogMessages.*;
 import static java.nio.file.StandardOpenOption.*;
 
 @ToString
+@SuppressWarnings("javaarchitecture:S7091") // yes it uses the compact index task
 public class IndexStorage<T extends Storable> {
 
   private static final int HEADER_SIZE = 32;
@@ -61,7 +62,7 @@ public class IndexStorage<T extends Storable> {
   private final boolean sync;
   private final String fileName;
   private final TaskQueue scheduler;
-  private final ArchivedDataStorage<T> dataStorage;
+  private final DeferredDataStorage<T> dataStorage;
 
   private IndexManager indexManager;
   private FileChannel mapChannel;

@@ -19,7 +19,7 @@
 package io.mapsmessaging.storage.impl.tier.memory;
 
 import io.mapsmessaging.storage.StorageConfig;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.memory.MemoryStorageConfig;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -51,10 +51,14 @@ public class MemoryTierConfig extends StorageConfig {
   @Schema(description = "Configuration for the disk-backed partition tier")
   private PartitionStorageConfig partitionStorageConfig;
 
-  public MemoryTierConfig() {}
+  public MemoryTierConfig() {
+    type = "MemoryTier";
+
+  }
 
   public MemoryTierConfig(MemoryTierConfig lhs) {
     super(lhs);
+    type = "MemoryTier";
     this.migrationTime = lhs.migrationTime;
     this.scanInterval = lhs.scanInterval;
     this.maximumCount = lhs.maximumCount;
@@ -63,17 +67,22 @@ public class MemoryTierConfig extends StorageConfig {
   }
 
   @Override
-  public void fromMap(String name, Map<String, String> properties) {
-    super.fromMap(name, properties);
+  public StorageConfig getCopy(){
+    return new MemoryTierConfig(this);
+  }
+
+  @Override
+  public void fromMap(Map<String, String> properties) {
+    super.fromMap(properties);
 
     migrationTime = Long.parseLong(properties.getOrDefault("MigrationPeriod", String.valueOf(DEFAULT_MIGRATION_TIME)));
     scanInterval = Long.parseLong(properties.getOrDefault("ScanInterval", String.valueOf(DEFAULT_SCAN_INTERVAL)));
     maximumCount = Long.parseLong(properties.getOrDefault("Tier1Size", String.valueOf(DEFAULT_TIER_1_SIZE)));
 
     memoryStorageConfig = new MemoryStorageConfig();
-    memoryStorageConfig.fromMap(name, properties);
+    memoryStorageConfig.fromMap(properties);
 
     partitionStorageConfig = new PartitionStorageConfig();
-    partitionStorageConfig.fromMap(name, properties);
+    partitionStorageConfig.fromMap(properties);
   }
 }

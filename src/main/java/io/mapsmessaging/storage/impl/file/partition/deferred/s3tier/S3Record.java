@@ -17,27 +17,47 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.compress;
+package io.mapsmessaging.storage.impl.file.partition.deferred.s3tier;
 
-import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DeferredRecord;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.*;
 
-public class CompressionRecord extends ArchiveRecord {
+public class S3Record extends DeferredRecord {
 
-  private static final String HEADER = "# Zip file place holder";
+  private static final String HEADER = "# s3 bucket place holder";
 
-  public CompressionRecord() {
+  @Getter
+  @Setter
+  private String bucketName;
+
+  @Getter
+  @Setter
+  private String entryName;
+
+  @Getter
+  @Setter
+  private boolean compressed;
+
+  public S3Record() {
   }
 
-  public CompressionRecord(long length, String hash, String digestName) {
-    super(digestName, hash, length);
+  public S3Record(String bucketName, String entryName, String contentMd5, long length, boolean compressed ) {
+    super("", contentMd5, length);
+    this.bucketName = bucketName;
+    this.entryName = entryName;
+    this.compressed = compressed;
   }
 
   public void write(String fileName) throws IOException {
     try(FileOutputStream fileOutputStream = new FileOutputStream(fileName, false)) {
       try (OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream)) {
         writer.write(HEADER + "\n");
+        writer.write(bucketName + "\n");
+        writer.write(entryName + "\n");
+        writer.write(compressed + "\n");
         writeOut(writer);
       }
     }
@@ -49,6 +69,9 @@ public class CompressionRecord extends ArchiveRecord {
         if (!reader.readLine().equals(HEADER)) {
           throw new IOException("Invalid place holder");
         }
+        bucketName = reader.readLine();
+        entryName = reader.readLine();
+        compressed = Boolean.parseBoolean(reader.readLine());
         readIn(reader);
       }
     }

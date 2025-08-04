@@ -17,14 +17,14 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.s3tier;
+package io.mapsmessaging.storage.impl.file.partition.deferred.s3tier;
 
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
-import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
-import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageProxy;
-import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageStub;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DataStorageProxy;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DataStorageStub;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DeferredRecord;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,18 +40,11 @@ public class S3DataStorageProxy<T extends Storable> extends DataStorageProxy<T> 
     this.s3TransferApi = transferApi;
   }
 
-
-
-  @Override
-  public String getArchiveName(){
-    return "S3";
-  }
-
   @Override
   public void delete() throws IOException {
     if(isArchived) {
       super.delete();
-      S3Record s3Record =(S3Record) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
+      S3Record s3Record =(S3Record) ((DataStorageStub<T>)physicalStore).getDeferredRecord();
       s3TransferApi.delete(s3Record); // Delete the S3 entry
     }
     else {
@@ -60,7 +53,7 @@ public class S3DataStorageProxy<T extends Storable> extends DataStorageProxy<T> 
   }
 
   @Override
-  protected ArchiveRecord buildArchiveRecord() {
+  protected DeferredRecord buildArchiveRecord() {
     return new S3Record();
   }
 
@@ -81,7 +74,7 @@ public class S3DataStorageProxy<T extends Storable> extends DataStorageProxy<T> 
   }
 
   public void restore() throws IOException {
-    S3Record s3Record = (S3Record) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
+    S3Record s3Record = (S3Record) ((DataStorageStub<T>)physicalStore).getDeferredRecord();
     try {
       MessageDigest messageDigest = getMessageDigest(s3Record.getDigestName());
       s3TransferApi.retrieve(fileName, s3Record, messageDigest);

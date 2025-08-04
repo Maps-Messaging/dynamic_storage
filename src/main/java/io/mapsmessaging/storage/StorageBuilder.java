@@ -22,7 +22,7 @@ package io.mapsmessaging.storage;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.impl.debug.DebugStorage;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.memory.MemoryStorageConfig;
 import io.mapsmessaging.storage.impl.tier.memory.MemoryTierConfig;
 import io.mapsmessaging.storage.logging.StorageLogMessages;
@@ -48,7 +48,6 @@ public class StorageBuilder<T extends Storable> {
   private final Logger logger = LoggerFactory.getLogger(StorageBuilder.class);
 
   private boolean enableWriteThrough = false;
-  private String storeType;
   private String cacheName;
   private String name;
   private StorageConfig config;
@@ -69,36 +68,33 @@ public class StorageBuilder<T extends Storable> {
   /**
    * This function is depricated, please use the setConfig() to ensure accurate mapping of values in the config
    * @param properties
+   *
+   * @deprecated Use the setConfig() function to ensure tighter configuration
    */
+  @SuppressWarnings("java:S1133")
   @Deprecated ( since = "2.4.13", forRemoval = true)
   public @NotNull StorageBuilder<T> setProperties(@NotNull Map<String, String> properties) {
-    if(storeType.equalsIgnoreCase("partition")){
+    String type = properties.get("storeType");
+
+    if(type.equalsIgnoreCase("partition")){
       config = new PartitionStorageConfig();
     }
-    else if(storeType.equalsIgnoreCase("memory")){
+    else if(type.equalsIgnoreCase("memory")){
       config = new MemoryStorageConfig();
     }
-    else if(storeType.equalsIgnoreCase("memorytier")){
+    else if(type.equalsIgnoreCase("memorytier")){
       config = new MemoryTierConfig();
     }
     else{
-      throw new IllegalArgumentException("Unknown storage type: " + storeType);
+      throw new IllegalArgumentException("Unknown storage type: " + type);
     }
-    config.fromMap(name, properties);
+    config.fromMap(properties);
+
     return this;
   }
 
   public @NotNull StorageBuilder<T> setConfig(@NotNull StorageConfig config) {
     this.config = config;
-    if(config instanceof PartitionStorageConfig){
-      storeType = "partition";
-    }
-    else if(config instanceof MemoryStorageConfig){
-      storeType = "memory";
-    }
-    else if(config instanceof MemoryTierConfig){
-      storeType = "memorytier";
-    }
     return this;
   }
 
@@ -109,25 +105,6 @@ public class StorageBuilder<T extends Storable> {
 
   public @NotNull StorageBuilder<T> enableCacheWriteThrough(boolean enableWriteThrough) {
     this.enableWriteThrough = enableWriteThrough;
-    return this;
-  }
-
-  public @NotNull StorageBuilder<T> setStorageType(@NotNull String storeType) throws IOException {
-    if (this.storeType != null) {
-      logger.log(StorageLogMessages.STORAGE_ALREADY_CONFIGURED);
-      throw new IOException("Store type already defined");
-    }
-    List<String> known = StorageFactoryFactory.getInstance().getKnownStorages();
-    for (String type : known) {
-      if (storeType.equalsIgnoreCase(type)) {
-        this.storeType = type;
-        break;
-      }
-    }
-    if (this.storeType == null) {
-      logger.log(StorageLogMessages.NO_SUCH_STORAGE_FOUND, storeType);
-      throw new IOException("No known storage type defined " + storeType);
-    }
     return this;
   }
 
@@ -160,7 +137,7 @@ public class StorageBuilder<T extends Storable> {
   }
 
   public Storage<T> build() throws IOException {
-    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, config, storableFactory, expiredStorableHandler);
+    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(config, storableFactory, expiredStorableHandler);
     if (storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
       if (baseStore.isCacheable() && cacheName != null) {

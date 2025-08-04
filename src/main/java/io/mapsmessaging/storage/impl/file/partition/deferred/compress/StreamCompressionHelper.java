@@ -17,9 +17,9 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.compress;
+package io.mapsmessaging.storage.impl.file.partition.deferred.compress;
 
-import io.mapsmessaging.storage.impl.file.partition.archive.StreamProcessor;
+import io.mapsmessaging.storage.impl.file.partition.deferred.StreamProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

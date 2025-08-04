@@ -16,10 +16,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package io.mapsmessaging.storage.impl.file;
+package io.mapsmessaging.storage.impl.file.config;
 
 import io.mapsmessaging.storage.StorableFactory;
 import io.mapsmessaging.storage.StorageConfig;
+import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -56,27 +57,19 @@ public class PartitionStorageConfig extends StorageConfig {
   @Schema(description = "Task queue identifier used for expired message handling")
   private TaskQueue taskQueue;
 
-  @Schema(description = "Optional archive name for rotated partitions", defaultValue = "None")
-  private String archiveName = "None";
+  @Schema(description = "Configuration to manage paused/idle messages stores when timeouts occur ")
+  private DeferredConfig deferredConfig;
 
-  @Schema(description = "Time in milliseconds after which data should be archived", defaultValue = "-1")
-  private long archiveIdleTime = -1;
+  @SuppressWarnings("java:S3740") // Unfortunately I can not
+  private StorableFactory storableFactory;
 
-  @Schema(description = "Optional S3 configuration parameters to use to push stale partitions to")
-  private S3Config s3Config;
-
-  @Schema(description = "Destination directory or location for data migration")
-  private String migrationDestination;
-
-  @Schema(description = "Digest algorithm name for checksums (e.g., SHA-256)")
-  private String digestName = "";
-
-  private transient StorableFactory storableFactory;
-
-  public PartitionStorageConfig() {}
+  public PartitionStorageConfig() {
+    type = "Partition";
+  }
 
   public PartitionStorageConfig(PartitionStorageConfig lhs) {
     super(lhs);
+    type = "Partition";
     this.fileName = lhs.fileName;
     this.sync = lhs.sync;
     this.capacity = lhs.capacity;
@@ -84,47 +77,27 @@ public class PartitionStorageConfig extends StorageConfig {
     this.maxPartitionSize = lhs.maxPartitionSize;
     this.expiredEventPoll = lhs.expiredEventPoll;
     this.taskQueue = lhs.taskQueue;
-    this.archiveName = lhs.archiveName;
-    this.archiveIdleTime = lhs.archiveIdleTime;
-    if(lhs.s3Config != null) {
-      this.s3Config = new S3Config(lhs.s3Config);
+    if(lhs.getDeferredConfig() != null) {
+      this.deferredConfig = new DeferredConfig(lhs.deferredConfig);
     }
-    else{
-      this.s3Config = null;
-    }
-    this.migrationDestination = lhs.migrationDestination;
-    this.digestName = lhs.digestName;
     this.storableFactory = lhs.storableFactory;
+  }
+  @Override
+  public StorageConfig getCopy(){
+    return new PartitionStorageConfig(this);
   }
 
   @Override
-  public void fromMap(String name, Map<String, String> properties) {
-    super.fromMap(name, properties);
-
+  public void fromMap(Map<String, String> properties) {
+    super.fromMap(properties);
     sync = Boolean.parseBoolean(properties.getOrDefault("Sync", "false"));
     itemCount = Integer.parseInt(properties.getOrDefault("ItemCount", String.valueOf(ITEM_COUNT)));
     capacity = Integer.parseInt(properties.getOrDefault("Capacity", "-1"));
     maxPartitionSize = Long.parseLong(properties.getOrDefault("MaxPartitionSize", String.valueOf(MAXIMUM_DATA_SIZE)));
     expiredEventPoll = Integer.parseInt(properties.getOrDefault("ExpiredEventPoll", String.valueOf(EXPIRED_EVENT_MONITOR_TIME)));
-
-    setFileName(name);
+    deferredConfig = new DeferredConfig();
+    deferredConfig.fromMap(properties);
     setTaskQueue(taskQueue); // Note: taskQueue remains null unless set elsewhere
 
-    if (properties.containsKey("archiveName")) {
-      archiveName = properties.get("archiveName");
-    }
-    if (properties.containsKey("archiveIdleTime")) {
-      archiveIdleTime = Long.parseLong(properties.get("archiveIdleTime"));
-    }
-    if (properties.containsKey("digestName")) {
-      digestName = properties.get("digestName");
-    }
-
-    migrationDestination = properties.get("migrationPath");
-
-    if(s3Config == null) {
-      s3Config = new S3Config();
-    }
-    s3Config.fromMap(properties);
   }
 }

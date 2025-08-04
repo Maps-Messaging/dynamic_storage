@@ -34,19 +34,6 @@ class StorageBuilderTest {
   }
 
   @Test
-  void testTypeSetters(){
-    StorageBuilder<BaseTest.MappedData> storageBuilder = new StorageBuilder<>();
-    try {
-      storageBuilder.setStorageType("Memory");
-    } catch (IOException e) {
-      Assertions.fail("Should not throw exception", e.getCause());
-    }
-    Assertions.assertThrowsExactly(IOException.class, () -> storageBuilder.setStorageType("Memory"));
-    StorageBuilder<BaseTest.MappedData> storageBuilder1= new StorageBuilder<>();
-    Assertions.assertThrowsExactly(IOException.class, () -> storageBuilder1.setStorageType("error"));
-  }
-
-  @Test
   void testCacheSetters(){
     StorageBuilder<BaseTest.MappedData> storageBuilder = new StorageBuilder<>();
     try {

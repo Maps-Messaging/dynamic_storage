@@ -17,25 +17,18 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition;
+package io.mapsmessaging.storage.impl.file.partition.deferred;
 
-import io.mapsmessaging.storage.Storable;
-
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.File;
 import java.io.IOException;
+import java.security.MessageDigest;
 
-public interface ArchivedDataStorage<T extends Storable> extends DataStorage<T>{
+public interface FileProcessor {
 
-  String getArchiveName();
+  long in(@Nonnull File input, @Nonnull File output, @Nullable MessageDigest messageDigest) throws IOException;
 
-  void pause() throws IOException;
+  long out(@Nonnull File input, @Nonnull File output, @Nullable MessageDigest messageDigest) throws IOException;
 
-  void resume() throws IOException;
-
-  void archive() throws IOException;
-
-  void restore() throws IOException;
-
-  boolean isArchived();
-
-  boolean supportsArchiving();
 }

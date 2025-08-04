@@ -40,6 +40,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
+
+@SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the migration task
 public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   private final Storage<ObjectMonitor<T>> primary;
