@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 
+@SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the ArchiveMonitorTask
 public class PartitionStorage<T extends Storable> implements Storage<T>, ExpiredMonitor, TierMigrationMonitor {
 
   private static final String PARTITION_FILE_NAME = "partition_";
