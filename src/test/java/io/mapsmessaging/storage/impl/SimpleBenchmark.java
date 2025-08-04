@@ -65,6 +65,7 @@ public class SimpleBenchmark extends BaseTest {
 
 
   @Setup
+  @SuppressWarnings("java:S5738")
   public void createState() throws IOException {
     System.err.println("Creating new stores :: ReadWriteQueues:" + readWriteQueues + " Sync:" + enableSync + " Cache:" + enableCache + " Drive:" + drive);
     for (int x = 0; x < storageArray.length; x++) {

@@ -71,6 +71,7 @@ public class StorageBuilder<T extends Storable> {
    *
    * @deprecated Use the setConfig() function to ensure tighter configuration
    */
+  @SuppressWarnings("java:S1133")
   @Deprecated ( since = "2.4.13", forRemoval = true)
   public @NotNull StorageBuilder<T> setProperties(@NotNull Map<String, String> properties) {
     String type = properties.get("storeType");

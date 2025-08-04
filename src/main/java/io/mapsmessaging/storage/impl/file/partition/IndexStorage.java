@@ -47,6 +47,7 @@ import static io.mapsmessaging.storage.logging.StorageLogMessages.*;
 import static java.nio.file.StandardOpenOption.*;
 
 @ToString
+@SuppressWarnings("javaarchitecture:S7091") // yes it uses the compact index task
 public class IndexStorage<T extends Storable> {
 
   private static final int HEADER_SIZE = 32;

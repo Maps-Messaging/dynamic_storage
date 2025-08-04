@@ -38,6 +38,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the AutoPauseTask
 public class AsyncStorage<T extends Storable> implements Closeable {
 
   private final Logger logger;

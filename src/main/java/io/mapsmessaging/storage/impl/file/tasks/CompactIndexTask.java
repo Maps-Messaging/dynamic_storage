@@ -22,6 +22,7 @@ package io.mapsmessaging.storage.impl.file.tasks;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
 
+@SuppressWarnings("javaarchitecture:S7091") // yes it uses the Index Storage
 public class CompactIndexTask<T extends Storable> implements FileTask<Boolean> {
 
   private final IndexStorage<T> indexStorage;

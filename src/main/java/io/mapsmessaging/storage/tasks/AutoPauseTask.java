@@ -27,6 +27,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+@SuppressWarnings("javaarchitecture:S7091") // yes it uses the Async Storage to pause
 public class AutoPauseTask implements Runnable {
 
   private final AsyncStorage<?> storage;

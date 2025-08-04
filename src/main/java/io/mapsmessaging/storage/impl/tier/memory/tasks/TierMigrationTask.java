@@ -24,6 +24,7 @@ import io.mapsmessaging.storage.impl.tier.memory.MemoryTierStorage;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("javaarchitecture:S7091") // yes it uses the memory tier storage
 public class TierMigrationTask implements FileTask<Void>, Runnable {
 
   private final MemoryTierStorage<?> storage;

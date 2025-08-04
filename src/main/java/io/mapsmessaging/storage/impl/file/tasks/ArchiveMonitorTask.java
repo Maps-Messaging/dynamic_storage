@@ -28,6 +28,7 @@ import java.io.IOException;
 
 import static io.mapsmessaging.storage.logging.StorageLogMessages.ARCHIVE_MONITOR_FAILED;
 
+@SuppressWarnings("javaarchitecture:S7091") // yes it uses the PartitionStorage class to work on
 public class ArchiveMonitorTask<T extends Storable> implements FileTask<Boolean>, Runnable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveMonitorTask.class);

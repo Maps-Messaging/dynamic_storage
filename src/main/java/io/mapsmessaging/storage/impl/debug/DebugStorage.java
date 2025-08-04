@@ -350,7 +350,7 @@ public class DebugStorage<T extends Storable> implements Storage<T>, ExpiredMoni
 
   private void exitFunction() {
     Context existingContext = thread.getAndSet(null);
-    if (existingContext != null && existingContext.t.getId() != Thread.currentThread().getId()) {
+    if (existingContext != null && existingContext.t != Thread.currentThread()) {
       logger.log(DEBUG_THREAD_MONITOR_LOGGING, "Thread has changed during function call");
     }
   }
@@ -358,7 +358,7 @@ public class DebugStorage<T extends Storable> implements Storage<T>, ExpiredMoni
   private String produceStackTrace(Thread t) {
     StringBuilder sb = new StringBuilder();
     if (t != null) {
-      sb.append(t.getName()).append(" id:").append(t.getId()).append("\n");
+      sb.append(t).append("\n");
       StackTraceElement[] stackTraceElements = t.getStackTrace();
       for (StackTraceElement stackTraceElement : stackTraceElements) {
         sb.append(stackTraceElement.toString()).append("\n");

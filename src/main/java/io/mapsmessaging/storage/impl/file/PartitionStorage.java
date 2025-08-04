@@ -80,6 +80,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private long lastKeyStored;
   private long lastAccess;
 
+  @SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the archive monitor task
   public PartitionStorage(PartitionStorageConfig config, ExpiredStorableHandler expiredHandler) throws IOException{
     this.config = config;
     this.expiredHandler = Objects.requireNonNullElseGet(expiredHandler, () -> new BaseExpiredHandler<>(this));
