@@ -31,6 +31,7 @@ import lombok.Setter;
 
 import java.util.Map;
 
+@SuppressWarnings("javaarchitecture:S7091")
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.PROPERTY,
@@ -65,6 +66,7 @@ public class StorageConfig {
 
   public StorageConfig(StorageConfig lhs){
     debug = lhs.debug;
+    type = lhs.type;
   }
 
   public void fromMap(String name, Map<String, String> properties){

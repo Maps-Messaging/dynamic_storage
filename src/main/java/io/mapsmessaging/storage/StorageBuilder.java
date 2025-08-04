@@ -68,6 +68,8 @@ public class StorageBuilder<T extends Storable> {
   /**
    * This function is depricated, please use the setConfig() to ensure accurate mapping of values in the config
    * @param properties
+   *
+   * @deprecated Use the setConfig() function to ensure tighter configuration
    */
   @Deprecated ( since = "2.4.13", forRemoval = true)
   public @NotNull StorageBuilder<T> setProperties(@NotNull Map<String, String> properties) {
