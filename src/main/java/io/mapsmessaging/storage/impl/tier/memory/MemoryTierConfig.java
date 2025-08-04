@@ -72,17 +72,17 @@ public class MemoryTierConfig extends StorageConfig {
   }
 
   @Override
-  public void fromMap(String name, Map<String, String> properties) {
-    super.fromMap(name, properties);
+  public void fromMap(Map<String, String> properties) {
+    super.fromMap(properties);
 
     migrationTime = Long.parseLong(properties.getOrDefault("MigrationPeriod", String.valueOf(DEFAULT_MIGRATION_TIME)));
     scanInterval = Long.parseLong(properties.getOrDefault("ScanInterval", String.valueOf(DEFAULT_SCAN_INTERVAL)));
     maximumCount = Long.parseLong(properties.getOrDefault("Tier1Size", String.valueOf(DEFAULT_TIER_1_SIZE)));
 
     memoryStorageConfig = new MemoryStorageConfig();
-    memoryStorageConfig.fromMap(name, properties);
+    memoryStorageConfig.fromMap(properties);
 
     partitionStorageConfig = new PartitionStorageConfig();
-    partitionStorageConfig.fromMap(name, properties);
+    partitionStorageConfig.fromMap(properties);
   }
 }

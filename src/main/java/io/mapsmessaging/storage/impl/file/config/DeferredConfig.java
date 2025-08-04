@@ -62,7 +62,7 @@ public class DeferredConfig {
     }
   }
 
-  public void fromMap(String name, Map<String, String> properties) {
+  public void fromMap(Map<String, String> properties) {
 
     if (properties.containsKey("deferredName")) {
       deferredName = properties.get("deferredName");

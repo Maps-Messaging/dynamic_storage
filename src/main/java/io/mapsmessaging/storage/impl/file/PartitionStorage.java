@@ -348,37 +348,43 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     return true;
   }
 
-  private void scanCapacity(){
-    if(config.getCapacity() >= 0) {
-      long size = size();
-      try (BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)) {
-        Queue<Long> expiredList = new NaturalOrderedLongQueue(0, bitSetFactory);
-        while (size > config.getCapacity()) {
-          for (IndexStorage<T> partition : partitions) {
-            List<Long> keys = new ArrayList<>(partition.getKeys());
+  private void scanCapacity() {
+    if (config.getCapacity() < 0) return;
 
-            Iterator<Long> iterator = keys.iterator();
-            while (iterator.hasNext() && size > config.getCapacity()) {
-              Long key = iterator.next();
-              remove(key);
-              expiredList.add(key);
-              size--;
-            }
-            if (size <= config.getCapacity()) {
-              break;
-            }
-          }
-          if (!expiredList.isEmpty()) {
-            expiredHandler.expired(expiredList);
-            expiredMonitor.schedulePoll();
-          }
-        }
+    long size = size();
+    try (BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)) {
+      Queue<Long> expiredList = new NaturalOrderedLongQueue(0, bitSetFactory);
+
+      while (size > config.getCapacity()) {
+        size = removeExpiredKeys(size, expiredList);
+        handleExpired(expiredList);
       }
-      catch (IOException e) {
-        // log this
-      }
+    } catch (IOException e) {
+      // log this
     }
   }
+
+  private long removeExpiredKeys(long size, Queue<Long> expiredList) throws IOException {
+    for (IndexStorage<T> partition : partitions) {
+      for (Long key : new ArrayList<>(partition.getKeys())) {
+        if (size <= config.getCapacity()) break;
+        remove(key);
+        expiredList.add(key);
+        size--;
+      }
+      if (size <= config.getCapacity()) break;
+    }
+    return size;
+  }
+
+  private void handleExpired(Queue<Long> expiredList) throws IOException {
+    if (!expiredList.isEmpty()) {
+      expiredHandler.expired(expiredList);
+      expiredMonitor.schedulePoll();
+      expiredList.clear();
+    }
+  }
+
 
   public void scanForExpired() throws IOException {
     if (!paused) {

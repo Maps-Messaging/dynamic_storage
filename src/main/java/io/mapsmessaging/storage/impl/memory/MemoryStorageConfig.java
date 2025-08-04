@@ -56,8 +56,8 @@ public class MemoryStorageConfig extends StorageConfig {
     return new MemoryStorageConfig(this);
   }
   @Override
-  public void fromMap(String name, Map<String, String> properties){
-    super.fromMap(name, properties);
+  public void fromMap(Map<String, String> properties){
+    super.fromMap(properties);
     expiredEventPoll = Integer.parseInt(properties.getOrDefault("ExpiredEventPoll", String.valueOf(EXPIRED_EVENT_MONITOR_TIME)));
     capacity = Integer.parseInt(properties.getOrDefault("Capacity", "-1"));
   }

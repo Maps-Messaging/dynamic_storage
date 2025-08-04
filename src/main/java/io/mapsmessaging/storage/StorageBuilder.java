@@ -87,7 +87,7 @@ public class StorageBuilder<T extends Storable> {
     else{
       throw new IllegalArgumentException("Unknown storage type: " + type);
     }
-    config.fromMap(name, properties);
+    config.fromMap(properties);
 
     return this;
   }

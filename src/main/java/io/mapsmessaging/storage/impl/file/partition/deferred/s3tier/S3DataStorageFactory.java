@@ -19,17 +19,15 @@
 
 package io.mapsmessaging.storage.impl.file.partition.deferred.s3tier;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.config.S3Config;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageFactory;
 import io.mapsmessaging.storage.impl.file.partition.DeferredDataStorage;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.IOException;
 
@@ -45,27 +43,21 @@ public class S3DataStorageFactory<T extends Storable> implements DataStorageFact
   }
 
   @Override
-  public DeferredDataStorage<T> create(PartitionStorageConfig config)
-      throws IOException {
-
+  public DeferredDataStorage<T> create(PartitionStorageConfig config) throws IOException {
     S3Config s3Config = config.getDeferredConfig().getS3Config();
-    AWSCredentials credentials = new BasicAWSCredentials(
+    AwsBasicCredentials credentials = AwsBasicCredentials.create(
         s3Config.getAccessKeyId(),
         s3Config.getSecretAccessKey()
     );
-    Regions regions = fromRegionName(s3Config.getRegionName());
-    AmazonS3 amazonS3 = AmazonS3ClientBuilder.standard()
-        .withRegion(regions)
-        .withCredentials(new AWSStaticCredentialsProvider(credentials))
-        .build();
-    S3TransferApi transferApi = new S3TransferApi(amazonS3, s3Config.getBucketName(), s3Config.isCompression());
-    return new S3DataStorageProxy<>(transferApi, config);
-  }
 
-  private Regions fromRegionName(String regionName) {
-    return java.util.Arrays.stream(Regions.values())
-        .filter(region -> region.getName().equals(regionName))
-        .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException("Unknown region: " + regionName));
+    Region region = Region.of(s3Config.getRegionName());
+
+    S3Client s3Client = S3Client.builder()
+        .region(region)
+        .credentialsProvider(StaticCredentialsProvider.create(credentials))
+        .build();
+
+    S3TransferApi transferApi = new S3TransferApi(s3Client, s3Config.getBucketName(), s3Config.isCompression());
+    return new S3DataStorageProxy<>(transferApi, config);
   }
 }

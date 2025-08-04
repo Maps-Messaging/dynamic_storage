@@ -60,7 +60,8 @@ public class PartitionStorageConfig extends StorageConfig {
   @Schema(description = "Configuration to manage paused/idle messages stores when timeouts occur ")
   private DeferredConfig deferredConfig;
 
-  private transient StorableFactory storableFactory;
+  @SuppressWarnings("java:S3740") // Unfortunately I can not
+  private StorableFactory storableFactory;
 
   public PartitionStorageConfig() {
     type = "Partition";
@@ -87,16 +88,15 @@ public class PartitionStorageConfig extends StorageConfig {
   }
 
   @Override
-  public void fromMap(String name, Map<String, String> properties) {
-    super.fromMap(name, properties);
-    fileName = name;
+  public void fromMap(Map<String, String> properties) {
+    super.fromMap(properties);
     sync = Boolean.parseBoolean(properties.getOrDefault("Sync", "false"));
     itemCount = Integer.parseInt(properties.getOrDefault("ItemCount", String.valueOf(ITEM_COUNT)));
     capacity = Integer.parseInt(properties.getOrDefault("Capacity", "-1"));
     maxPartitionSize = Long.parseLong(properties.getOrDefault("MaxPartitionSize", String.valueOf(MAXIMUM_DATA_SIZE)));
     expiredEventPoll = Integer.parseInt(properties.getOrDefault("ExpiredEventPoll", String.valueOf(EXPIRED_EVENT_MONITOR_TIME)));
     deferredConfig = new DeferredConfig();
-    deferredConfig.fromMap(name, properties);
+    deferredConfig.fromMap(properties);
     setTaskQueue(taskQueue); // Note: taskQueue remains null unless set elsewhere
 
   }

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.storage;
 
+
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
@@ -69,7 +70,7 @@ public class StorageConfig {
     type = lhs.type;
   }
 
-  public void fromMap(String name, Map<String, String> properties){
+  public void fromMap(Map<String, String> properties){
     debug = properties.containsKey("debug") && Boolean.parseBoolean(properties.get("debug"));
   }
 

@@ -390,11 +390,11 @@
       <version>3.2.1</version>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-s3 -->
+    <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/s3 -->
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.12.788</version>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <version>2.32.14</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
@@ -403,6 +403,14 @@
       <artifactId>swagger-annotations</artifactId>
       <version>2.2.34</version>
     </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>2.19.2</version>
+    </dependency>
+
 
 
     <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->

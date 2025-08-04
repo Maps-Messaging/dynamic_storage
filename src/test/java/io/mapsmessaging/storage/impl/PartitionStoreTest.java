@@ -19,14 +19,6 @@
 
 package io.mapsmessaging.storage.impl;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import io.mapsmessaging.storage.*;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
@@ -34,6 +26,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 
 import java.io.File;
 import java.io.IOException;
@@ -374,7 +372,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     String bucketName = System.getProperty("bucketName");
 
     if(accessKeyId != null && secretAccessKey != null && region != null && bucketName != null) {
-      AmazonS3 amazonS3 = createAmazonId(accessKeyId, secretAccessKey, region);
+      S3Client amazonS3 = createS3Client(accessKeyId, secretAccessKey, region);
 
       Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty before the test starts");
       Map<String, String> properties = buildProperties(false);
@@ -416,7 +414,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     String region = System.getProperty("regionName");
     String bucketName = System.getProperty("bucketName");
     if(accessKeyId != null && secretAccessKey != null && region != null && bucketName != null) {
-      AmazonS3 amazonS3 = createAmazonId(accessKeyId, secretAccessKey, region);
+      S3Client amazonS3 = createS3Client(accessKeyId, secretAccessKey, region);
 
       Assertions.assertTrue(isBucketEmpty(amazonS3, bucketName), "S3 bucket should be empty before the test starts");
       Map<String, String> properties = buildProperties(false);
@@ -442,23 +440,23 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     }
   }
 
-  private AmazonS3 createAmazonId(String accessKeyId, String secretAccessKey, String region){
-
-    AWSCredentials credentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
-    Regions regions = Regions.fromName(region);
-    return AmazonS3ClientBuilder.standard()
-        .withRegion(regions)
-        .withCredentials(new AWSStaticCredentialsProvider(credentials))
+  private S3Client createS3Client(String accessKeyId, String secretAccessKey, String region) {
+    AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
+    return S3Client.builder()
+        .region(Region.of(region))
+        .credentialsProvider(StaticCredentialsProvider.create(credentials))
         .build();
   }
 
-  boolean isBucketEmpty(AmazonS3 amazonS3, String bucketName){
-    return getBucketEntityCount(amazonS3, bucketName) == 0;
+  boolean isBucketEmpty(S3Client s3Client, String bucketName) {
+    return getBucketEntityCount(s3Client, bucketName) == 0;
   }
 
-  int getBucketEntityCount(AmazonS3 amazonS3, String bucketName){
-    ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucketName);
-    ListObjectsV2Result listing = amazonS3.listObjectsV2(req);
-    return listing.getKeyCount();
+  int getBucketEntityCount(S3Client s3Client, String bucketName) {
+    ListObjectsV2Request request = ListObjectsV2Request.builder()
+        .bucket(bucketName)
+        .build();
+    ListObjectsV2Response response = s3Client.listObjectsV2(request);
+    return response.keyCount();
   }
 }

@@ -142,7 +142,7 @@ public abstract class DataStorageProxy<T extends Storable> implements DeferredDa
   }
 
   protected @Nullable MessageDigest getMessageDigest(String name) throws NoSuchAlgorithmException {
-    if (name != null && name.length() > 0 && !name.equalsIgnoreCase("none")) {
+    if (name != null && !name.isEmpty() && !name.equalsIgnoreCase("none")) {
       return MessageDigest.getInstance(name);
     }
     return null;
