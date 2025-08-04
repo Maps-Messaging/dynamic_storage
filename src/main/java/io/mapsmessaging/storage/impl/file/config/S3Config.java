@@ -62,18 +62,4 @@ public class S3Config {
     bucketName = properties.get("S3BucketName");
     compression = Boolean.parseBoolean(properties.getOrDefault("S3CompressEnabled", "false"));
   }
-
-  public void validate() {
-    boolean s3FieldsUsed = accessKeyId != null || secretAccessKey != null || regionName != null || bucketName != null || compression;
-    if (s3FieldsUsed) {
-      if (isBlank(accessKeyId)) throw new IllegalArgumentException("S3 accessKeyId must be set");
-      if (isBlank(secretAccessKey)) throw new IllegalArgumentException("S3 secretAccessKey must be set");
-      if (isBlank(regionName)) throw new IllegalArgumentException("S3 regionName must be set");
-      if (isBlank(bucketName)) throw new IllegalArgumentException("S3 bucketName must be set");
-    }
-  }
-
-  private boolean isBlank(String s) {
-    return s == null || s.isBlank();
-  }
 }
