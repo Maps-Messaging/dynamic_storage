@@ -1,18 +1,20 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.storage.impl.file.partition;
@@ -20,25 +22,25 @@ package io.mapsmessaging.storage.impl.file.partition;
 import io.mapsmessaging.storage.impl.file.tasks.MemoryMapLoadTask;
 import io.mapsmessaging.utilities.collections.MappedBufferHelper;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import lombok.Getter;
+import lombok.ToString;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
-import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+@ToString
+@SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the Memory Map Load task
 public class IndexManager implements Closeable {
 
   private static final int HEADER_SIZE = 16;
@@ -123,16 +125,18 @@ public class IndexManager implements Closeable {
     if (!closed) {
       waitForLoad();
       closed = true;
-      index.force();
-      MappedBufferHelper.closeDirectBuffer(index);
-      index = null; // ensure NPE rather than a full-blown JVM crash!!!
+      if(index != null) {
+        index.force();
+        MappedBufferHelper.closeDirectBuffer(index);
+        index = null;
+      }
     }
   }
 
   public void pause() {
     if (!paused) {
-      waitForLoad();
       paused = true;
+      waitForLoad();
       index.force();
       MappedBufferHelper.closeDirectBuffer(index);
       index = null; // ensure NPE rather than a full-blown JVM crash!!!
@@ -141,8 +145,8 @@ public class IndexManager implements Closeable {
 
   public void resume(FileChannel channel) throws IOException {
     if (paused) {
-      waitForLoad();
       paused = false;
+      waitForLoad();
       int totalSize = (int) ((end - start) + 1) * IndexRecord.HEADER_SIZE;
       index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
       index.load(); // Ensure the file contents are loaded
@@ -180,7 +184,9 @@ public class IndexManager implements Closeable {
     ByteBuffer header = ByteBuffer.allocate(8);
     header.putLong(key);
     header.flip();
-    channel.write(header);
+    if(channel.write(header) != 8){
+      throw new IOException("Unable to write to channel");
+    }
   }
 
   public int size() {
@@ -243,7 +249,7 @@ public class IndexManager implements Closeable {
         emptySpace.add(item.getLength());
         setMapPosition(key, true);
         // Mark it as deleted, so on reload we can get the total length and key
-        IndexRecord indexRecord = new IndexRecord(key, 0, -1, 0, item.getLength());
+        IndexRecord indexRecord = new IndexRecord(key, 0, 0, 0, item.getLength());
         indexRecord.update(index);
         return true;
       }
@@ -304,7 +310,7 @@ public class IndexManager implements Closeable {
     waitForLoad();
     List<Long> keys = new NaturalOrderedLongList();
     getIterator().forEachRemaining(indexRecord -> {
-      if (indexRecord != null && indexRecord.getLength() != 0 && indexRecord.getPosition() >= 0) {
+      if (indexRecord != null && indexRecord.getLength() != 0 && indexRecord.getPosition() > 0) {
         keys.add(indexRecord.getKey());
       }
     });

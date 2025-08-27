@@ -1,24 +1,27 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.storage.impl.file;
 
 import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.IndexGet;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import io.mapsmessaging.storage.impl.file.partition.IndexStorage;
@@ -43,7 +46,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 
-public class PartitionStorage<T extends Storable> implements Storage<T>, ExpiredMonitor {
+@SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the ArchiveMonitorTask
+public class PartitionStorage<T extends Storable> implements Storage<T>, ExpiredMonitor, TierMigrationMonitor {
 
   private static final String PARTITION_FILE_NAME = "partition_";
 
@@ -54,7 +58,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
 
   private final int itemCount;
   private final ExpireStorableTaskManager<T> expiredMonitor;
-  private final PartitionStorageConfig<T> config;
+  private final PartitionStorageConfig config;
 
   private final List<IndexStorage<T>> partitions;
   private final String fileName;
@@ -77,15 +81,17 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private long lastKeyStored;
   private long lastAccess;
 
-  public PartitionStorage(PartitionStorageConfig<T> config) throws IOException{
+  @SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the archive monitor task
+  public PartitionStorage(PartitionStorageConfig config, ExpiredStorableHandler expiredHandler) throws IOException{
     this.config = config;
+    this.expiredHandler = Objects.requireNonNullElseGet(expiredHandler, () -> new BaseExpiredHandler<>(this));
+    this.itemCount = config.getItemCount();
+    this.fileName = config.getFileName() + File.separator + PARTITION_FILE_NAME;
+
     partitions = new ArrayList<>();
     taskScheduler = config.getTaskQueue();
     rootDirectory = config.getFileName();
-    this.expiredHandler = Objects.requireNonNullElseGet(config.getExpiredHandler(), () -> new BaseExpiredHandler<>(this));
-    this.itemCount = config.getItemCount();
-    this.fileName = config.getFileName() + File.separator + PARTITION_FILE_NAME;
-    archiveIdleTime = config.getArchiveIdleTime();
+    archiveIdleTime = config.getDeferredConfig().getIdleTime();
     partitionCounter = 0;
     shutdown = false;
     File location = new File(config.getFileName());
@@ -182,12 +188,20 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   public void resume() throws IOException {
     if (paused) {
       paused = false;
+      List<IndexStorage<T>> closedPartitions = new ArrayList<>();
       for (IndexStorage<T> partition : partitions) {
-        partition.resume();
+        if(partition.isDeleted()){
+          closedPartitions.add(partition);
+        }
+        else {
+          partition.resume();
+        }
+      }
+      for(IndexStorage<T> partition : closedPartitions){
+        partitions.remove(partition);
       }
       expiredMonitor.resume();
     }
-
   }
 
   @Override
@@ -199,7 +213,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     long time = System.currentTimeMillis();
     IndexStorage<T> partition = locateOrCreatePartition(object.getKey());
     IndexRecord indexRecord = partition.add(object);
-    if (partition.isFull()) {
+    if (partition.isFull() && object.getKey() < partition.getEnd()) {
       partition.setEnd(object.getKey());
     }
     expiredMonitor.added(object);
@@ -209,6 +223,9 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     writeTimes.add((System.currentTimeMillis() - time));
     if (getLastKey() < object.getKey()) {
       lastKeyStored = object.getKey();
+    }
+    if(config.getCapacity()>0){
+      scanCapacity();
     }
   }
 
@@ -333,6 +350,44 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     return true;
   }
 
+  private void scanCapacity() {
+    if (config.getCapacity() < 0) return;
+
+    long size = size();
+    try (BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)) {
+      Queue<Long> expiredList = new NaturalOrderedLongQueue(0, bitSetFactory);
+
+      while (size > config.getCapacity()) {
+        size = removeExpiredKeys(size, expiredList);
+        handleExpired(expiredList);
+      }
+    } catch (IOException e) {
+      // log this
+    }
+  }
+
+  private long removeExpiredKeys(long size, Queue<Long> expiredList) throws IOException {
+    for (IndexStorage<T> partition : partitions) {
+      for (Long key : new ArrayList<>(partition.getKeys())) {
+        if (size <= config.getCapacity()) break;
+        remove(key);
+        expiredList.add(key);
+        size--;
+      }
+      if (size <= config.getCapacity()) break;
+    }
+    return size;
+  }
+
+  private void handleExpired(Queue<Long> expiredList) throws IOException {
+    if (!expiredList.isEmpty()) {
+      expiredHandler.expired(expiredList);
+      expiredMonitor.schedulePoll();
+      expiredList.clear();
+    }
+  }
+
+
   public void scanForExpired() throws IOException {
     if (!paused) {
       try (BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)) {
@@ -361,7 +416,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   }
 
   @Override
-  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) {
+  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) throws IOException {
     for (IndexStorage<T> partition : partitions) {
       listToKeep = partition.keepOnly(listToKeep);
     }
@@ -369,7 +424,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   }
 
   @Override
-  public int removeAll(@NotNull Collection<Long> listToRemove) {
+  public int removeAll(@NotNull Collection<Long> listToRemove) throws IOException {
     int counter = 0;
     for (IndexStorage<T> partition : partitions) {
       counter += partition.removeAll(listToRemove);
@@ -389,9 +444,11 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   }
 
   public @NotNull Statistics getStatistics() {
-    long length;
+    long length = 0;
     try {
-      length = length();
+      if(!paused) {
+        length = length();
+      }
     } catch (IOException e) {
       length = -1;
     }

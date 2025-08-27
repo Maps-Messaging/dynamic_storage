@@ -1,31 +1,36 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.storage.impl.file.s3;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import io.mapsmessaging.storage.impl.S3Helper;
-import io.mapsmessaging.storage.impl.file.partition.archive.s3tier.S3Record;
-import io.mapsmessaging.storage.impl.file.partition.archive.s3tier.S3TransferApi;
+import io.mapsmessaging.storage.impl.file.partition.deferred.s3tier.S3Record;
+import io.mapsmessaging.storage.impl.file.partition.deferred.s3tier.S3TransferApi;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -33,10 +38,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
 import java.util.function.BooleanSupplier;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 class SimpleS3Test {
 
@@ -59,7 +60,7 @@ class SimpleS3Test {
   @Test
   void archiveAndDelete() throws IOException {
     Assumptions.assumeTrue(new ConfigurationCheck(), "AWS Configuration not preset");
-    AmazonS3 amazonS3 = createAmazonId();
+    S3Client amazonS3 = createAmazonId();
     S3TransferApi transferApi = new S3TransferApi(amazonS3, bucketName, false);
     String filename = "FileToArchive.dmp";
     FileOutputStream fileOutputStream = new FileOutputStream(filename, false);
@@ -78,7 +79,7 @@ class SimpleS3Test {
   @Test
   void archiveAndRestore() throws IOException, NoSuchAlgorithmException {
     Assumptions.assumeTrue(new ConfigurationCheck(), "AWS Configuration not preset");
-    AmazonS3 amazonS3 = createAmazonId();
+    S3Client amazonS3 = createAmazonId();
     S3TransferApi transferApi = new S3TransferApi(amazonS3, bucketName, false);
 
     String filename = "FileToArchive.dmp";
@@ -111,7 +112,7 @@ class SimpleS3Test {
 
     Assertions.assertEquals(record.getLength(), reloaded.getLength());
     Assertions.assertEquals(record.getEntryName(), reloaded.getEntryName());
-    Assertions.assertEquals(record.getArchiveHash(), reloaded.getArchiveHash());
+    Assertions.assertEquals(record.getDeferredHash(), reloaded.getDeferredHash());
     Assertions.assertEquals(record.getBucketName(), reloaded.getBucketName());
     Assertions.assertEquals(record.getArchivedDate(), reloaded.getArchivedDate());
 
@@ -130,14 +131,14 @@ class SimpleS3Test {
     Assertions.assertArrayEquals(digest, reloadedDigest);
   }
 
-  private AmazonS3 createAmazonId(){
-    AWSCredentials credentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
-    Regions regions = Regions.fromName(region);
-    return AmazonS3ClientBuilder.standard()
-        .withRegion(regions)
-        .withCredentials(new AWSStaticCredentialsProvider(credentials))
+  private S3Client createAmazonId(){
+    AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
+    return S3Client.builder()
+        .region(Region.of(region))
+        .credentialsProvider(StaticCredentialsProvider.create(credentials))
         .build();
   }
+
 
   private boolean isConfigured(){
     return accessKeyId != null && secretAccessKey != null && region != null && bucketName != null;

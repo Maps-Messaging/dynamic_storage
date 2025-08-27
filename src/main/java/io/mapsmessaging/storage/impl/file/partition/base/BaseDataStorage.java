@@ -1,32 +1,35 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.storage.impl.file.partition.base;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.StorableFactory;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
-import io.mapsmessaging.storage.impl.file.partition.ArchivedDataStorage;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorage;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
+import io.mapsmessaging.storage.impl.file.partition.DeferredDataStorage;
 import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
+
 import java.io.IOException;
 
-public class BaseDataStorage <T extends Storable> implements ArchivedDataStorage<T> {
+public class BaseDataStorage <T extends Storable> implements DeferredDataStorage<T> {
 
   private final String fileName;
   private final StorableFactory<T> storableFactory;
@@ -35,10 +38,10 @@ public class BaseDataStorage <T extends Storable> implements ArchivedDataStorage
 
   private DataStorage<T> physicalStore;
 
-  public BaseDataStorage(PartitionStorageConfig<T> config) throws IOException {
+  public BaseDataStorage(PartitionStorageConfig config) throws IOException {
     this.fileName = config.getFileName()+ "_data";
-    this.sync = config.isSync();
     this.storableFactory = config.getStorableFactory();
+    this.sync = config.isSync();
     this.maxPartitionSize = config.getMaxPartitionSize();
     physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
   }
@@ -54,11 +57,6 @@ public class BaseDataStorage <T extends Storable> implements ArchivedDataStorage
 
   public void resume() throws IOException {
     physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
-  }
-
-  @Override
-  public String getArchiveName(){
-    return "None";
   }
 
   @Override

@@ -1,49 +1,59 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.storage;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.storage.impl.debug.DebugStorage;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.memory.MemoryStorageConfig;
+import io.mapsmessaging.storage.impl.tier.memory.MemoryTierConfig;
 import io.mapsmessaging.storage.logging.StorageLogMessages;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import lombok.Getter;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+
 @ToString
+@Getter
 public class StorageBuilder<T extends Storable> {
 
   public static void initialiseLayer(){
     StorageFactoryFactory.getInstance().getKnownStorages();
     StorageFactoryFactory.getInstance().getKnownLayers();
   }
+
   private final Logger logger = LoggerFactory.getLogger(StorageBuilder.class);
 
-  private String storeType;
+  private boolean enableWriteThrough = false;
   private String cacheName;
   private String name;
-  private Map<String, String> properties;
+  private StorageConfig config;
   private StorableFactory<T> storableFactory;
   private ExpiredStorableHandler expiredStorableHandler;
 
-  private boolean enableWriteThrough = false;
 
   public @NotNull StorageBuilder<T> setName(@NotNull String name) {
     this.name = name;
@@ -55,8 +65,36 @@ public class StorageBuilder<T extends Storable> {
     return this;
   }
 
+  /**
+   * This function is depricated, please use the setConfig() to ensure accurate mapping of values in the config
+   * @param properties
+   *
+   * @deprecated Use the setConfig() function to ensure tighter configuration
+   */
+  @SuppressWarnings("java:S1133")
+  @Deprecated ( since = "2.4.13", forRemoval = true)
   public @NotNull StorageBuilder<T> setProperties(@NotNull Map<String, String> properties) {
-    this.properties = properties;
+    String type = properties.get("storeType");
+
+    if(type.equalsIgnoreCase("partition")){
+      config = new PartitionStorageConfig();
+    }
+    else if(type.equalsIgnoreCase("memory")){
+      config = new MemoryStorageConfig();
+    }
+    else if(type.equalsIgnoreCase("memorytier")){
+      config = new MemoryTierConfig();
+    }
+    else{
+      throw new IllegalArgumentException("Unknown storage type: " + type);
+    }
+    config.fromMap(properties);
+
+    return this;
+  }
+
+  public @NotNull StorageBuilder<T> setConfig(@NotNull StorageConfig config) {
+    this.config = config;
     return this;
   }
 
@@ -67,25 +105,6 @@ public class StorageBuilder<T extends Storable> {
 
   public @NotNull StorageBuilder<T> enableCacheWriteThrough(boolean enableWriteThrough) {
     this.enableWriteThrough = enableWriteThrough;
-    return this;
-  }
-
-  public @NotNull StorageBuilder<T> setStorageType(@NotNull String storeType) throws IOException {
-    if (this.storeType != null) {
-      logger.log(StorageLogMessages.STORAGE_ALREADY_CONFIGURED);
-      throw new IOException("Store type already defined");
-    }
-    List<String> known = StorageFactoryFactory.getInstance().getKnownStorages();
-    for (String type : known) {
-      if (storeType.equals(type)) {
-        this.storeType = type;
-        break;
-      }
-    }
-    if (this.storeType == null) {
-      logger.log(StorageLogMessages.NO_SUCH_STORAGE_FOUND, storeType);
-      throw new IOException("No known storage type defined " + storeType);
-    }
     return this;
   }
 
@@ -117,15 +136,17 @@ public class StorageBuilder<T extends Storable> {
     return this;
   }
 
-
   public Storage<T> build() throws IOException {
-    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(storeType, properties, storableFactory, expiredStorableHandler);
+    StorageFactory<T> storeFactory = StorageFactoryFactory.getInstance().create(config, storableFactory, expiredStorableHandler);
     if (storeFactory != null) {
       Storage<T> baseStore = storeFactory.create(name);
       if (baseStore.isCacheable() && cacheName != null) {
         baseStore = StorageFactoryFactory.getInstance().createCache(cacheName, enableWriteThrough, baseStore);
       }
       logger.log(StorageLogMessages.BUILT_STORAGE, this);
+      if(config.isDebug()){
+        baseStore =  new DebugStorage<>(baseStore);
+      }
       return baseStore;
     } else {
       logger.log(StorageLogMessages.NO_STORAGE_FACTORY_FOUND);
@@ -136,7 +157,6 @@ public class StorageBuilder<T extends Storable> {
   public static List<String> getKnownStorages() {
     return StorageFactoryFactory.getInstance().getKnownStorages();
   }
-
 
   public static List<String> getKnownLayers() {
     return StorageFactoryFactory.getInstance().getKnownLayers();

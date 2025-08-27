@@ -1,29 +1,25 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.storage.impl.memory;
 
-import io.mapsmessaging.storage.BaseExpiredHandler;
-import io.mapsmessaging.storage.ExpiredMonitor;
-import io.mapsmessaging.storage.ExpiredStorableHandler;
-import io.mapsmessaging.storage.Statistics;
-import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.StorageStatistics;
+import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.expired.ExpireStorableTaskManager;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
@@ -31,19 +27,13 @@ import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMonitor {
 
@@ -54,6 +44,8 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   private final LongAdder reads;
   private final LongAdder writes;
   private final LongAdder deletes;
+  private final LongAdder evictions;
+  private final int capacity;
   private final ExpiredStorableHandler expiredStorableHandler;
   private final ExpireStorableTaskManager<T> expireStorableTaskManager;
   @Getter
@@ -62,15 +54,35 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   private long lastKeyStored;
   private long lastAccess;
 
-  public MemoryStorage(ExpiredStorableHandler expiredStorableHandler, int expiredEventPoll) {
-    memoryMap = new LinkedHashMap<>();
+  public MemoryStorage(ExpiredStorableHandler expiredStorableHandler, MemoryStorageConfig config) {
+    memoryMap = new LinkedHashMap<>() {
+      @Override
+      protected boolean removeEldestEntry(Map.Entry<Long, T> eldest) {
+        if ((capacity > 0) && size() > MemoryStorage.this.capacity) {
+          if(expiredStorableHandler != null) {
+            Queue<Long> evicted = new LinkedList<>();
+            evicted.add(eldest.getKey());
+            try {
+              expiredStorableHandler.expired(evicted);
+            } catch (IOException e) {
+              // log and ignore
+            }
+          }
+          evictions.increment();
+          return true;
+        }
+        return false;
+      }
+    };
+    this.capacity = config.getCapacity();
     this.expiredStorableHandler = Objects.requireNonNullElseGet(expiredStorableHandler, () -> new BaseExpiredHandler<>(this));
     taskScheduler = new TaskQueue();
-    this.expireStorableTaskManager = new ExpireStorableTaskManager<>(this, taskScheduler, expiredEventPoll);
+    this.expireStorableTaskManager = new ExpireStorableTaskManager<>(this, taskScheduler, config.getExpiredEventPoll());
     name = "memory" + counter.get();
     reads = new LongAdder();
     writes = new LongAdder();
     deletes = new LongAdder();
+    evictions = new LongAdder();
     lastKeyStored = 0;
     lastAccess = System.currentTimeMillis();
   }
@@ -139,6 +151,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
       for (Map.Entry<Long, T> entry : memoryMap.entrySet()) {
         if (entry.getValue().getExpiry() != 0 && entry.getValue().getExpiry() < now) {
           expired.add(entry.getKey());
+          evictions.increment();
         }
       }
       if (!expired.isEmpty()) {

@@ -1,30 +1,33 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
-package io.mapsmessaging.storage.impl.file.partition.archive.migration;
+package io.mapsmessaging.storage.impl.file.partition.deferred.migration;
 
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.FileHelper;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.partition.DataStorageImpl;
-import io.mapsmessaging.storage.impl.file.partition.archive.ArchiveRecord;
-import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageProxy;
-import io.mapsmessaging.storage.impl.file.partition.archive.DataStorageStub;
-import io.mapsmessaging.storage.impl.file.partition.archive.compress.FileCompressionProcessor;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DataStorageProxy;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DataStorageStub;
+import io.mapsmessaging.storage.impl.file.partition.deferred.DeferredRecord;
+import io.mapsmessaging.storage.impl.file.partition.deferred.compress.FileCompressionProcessor;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,9 +39,9 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
 
   private final String destination;
 
-  public MigrationDataStorageProxy(PartitionStorageConfig<T> config) throws IOException {
+  public MigrationDataStorageProxy(PartitionStorageConfig config) throws IOException {
     super(config);
-    String t = config.getMigrationDestination();
+    String t = config.getDeferredConfig().getMigrationDestination();
     if(t.endsWith(File.separator)){
       t = t.substring(0, t.length()-1);
     }
@@ -46,13 +49,8 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
   }
 
   @Override
-  protected ArchiveRecord buildArchiveRecord() {
+  protected DeferredRecord buildArchiveRecord() {
     return new MigrationRecord();
-  }
-
-  @Override
-  public String getArchiveName() {
-    return "Migrate";
   }
 
   @Override
@@ -94,13 +92,13 @@ public class MigrationDataStorageProxy<T extends Storable> extends DataStoragePr
       File from = new File(destination+File.separator+fileName+"_zip");
       FileCompressionProcessor compressionHelper = new FileCompressionProcessor();
       FileHelper.delete(to);
-      MigrationRecord migrationRecord = (MigrationRecord) ((DataStorageStub<T>)physicalStore).getArchiveRecord();
+      MigrationRecord migrationRecord = (MigrationRecord) ((DataStorageStub<T>)physicalStore).getDeferredRecord();
       MessageDigest messageDigest = getMessageDigest(migrationRecord.getDigestName());
       compressionHelper.out(from, to, messageDigest);
       String digest = null;
       if(messageDigest != null) {
         digest = Base64.getEncoder().encodeToString(messageDigest.digest());
-        if(!digest.equals(migrationRecord.getArchiveHash())){
+        if(!digest.equals(migrationRecord.getDeferredHash())){
           throw new IOException("File has been changed, MD5 hash does not match");
         }
       }

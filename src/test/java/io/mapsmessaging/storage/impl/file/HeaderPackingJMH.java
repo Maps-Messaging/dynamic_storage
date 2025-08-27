@@ -1,34 +1,29 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.storage.impl.file;
 
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutionException;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Threads;
+import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
+
+import java.nio.ByteBuffer;
 
 @State(Scope.Benchmark)
 public class HeaderPackingJMH {
@@ -38,7 +33,7 @@ public class HeaderPackingJMH {
   @BenchmarkMode({Mode.All})
   @Fork(value = 1, warmups = 2)
   @Threads(12)
-  public void performIntTasks(Blackhole blackhole) throws IOException, ExecutionException, InterruptedException {
+  public void performIntTasks(Blackhole blackhole)  {
     ByteBuffer test = ByteBuffer.allocate(128);
     writeInt(312321312L, 3756878L, 546347645L, 3167L, test);
     test.flip();
@@ -49,7 +44,7 @@ public class HeaderPackingJMH {
   @BenchmarkMode({Mode.All})
   @Fork(value = 1, warmups = 2)
   @Threads(12)
-  public void performPackedIntToLongTasks(Blackhole blackhole) throws IOException, ExecutionException, InterruptedException {
+  public void performPackedIntToLongTasks(Blackhole blackhole)  {
     ByteBuffer test = ByteBuffer.allocate(128);
     writeIntToLong(312321312L, 3756878L, 546347645L, 3167L, test);
     test.flip();
@@ -60,7 +55,7 @@ public class HeaderPackingJMH {
   @BenchmarkMode({Mode.All})
   @Fork(value = 1, warmups = 2)
   @Threads(12)
-  public void performLongTasks(Blackhole blackhole) throws IOException, ExecutionException, InterruptedException {
+  public void performLongTasks(Blackhole blackhole) {
     ByteBuffer test = ByteBuffer.allocate(128);
     writeLong(312321312L, 3756878L, 546347645L, 3167L, test);
     test.flip();

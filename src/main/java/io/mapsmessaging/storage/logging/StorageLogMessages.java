@@ -1,18 +1,20 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.storage.logging;
@@ -80,6 +82,13 @@ public enum StorageLogMessages implements LogMessage {
   FILE_HELPER_DELETED_FILE(LEVEL.INFO, STORAGE_CATEGORY.FILE, "Deleted file {}"),
   FILE_HELPER_EXCEPTION_RAISED(LEVEL.INFO, STORAGE_CATEGORY.FILE, "Exception raised while deleting {}"),
 
+  INDEX_STORAGE_RELOAD_ERROR(LEVEL.FATAL, STORAGE_CATEGORY.FILE, "Failed to read header : {} expected {}"),
+  INDEX_STORAGE_RESUME_ERROR(LEVEL.FATAL, STORAGE_CATEGORY.FILE, "Failed to resume store while suspended {}"),
+  INDEX_STORAGE_RELOAD_STATE(LEVEL.FATAL, STORAGE_CATEGORY.FILE, "{}"),
+
+  DEBUG_LOGGING(LEVEL.DEBUG, STORAGE_CATEGORY.MONITOR, "{}"),
+  DEBUG_THREAD_MONITOR_LOGGING(LEVEL.FATAL, STORAGE_CATEGORY.MONITOR, "{}"),
+
   CACHE_ALREADY_CONFIGURED(LEVEL.WARN, STORAGE_CATEGORY.FACTORY, "The cache has already been configured"),
   NO_SUCH_CACHE_FOUND(LEVEL.ERROR, STORAGE_CATEGORY.FACTORY, "No such cache implementation found {}"),
   DEFAULTING_CACHE(LEVEL.INFO, STORAGE_CATEGORY.FACTORY, "Defaulting the cache implementation to {}");
@@ -110,6 +119,7 @@ public enum StorageLogMessages implements LogMessage {
     TIER("Tier"),
     CACHE("Cache"),
     ASYNC("Async"),
+    MONITOR("Monitor"),
     FACTORY("Factory");
 
     private final @Getter String description;

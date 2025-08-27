@@ -1,18 +1,20 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.storage;
@@ -21,22 +23,11 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.impl.tier.memory.MemoryTierStorage;
 import io.mapsmessaging.storage.logging.StorageLogMessages;
-import io.mapsmessaging.storage.tasks.AddTask;
-import io.mapsmessaging.storage.tasks.AutoPauseTask;
-import io.mapsmessaging.storage.tasks.CloseTask;
-import io.mapsmessaging.storage.tasks.Completion;
-import io.mapsmessaging.storage.tasks.ContainsTask;
-import io.mapsmessaging.storage.tasks.DeleteTask;
-import io.mapsmessaging.storage.tasks.GetKeysTask;
-import io.mapsmessaging.storage.tasks.GetTask;
-import io.mapsmessaging.storage.tasks.IsEmptyTask;
-import io.mapsmessaging.storage.tasks.KeepOnlyTask;
-import io.mapsmessaging.storage.tasks.LastKeyTask;
-import io.mapsmessaging.storage.tasks.PauseTask;
-import io.mapsmessaging.storage.tasks.RemoveTask;
-import io.mapsmessaging.storage.tasks.RetrieveStatisticsTask;
-import io.mapsmessaging.storage.tasks.SizeTask;
+import io.mapsmessaging.storage.tasks.*;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
+import lombok.SneakyThrows;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
@@ -46,9 +37,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import lombok.SneakyThrows;
-import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the AutoPauseTask
 public class AsyncStorage<T extends Storable> implements Closeable {
 
   private final Logger logger;
@@ -212,6 +202,12 @@ public class AsyncStorage<T extends Storable> implements Closeable {
     checkClose();
     logger.log(StorageLogMessages.ASYNC_PAUSE_REQUESTED);
     return scheduler.submit(new PauseTask<>(storage), BACKGROUND_PRIORITY);
+  }
+
+  public Future<Long> getLastAccessAsync() throws IOException {
+    checkClose();
+    logger.log(StorageLogMessages.ASYNC_PAUSE_REQUESTED);
+    return scheduler.submit(new LastAccessTask<>(storage), BACKGROUND_PRIORITY);
   }
 
   public long getLastAccess() {

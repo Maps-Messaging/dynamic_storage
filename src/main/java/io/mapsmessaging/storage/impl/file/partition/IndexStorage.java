@@ -1,34 +1,35 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.storage.impl.file.partition;
 
-import static io.mapsmessaging.storage.impl.file.partition.PartitionDataManagerFactory.getInstance;
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
-import static java.nio.file.StandardOpenOption.DSYNC;
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.SPARSE;
-import static java.nio.file.StandardOpenOption.WRITE;
-
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.file.tasks.CompactIndexTask;
+import lombok.Getter;
+import lombok.ToString;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -40,10 +41,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
-import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import static io.mapsmessaging.storage.impl.file.partition.PartitionDataManagerFactory.getInstance;
+import static io.mapsmessaging.storage.logging.StorageLogMessages.*;
+import static java.nio.file.StandardOpenOption.*;
+
+@ToString
+@SuppressWarnings("javaarchitecture:S7091") // yes it uses the compact index task
 public class IndexStorage<T extends Storable> {
 
   private static final int HEADER_SIZE = 32;
@@ -53,11 +57,12 @@ public class IndexStorage<T extends Storable> {
   private static final long OPEN_STATE = 0xEFFFFFFFFFFFFFFFL;
   private static final long CLOSE_STATE = 0x0000000000000000L;
 
+  private final Logger logger = LoggerFactory.getLogger(IndexStorage.class);
   private int itemCount;
   private final boolean sync;
   private final String fileName;
   private final TaskQueue scheduler;
-  private final ArchivedDataStorage<T> dataStorage;
+  private final DeferredDataStorage<T> dataStorage;
 
   private IndexManager indexManager;
   private FileChannel mapChannel;
@@ -65,11 +70,14 @@ public class IndexStorage<T extends Storable> {
   @Getter
   private long lastAccess;
 
+  @Getter
   private volatile boolean closed;
+  @Getter
+  private volatile boolean deleted;
   private volatile boolean paused;
   private boolean requiresValidation;
 
-  public IndexStorage(PartitionStorageConfig<T> config, String name, long start, TaskQueue taskScheduler) throws IOException {
+  public IndexStorage(PartitionStorageConfig config, String name, long start, TaskQueue taskScheduler) throws IOException {
     this.itemCount = config.getItemCount();
     this.sync = config.isSync();
 
@@ -78,6 +86,7 @@ public class IndexStorage<T extends Storable> {
     scheduler = taskScheduler;
 
     long length = 0;
+    Files.createDirectories(file.getParentFile().toPath());
     if (file.exists()) {
       length = file.length();
     }
@@ -87,7 +96,7 @@ public class IndexStorage<T extends Storable> {
     } else {
       indexManager = initialise(start);
     }
-    PartitionStorageConfig<T> partitionConfig = new PartitionStorageConfig<>(config);
+    PartitionStorageConfig partitionConfig = new PartitionStorageConfig(config);
     partitionConfig.setFileName(this.fileName);
     PartitionDataManagerFactory<T> partitionDataManagerFactory = getInstance();
     dataStorage = partitionDataManagerFactory.create(partitionConfig);
@@ -97,6 +106,7 @@ public class IndexStorage<T extends Storable> {
     }
     closed = false;
     paused = false;
+    deleted = false;
   }
 
   public void close() throws IOException {
@@ -115,8 +125,12 @@ public class IndexStorage<T extends Storable> {
   }
 
   public void delete() throws IOException {
+    closed = true;
+    deleted = true;
     indexManager.close();
-    mapChannel.close();
+    if(!paused){
+      mapChannel.close();
+    }
     dataStorage.delete();
     File path = new File(fileName);
     Files.delete(path.toPath());
@@ -134,11 +148,20 @@ public class IndexStorage<T extends Storable> {
   }
 
   public void resume() throws IOException {
+    if(closed){
+      return;
+    }
     if (paused) {
       paused = false;
       File file = new File(this.fileName);
+      boolean recreate = !file.exists();
       mapChannel = openChannel(file);
-      indexManager.resume(mapChannel);
+      if(recreate){
+        indexManager = initialise(this.getStart());
+      }
+      else {
+        indexManager = reload();
+      }
       dataStorage.resume();
     }
   }
@@ -167,7 +190,9 @@ public class IndexStorage<T extends Storable> {
     headerValidation.putLong(Double.doubleToLongBits(VERSION));
     headerValidation.putLong(itemCount);
     headerValidation.flip();
-    mapChannel.write(headerValidation);
+    if(mapChannel.write(headerValidation) != HEADER_SIZE) {
+      throw new IOException("Failed to write header");
+    }
     IndexManager idx = new IndexManager(start, itemCount, mapChannel);
     scheduler.scheduleNow(idx.queueTask(false));
     mapChannel.force(false);
@@ -176,8 +201,12 @@ public class IndexStorage<T extends Storable> {
   }
 
   private IndexManager reload() throws IOException {
+    mapChannel.position(0);
     ByteBuffer headerValidation = ByteBuffer.allocate(HEADER_SIZE);
-    mapChannel.read(headerValidation);
+    if(mapChannel.read(headerValidation) != HEADER_SIZE){
+      logger.log(INDEX_STORAGE_RELOAD_ERROR, headerValidation.position(), HEADER_SIZE );
+      logger.log(INDEX_STORAGE_RELOAD_STATE, this.toString());
+    }
     headerValidation.flip();
     requiresValidation = headerValidation.getLong() != CLOSE_STATE;
     if (headerValidation.getLong() != UNIQUE_ID) {
@@ -200,6 +229,9 @@ public class IndexStorage<T extends Storable> {
   }
 
   public void compact() throws IOException {
+    if(paused){
+      resume();
+    }
     long size = ((indexManager.getEnd() - indexManager.getStart() + 2) * IndexRecord.HEADER_SIZE) + 24 + 16;
     long mapSize = mapChannel.size();
     if (size <mapSize) {
@@ -260,6 +292,10 @@ public class IndexStorage<T extends Storable> {
   }
 
   public IndexRecord add(@NotNull T object) throws IOException {
+    if(paused){
+      resume();
+    }
+
     if (indexManager.contains(object.getKey())) {
       throw new IOException("Key already exists");
     }
@@ -273,7 +309,15 @@ public class IndexStorage<T extends Storable> {
     return dataStorage.isFull();
   }
 
-  public boolean remove(long key) {
+  public boolean remove(long key) throws IOException {
+    if(paused){
+      try {
+        resume();
+      } catch (IOException e) {
+        logger.log(INDEX_STORAGE_RESUME_ERROR, this.fileName, e);
+        throw new IOException(e);
+      }
+    }
     lastAccess = System.currentTimeMillis();
     return indexManager.delete(key);
   }
@@ -299,6 +343,9 @@ public class IndexStorage<T extends Storable> {
   }
 
   public long emptySpace() {
+    if(paused){
+      return 0;
+    }
     return indexManager.emptySpace();
   }
 
@@ -310,7 +357,7 @@ public class IndexStorage<T extends Storable> {
     return indexManager.size() == 0;
   }
 
-  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) {
+  public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) throws IOException {
     lastAccess = System.currentTimeMillis();
     List<Long> itemsToRemove = indexManager.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
@@ -328,7 +375,7 @@ public class IndexStorage<T extends Storable> {
     return new ArrayList<>();
   }
 
-  public int removeAll(@NotNull Collection<Long> listToRemove) {
+  public int removeAll(@NotNull Collection<Long> listToRemove) throws IOException {
     int count =0;
     if (!listToRemove.isEmpty()) {
       for (long key : listToRemove) {

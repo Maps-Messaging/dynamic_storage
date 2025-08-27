@@ -1,18 +1,20 @@
 /*
- *   Copyright [2020 - 2022]   [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.storage.impl.tier.memory;
@@ -25,6 +27,11 @@ import io.mapsmessaging.storage.impl.tier.memory.tasks.TierMigrationTask;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
+import lombok.Getter;
+import lombok.SneakyThrows;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -32,11 +39,9 @@ import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-import lombok.Getter;
-import lombok.SneakyThrows;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+
+@SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the migration task
 public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   private final Storage<ObjectMonitor<T>> primary;
@@ -56,12 +61,12 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   private long lastKey;
 
-  public MemoryTierStorage(Storage<ObjectMonitor<T>> primary, Storage<T> secondary, long scanInterval, long migrationTime, long memorySize) {
+  public MemoryTierStorage(Storage<ObjectMonitor<T>> primary, Storage<T> secondary, MemoryTierConfig config) {
     this.primary = primary;
     this.secondary = secondary;
-    this.memorySize = memorySize;
-    this.migrationTime =migrationTime;
-    this.scanInterval = scanInterval;
+    this.memorySize = config.getMaximumCount();
+    this.migrationTime = config.getMigrationTime();
+    this.scanInterval = config.getScanInterval();
 
     memoryList = new NaturalOrderedLongQueue();
     lastKey = -2;
