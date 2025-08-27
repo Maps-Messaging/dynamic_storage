@@ -1,0 +1,6 @@
+steps:
+  - label: ":maven: Build and Deploy"
+    command:
+      - mvn clean deploy -Prelease
+    agents:
+      queue: "raspberrypi_build_agent"
