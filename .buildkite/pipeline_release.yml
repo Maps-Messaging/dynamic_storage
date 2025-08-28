@@ -3,4 +3,4 @@ steps:
     command:
       - mvn -DskipTests clean deploy -Prelease
     agents:
-      queue: "raspberrypi_build_agent"
+      queue:  "java_build_queue"
