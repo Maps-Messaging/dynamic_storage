@@ -215,8 +215,9 @@ public class IndexStorage<T extends Storable> {
     if (Double.longBitsToDouble(headerValidation.getLong()) != VERSION) {
       throw new IOException("Unexpected file version");
     }
-    if (headerValidation.getLong() != itemCount) {
-      itemCount = (int)(headerValidation.getLong() & 0x7fffffffL);
+    long bufferCount = headerValidation.getLong();
+    if (bufferCount != itemCount) {
+      itemCount = (int)(bufferCount & 0x7fffffffL);
     }
     IndexManager idx = new IndexManager(mapChannel);
     idx.loadMap(true);
