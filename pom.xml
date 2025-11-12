@@ -25,7 +25,7 @@
 
   <groupId>io.mapsmessaging</groupId>
   <artifactId>dynamic_storage</artifactId>
-  <version>2.5.0</version>
+  <version>2.5.1</version>
   <packaging>jar</packaging>
 
   <name>Dynamic Storage</name>
@@ -112,20 +112,20 @@
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>simple_logging</artifactId>
-          <version>2.1.0</version>
+          <version>2.1.1</version>
         </dependency>
         <!-- Naturally order long collection -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.2.0</version>
+          <version>1.2.1</version>
         </dependency>
 
         <!-- Non Blocking Task Queue module -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.2.0</version>
+          <version>2.2.1</version>
         </dependency>
 
       </dependencies>
@@ -135,7 +135,7 @@
           <plugin>
             <groupId>org.sonatype.central</groupId>
             <artifactId>central-publishing-maven-plugin</artifactId>
-            <version>0.8.0</version>
+            <version>0.9.0</version>
             <extensions>true</extensions>
             <configuration>
               <publishingServerId>central</publishingServerId>
@@ -147,7 +147,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-deploy-plugin</artifactId>
-            <version>3.1.1</version>
+            <version>3.1.4</version>
             <configuration>
               <skip>true</skip>
             </configuration>
@@ -176,20 +176,20 @@
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>simple_logging</artifactId>
-          <version>2.1.1-SNAPSHOT</version>
+          <version>2.1.2-SNAPSHOT</version>
         </dependency>
         <!-- Naturally order long collection -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.2.1-SNAPSHOT</version>
+          <version>1.2.2-SNAPSHOT</version>
         </dependency>
 
         <!-- Non Blocking Task Queue module -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.2.1-SNAPSHOT</version>
+          <version>2.2.2-SNAPSHOT</version>
         </dependency>
 
       </dependencies>
@@ -237,7 +237,7 @@
           <target>17</target>
         </configuration>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.14.0</version>
+        <version>3.14.1</version>
       </plugin>
 
       <!-- Setup code coverage by jacoco for our tests -->
@@ -265,7 +265,7 @@
           </execution>
         </executions>
         <groupId>org.jacoco</groupId>
-        <version>0.8.13</version>
+        <version>0.8.14</version>
       </plugin>
 
       <!-- Setup the JUnit tests runner -->
@@ -279,7 +279,7 @@
           </includes>
         </configuration>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.5.3</version>
+        <version>3.5.4</version>
       </plugin>
 
       <!-- build the source jar as well -->
@@ -331,12 +331,12 @@
           </execution>
         </executions>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.11.3</version>
+        <version>3.12.0</version>
       </plugin>
       <plugin>
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
-        <version>12.1.3</version>
+        <version>12.1.8</version>
         <configuration>
           <nvdApiKey>${nvd.api.key}</nvdApiKey>
           <failBuildOnCVSS>10</failBuildOnCVSS>
@@ -361,13 +361,13 @@
     <dependency>
       <artifactId>annotations</artifactId>
       <groupId>org.jetbrains</groupId>
-      <version>26.0.2</version>
+      <version>26.0.2-1</version>
     </dependency>
 
     <dependency>
       <artifactId>lombok</artifactId>
       <groupId>org.projectlombok</groupId>
-      <version>1.18.38</version>
+      <version>1.18.42</version>
       <scope>provided</scope>
     </dependency>
 
@@ -388,28 +388,28 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
-      <version>2.32.31</version>
+      <version>2.38.2</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-annotations</artifactId>
-      <version>2.2.36</version>
+      <version>2.2.40</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.19.2</version>
+      <version>2.20</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.5.19</version>
+      <version>1.5.20</version>
       <scope>test</scope>
     </dependency>
 
@@ -417,7 +417,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.5.18</version>
+      <version>1.5.20</version>
       <scope>test</scope>
     </dependency>
 
@@ -434,13 +434,13 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
-      <version>5.13.4</version>
+      <version>6.0.1</version>
     </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
-      <version>5.13.4</version>
+      <version>6.0.1</version>
       <scope>test</scope>
     </dependency>
 
