@@ -162,7 +162,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     properties.put("storeType", "Partition");
     properties.put("Sync", "" + false);
     properties.put("ItemCount", ""+ 1_000);
-    properties.put("ExpiredEventPoll", ""+20);
+    properties.put("ExpiredEventPoll", ""+120);
     properties.put("MaxPartitionSize", "" + (1024L * 1024L)); // set to 1MB data limit // force the index
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder
