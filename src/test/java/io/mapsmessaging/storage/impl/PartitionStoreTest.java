@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     properties.put("storeType", "Partition");
     properties.put("Sync", "" + false);
     properties.put("ItemCount", ""+ 1_000);
-    properties.put("ExpiredEventPoll", ""+2);
+    properties.put("ExpiredEventPoll", ""+20);
     properties.put("MaxPartitionSize", "" + (1024L * 1024L)); // set to 1MB data limit // force the index
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder
