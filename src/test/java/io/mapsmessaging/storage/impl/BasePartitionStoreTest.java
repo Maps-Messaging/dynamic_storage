@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public class BasePartitionStoreTest extends BaseStoreTest {
   static Storage<MappedData> build(Map<String, String> properties, String testName) throws IOException {
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder.setFactory(getFactory())
-        .setName("test_file" + File.separator + testName)
+        .setName("test_file" + File.separator + computeNameFromTestName(testName))
         .setProperties(properties);
     return storageBuilder.build();
   }
@@ -62,4 +62,17 @@ public class BasePartitionStoreTest extends BaseStoreTest {
     return build(properties, testName);
   }
 
+  static String computeNameFromTestName(String testName){
+    String[] test = testName.split(" ");
+    String name;
+    if(test.length == 1){
+      name = test[0];
+    }
+    else{
+      name = test[1];
+    }
+    name = name.replace("(", "");
+    name = name.replace(")", "");
+    return name.replace("\"", "").trim();
+  }
 }
