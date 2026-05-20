@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     properties.put("storeType", "Partition");
     properties.put("Sync", "" + false);
     properties.put("ItemCount", ""+ 1_000);
-    properties.put("ExpiredEventPoll", ""+2);
+    properties.put("ExpiredEventPoll", ""+120);
     properties.put("MaxPartitionSize", "" + (1024L * 1024L)); // set to 1MB data limit // force the index
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder
@@ -264,7 +264,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     properties.put("deferredName", "Migrate");
     properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
     properties.put("migrationPath", "P:/migration/");
-    Storage<MappedData> storage = build(properties, testName);
+    Storage<MappedData> storage = build(properties,  BasePartitionStoreTest.computeNameFromTestName(testName));
     for (int x = 0; x < 1100; x++) {
       MappedData message = createMessageBuilder(x);
       storage.add(message);
@@ -289,7 +289,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     properties.put("deferredName", "Migrate");
     properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
     properties.put("migrationPath", "P:/migration/");
-    Storage<MappedData> storage = build(properties, testName);
+    Storage<MappedData> storage = build(properties,  BasePartitionStoreTest.computeNameFromTestName(testName));
     for (int x = 0; x < 1100; x++) {
       MappedData message = createMessageBuilder(x);
       storage.add(message);
@@ -298,7 +298,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
     TimeUnit.SECONDS.sleep(40);
     ((TierMigrationMonitor)storage).scanForArchiveMigration();
-    File file = new File("P:/migration/test_file" + File.separator+testName);
+    File file = new File("P:/migration/test_file" + File.separator+ BasePartitionStoreTest.computeNameFromTestName(testName));
     // We should have 10 zip files
     int count =0;
     File[] files = file.listFiles();
@@ -316,7 +316,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     Map<String, String> properties = buildProperties(false);
     properties.put("deferredName", "Compress");
     properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
-    Storage<MappedData> storage = build(properties, testName);
+    Storage<MappedData> storage = build(properties,  BasePartitionStoreTest.computeNameFromTestName(testName));
     for (int x = 0; x < 1100; x++) {
       MappedData message = createMessageBuilder(x);
       storage.add(message);
@@ -341,7 +341,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     Map<String, String> properties = buildProperties(false);
     properties.put("deferredName", "Compress");
     properties.put("archiveIdleTime", ""+TimeUnit.SECONDS.toMillis(30));
-    Storage<MappedData> storage = build(properties, testName);
+    Storage<MappedData> storage = build(properties,  BasePartitionStoreTest.computeNameFromTestName(testName));
     for (int x = 0; x < 1100; x++) {
       MappedData message = createMessageBuilder(x);
       storage.add(message);
@@ -350,7 +350,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
     TimeUnit.SECONDS.sleep(40);
     ((TierMigrationMonitor)storage).scanForArchiveMigration();
-    File file = new File("test_file" + File.separator+testName);
+    File file = new File("test_file" + File.separator+ BasePartitionStoreTest.computeNameFromTestName(testName));
     // We should have 10 zip files
     int count =0;
     File[] files = file.listFiles();
@@ -383,7 +383,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
       properties.put("S3RegionName", region);
       properties.put("S3BucketName", bucketName);
       properties.put("S3CompressEnabled", ""+compress);
-      Storage<MappedData> storage = build(properties, testName);
+      Storage<MappedData> storage = build(properties,  BasePartitionStoreTest.computeNameFromTestName(testName));
       for (int x = 0; x < 1100; x++) {
         MappedData message = createMessageBuilder(x);
         storage.add(message);
@@ -425,7 +425,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
       properties.put("S3RegionName", region);
       properties.put("S3BucketName", bucketName);
       properties.put("S3CompressEnabled", ""+compress);
-      Storage<MappedData> storage = build(properties, testName);
+      Storage<MappedData> storage = build(properties,  BasePartitionStoreTest.computeNameFromTestName(testName));
       for (int x = 0; x < 1100; x++) {
         MappedData message = createMessageBuilder(x);
         storage.add(message);

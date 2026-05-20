@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static io.mapsmessaging.storage.impl.BasePartitionStoreTest.computeNameFromTestName;
 
 class CompressionArchivePartitionTest  extends BaseTest {
 
@@ -76,7 +78,7 @@ class CompressionArchivePartitionTest  extends BaseTest {
     // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
     TimeUnit.SECONDS.sleep(5);
     ((TierMigrationMonitor)storage).scanForArchiveMigration();
-    File file = new File("test_file" + File.separator+testName);
+    File file = new File("test_file" + File.separator+computeNameFromTestName(testName));
     // We should have 10 zip files
     int count =0;
     File[] files = file.listFiles();

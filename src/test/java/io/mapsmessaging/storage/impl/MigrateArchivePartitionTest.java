@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ class MigrateArchivePartitionTest  extends BaseTest {
     properties.put("archiveIdleTime", "" + TimeUnit.SECONDS.toMillis(4));
     properties.put("migrationPath", "test_file_archive" + File.separator);
     properties.put("digestName", digestName);
-    Storage<MappedData> storage = BasePartitionStoreTest.build(properties, testName);
+    Storage<MappedData> storage = BasePartitionStoreTest.build(properties, BasePartitionStoreTest.computeNameFromTestName(testName));
     for (int x = 0; x < 1100; x++) {
       MappedData message = createMessageBuilder(x);
       storage.add(message);
@@ -65,7 +65,7 @@ class MigrateArchivePartitionTest  extends BaseTest {
     properties.put("deferredName", "Migrate");
     properties.put("archiveIdleTime", "" + TimeUnit.SECONDS.toMillis(4));
     properties.put("migrationPath", "test_file_archive" + File.separator);
-    Storage<MappedData> storage = BasePartitionStoreTest.build(properties, testName);
+    Storage<MappedData> storage = BasePartitionStoreTest.build(properties,  BasePartitionStoreTest.computeNameFromTestName(testName));
     for (int x = 0; x < 1100; x++) {
       MappedData message = createMessageBuilder(x);
       storage.add(message);
@@ -74,7 +74,7 @@ class MigrateArchivePartitionTest  extends BaseTest {
     // We should have exceeded the partition limits and have 10 partitions, lets wait the time out period
     TimeUnit.SECONDS.sleep(5);
     ((TierMigrationMonitor) storage).scanForArchiveMigration();
-    File file = new File("test_file_archive" + File.separator+"test_file"+File.separator+testName);
+    File file = new File("test_file_archive" + File.separator+"test_file"+File.separator+ BasePartitionStoreTest.computeNameFromTestName(testName));
     // We should have 10 zip files
     int count = 0;
     if(file.exists()) {
