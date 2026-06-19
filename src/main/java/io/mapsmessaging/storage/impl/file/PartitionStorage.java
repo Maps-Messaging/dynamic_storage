@@ -39,7 +39,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
@@ -155,19 +154,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     }
     partitions.clear();
 
-    File file = new File(rootDirectory);
-    String[] children = file.list();
-    if (children != null) {
-      for (String child : children) {
-        File childFile = new File(file, child);
-        Files.deleteIfExists(childFile.toPath());
-      }
-    }
-
-    children = file.list();
-    if (children == null || children.length == 0) {
-      Files.deleteIfExists(file.toPath());
-    }
+    FileHelper.deleteAllowingNfsTemporaryFiles(new File(rootDirectory), true);
   }
 
   @Override
@@ -616,5 +603,4 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
       previousPartition = partition;
     }
   }
-
 }
