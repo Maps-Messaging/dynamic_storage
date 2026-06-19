@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
 @ToString
-@SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the Memory Map Load task
+@SuppressWarnings("javaarchitecture:S7091")
 public class IndexManager implements Closeable {
 
   private static final int HEADER_SIZE = 16;
@@ -68,14 +68,15 @@ public class IndexManager implements Closeable {
 
   private final AtomicBoolean loaded;
 
-
   public IndexManager(FileChannel channel) throws IOException {
     loaded = new AtomicBoolean(false);
     this.channel = channel;
     position = channel.position();
+
     ByteBuffer header = ByteBuffer.allocate(HEADER_SIZE);
     channel.read(header);
     header.flip();
+
     start = header.getLong();
     end = header.getLong();
     localEnd = end;
@@ -95,28 +96,28 @@ public class IndexManager implements Closeable {
     this.channel = channel;
     position = channel.position();
     this.start = start;
-    end = (start + itemSize)-1;
-
+    end = start + itemSize - 1;
     localEnd = end;
+
     counter = new LongAdder();
     emptySpace = new LongAdder();
 
-    ByteBuffer header = ByteBuffer.allocate(16);
+    ByteBuffer header = ByteBuffer.allocate(HEADER_SIZE);
     header.putLong(start);
     header.putLong(end);
     header.flip();
     channel.write(header);
-    header.flip();
+
     int totalSize = itemSize * IndexRecord.HEADER_SIZE;
-    // This block basically moves to the end of the file -1
-    // and writes 1 byte. For a sparse file it will preallocate the file and zero fill for us at no cost
-    // for file systems with NO sparse support it will be zero filled and will take some time
     ByteBuffer sparseAllocate = ByteBuffer.allocate(1);
     channel.position(position + HEADER_SIZE + totalSize - 1);
     channel.write(sparseAllocate);
-    channel.position(position); // Move back
+    channel.position(position);
+
     expiryIndex = new NaturalOrderedLongList();
     closed = false;
+    paused = false;
+    maxKey = 0;
     index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
   }
 
@@ -125,7 +126,7 @@ public class IndexManager implements Closeable {
     if (!closed) {
       waitForLoad();
       closed = true;
-      if(index != null) {
+      if (index != null) {
         index.force();
         MappedBufferHelper.closeDirectBuffer(index);
         index = null;
@@ -139,7 +140,7 @@ public class IndexManager implements Closeable {
       waitForLoad();
       index.force();
       MappedBufferHelper.closeDirectBuffer(index);
-      index = null; // ensure NPE rather than a full-blown JVM crash!!!
+      index = null;
     }
   }
 
@@ -149,11 +150,11 @@ public class IndexManager implements Closeable {
       waitForLoad();
       int totalSize = (int) ((end - start) + 1) * IndexRecord.HEADER_SIZE;
       index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
-      index.load(); // Ensure the file contents are loaded
+      index.load();
     }
   }
 
-  public long getMaxKey(){
+  public long getMaxKey() {
     waitForLoad();
     return maxKey;
   }
@@ -180,11 +181,11 @@ public class IndexManager implements Closeable {
   public void setEnd(long key) throws IOException {
     waitForLoad();
     end = key;
-    channel.position(position + 8);
-    ByteBuffer header = ByteBuffer.allocate(8);
+    channel.position(position + Long.BYTES);
+    ByteBuffer header = ByteBuffer.allocate(Long.BYTES);
     header.putLong(key);
     header.flip();
-    if(channel.write(header) != 8){
+    if (channel.write(header) != Long.BYTES) {
       throw new IOException("Unable to write to channel");
     }
   }
@@ -196,9 +197,8 @@ public class IndexManager implements Closeable {
 
   public long emptySpace() {
     waitForLoad();
-    return (int) emptySpace.sum();
+    return emptySpace.sum();
   }
-
 
   public boolean add(long key, @NotNull IndexRecord item) {
     waitForLoad();
@@ -209,6 +209,9 @@ public class IndexManager implements Closeable {
       setMapPosition(key);
       item.update(index);
       counter.increment();
+      if (key - start > maxKey) {
+        maxKey = key - start;
+      }
       return true;
     }
     return false;
@@ -216,12 +219,11 @@ public class IndexManager implements Closeable {
 
   public @Nullable IndexRecord get(long key) {
     waitForLoad();
-    IndexRecord item = null;
     if (key >= start && key <= localEnd && !closed && key <= end) {
       setMapPosition(key);
-      item = new IndexRecord(key, index);
+      return new IndexRecord(key, index);
     }
-    return item;
+    return null;
   }
 
   public boolean contains(long key) {
@@ -248,7 +250,6 @@ public class IndexManager implements Closeable {
         counter.decrement();
         emptySpace.add(item.getLength());
         setMapPosition(key, true);
-        // Mark it as deleted, so on reload we can get the total length and key
         IndexRecord indexRecord = new IndexRecord(key, 0, 0, 0, item.getLength());
         indexRecord.update(index);
         return true;
@@ -256,12 +257,15 @@ public class IndexManager implements Closeable {
     }
     return false;
   }
+
   void setMapPosition(long key) {
     setMapPosition(key, false);
   }
 
   void setMapPosition(long key, boolean override) {
-    if(!override) waitForLoad();
+    if (!override) {
+      waitForLoad();
+    }
     int adjusted = (int) (key - start);
     int pos = adjusted * IndexRecord.HEADER_SIZE;
     index.position(pos);
@@ -272,11 +276,28 @@ public class IndexManager implements Closeable {
     index.position(0);
     int size = (int) (end - start) + 1;
     long now = System.currentTimeMillis();
-    for (int x = 0; x < size; x++) {
-      IndexRecord indexRecord = new IndexRecord(start+x, index);
-      validateIndexRecord(x, indexRecord, now, expired);
+    for (int offset = 0; offset < size; offset++) {
+      IndexRecord indexRecord = new IndexRecord(start + offset, index);
+      validateIndexRecord(offset, indexRecord, now, expired);
     }
     return expired;
+  }
+
+  public void rebuild() {
+    waitForLoad();
+    counter.reset();
+    emptySpace.reset();
+    clearExpiryIndex();
+    maxKey = 0;
+    walkIndex();
+  }
+
+  private void clearExpiryIndex() {
+    Iterator<Long> iterator = expiryIndex.iterator();
+    while (iterator.hasNext()) {
+      iterator.next();
+      iterator.remove();
+    }
   }
 
   private void validateIndexRecord(int index, IndexRecord indexRecord, long now, List<Long> expired) {
@@ -287,7 +308,7 @@ public class IndexManager implements Closeable {
         counter.increment();
         checkExpiryDetails(indexRecord, now, expired);
       }
-    } else{
+    } else {
       long indexLength = indexRecord.getLength();
       if (indexLength > 0) {
         emptySpace.add(indexLength);
@@ -321,23 +342,23 @@ public class IndexManager implements Closeable {
     return new HeaderIterator();
   }
 
-  private void waitForLoad(){
-    while(!loaded.get()){
+  private void waitForLoad() {
+    while (!loaded.get()) {
       LockSupport.parkNanos(10000);
     }
   }
 
-  public void loadMap(boolean walkIndex){
+  public void loadMap(boolean walkIndex) {
     try {
-      index.load(); // Ensure the file contents are loaded
-      if(walkIndex) {
+      index.load();
+      if (walkIndex) {
         List<Long> expired = walkIndex();
         for (Long key : expired) {
           delete(key, true);
         }
       }
     } finally {
-      loaded.set(true); // pass any exception to another call
+      loaded.set(true);
     }
   }
 
@@ -391,5 +412,4 @@ public class IndexManager implements Closeable {
       Iterator.super.forEachRemaining(action);
     }
   }
-
 }

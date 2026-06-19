@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 
 import java.io.IOException;
 
-public class BaseDataStorage <T extends Storable> implements DeferredDataStorage<T> {
+public class BaseDataStorage<T extends Storable> implements DeferredDataStorage<T> {
 
   private final String fileName;
   private final StorableFactory<T> storableFactory;
@@ -39,7 +39,7 @@ public class BaseDataStorage <T extends Storable> implements DeferredDataStorage
   private DataStorage<T> physicalStore;
 
   public BaseDataStorage(PartitionStorageConfig config) throws IOException {
-    this.fileName = config.getFileName()+ "_data";
+    this.fileName = config.getFileName() + "_data";
     this.storableFactory = config.getStorableFactory();
     this.sync = config.isSync();
     this.maxPartitionSize = config.getMaxPartitionSize();
@@ -51,10 +51,12 @@ public class BaseDataStorage <T extends Storable> implements DeferredDataStorage
     physicalStore.close();
   }
 
+  @Override
   public void pause() throws IOException {
     close();
   }
 
+  @Override
   public void resume() throws IOException {
     physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
   }
@@ -80,6 +82,11 @@ public class BaseDataStorage <T extends Storable> implements DeferredDataStorage
   }
 
   @Override
+  public boolean isValid(IndexRecord item) throws IOException {
+    return physicalStore.isValid(item);
+  }
+
+  @Override
   public long length() throws IOException {
     return physicalStore.length();
   }
@@ -94,12 +101,14 @@ public class BaseDataStorage <T extends Storable> implements DeferredDataStorage
     return physicalStore.isFull();
   }
 
+  @Override
   public void archive() {
-    // No Archive options are supported for the base functionality
+    // No archive options are supported for the base functionality.
   }
 
+  @Override
   public void restore() {
-    // No Archive options are supported for the base functionality
+    // No archive options are supported for the base functionality.
   }
 
   @Override
@@ -111,5 +120,4 @@ public class BaseDataStorage <T extends Storable> implements DeferredDataStorage
   public boolean supportsArchiving() {
     return false;
   }
-
 }

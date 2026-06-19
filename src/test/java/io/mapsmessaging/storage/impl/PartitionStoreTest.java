@@ -20,6 +20,8 @@
 package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.*;
+import io.mapsmessaging.storage.impl.file.FileHelper;
+import io.mapsmessaging.storage.impl.file.partition.IndexRecord;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import org.junit.jupiter.api.Assertions;
@@ -35,6 +37,7 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -257,7 +260,165 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     }
   }
 
+  @Test
+  void reopenedStoreCreatesNextPartitionWithoutReusingExistingPartitionFile() throws IOException {
+    File file = new File("test_file" + File.separator + "reopenPartitionRollover");
+    if (file.exists()) {
+      FileHelper.delete(file, true);
+    }
 
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("storeType", "Partition");
+    properties.put("Sync", "" + false);
+    properties.put("ItemCount", "" + 10);
+    properties.put("ExpiredEventPoll", "" + 120);
+    properties.put("MaxPartitionSize", "" + (1024L * 1024L));
+
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder
+        .setFactory(getFactory())
+        .setName(file.getPath())
+        .setProperties(properties);
+
+    Storage<MappedData> storage = null;
+    try {
+      storage = storageBuilder.build();
+
+      for (int x = 0; x < 20; x++) {
+        storage.add(createMessageBuilder(x));
+      }
+
+      Assertions.assertEquals(20, storage.size());
+      storage.close();
+      storage = null;
+
+      storage = storageBuilder.build();
+      storage.add(createMessageBuilder(20));
+
+      Assertions.assertEquals(21, storage.size());
+
+      for (int x = 0; x <= 20; x++) {
+        MappedData data = storage.get(x);
+        Assertions.assertNotNull(data, "Expected data for key " + x);
+        Assertions.assertEquals(x, data.key);
+      }
+
+      Assertions.assertTrue(new File(file, "partition_0_index").exists());
+      Assertions.assertTrue(new File(file, "partition_1_index").exists());
+      Assertions.assertTrue(new File(file, "partition_2_index").exists());
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      } else if (file.exists()) {
+        FileHelper.delete(file, true);
+      }
+    }
+  }
+
+  @Test
+  void deleteRemovesUnknownChildrenUnderStorageRootWithoutTouchingWorkingDirectory() throws IOException {
+    File file = new File("test_file" + File.separator + "deleteWithOrphanChild");
+    File workingDirectoryFile = new File("orphan.tmp");
+    if(file.exists()) {
+      FileHelper.delete(file, true);
+    }
+    if(workingDirectoryFile.exists()) {
+      Files.deleteIfExists(workingDirectoryFile.toPath());
+    }
+
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("storeType", "Partition");
+    properties.put("Sync", "" + false);
+    properties.put("ItemCount", "" + 10);
+    properties.put("ExpiredEventPoll", "" + 120);
+    properties.put("MaxPartitionSize", "" + (1024L * 1024L));
+
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder
+        .setFactory(getFactory())
+        .setName(file.getPath())
+        .setProperties(properties);
+
+    Storage<MappedData> storage = null;
+    try {
+      storage = storageBuilder.build();
+      storage.add(createMessageBuilder(1));
+
+      File orphanFile = new File(file, "orphan.tmp");
+      Files.writeString(orphanFile.toPath(), "orphan");
+      Files.writeString(workingDirectoryFile.toPath(), "do-not-delete");
+
+      storage.delete();
+      storage = null;
+
+      Assertions.assertFalse(file.exists(), "Storage root should have been deleted");
+      Assertions.assertTrue(workingDirectoryFile.exists(), "Working directory file must not be touched");
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+      if(file.exists()) {
+        FileHelper.delete(file, true);
+      }
+      if(workingDirectoryFile.exists()) {
+        Files.deleteIfExists(workingDirectoryFile.toPath());
+      }
+    }
+  }
+
+  @Test
+  void failedAddDoesNotLeaveFailedObjectVisibleFromCache() throws IOException {
+    File file = new File("test_file" + File.separator + "cacheFailedAdd");
+    if (file.exists()) {
+      FileHelper.delete(file, true);
+    }
+
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("storeType", "Partition");
+    properties.put("Sync", "false");
+    properties.put("ItemCount", "10");
+    properties.put("ExpiredEventPoll", "120");
+    properties.put("MaxPartitionSize", "" + (1024L * 1024L));
+
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder
+        .setFactory(getFactory())
+        .setCache()
+        .setName(file.getPath())
+        .setProperties(properties);
+
+    Storage<MappedData> storage = null;
+    try {
+      storage = storageBuilder.build();
+
+      MappedData original = createMessageBuilder(1);
+      original.setMap(new LinkedHashMap<>(original.getMap()));
+      original.getMap().put("cache-test-marker", "original");
+      storage.add(original);
+
+      MappedData failedReplacement = createMessageBuilder(1);
+      failedReplacement.setMap(new LinkedHashMap<>(failedReplacement.getMap()));
+      failedReplacement.getMap().put("cache-test-marker", "failed-replacement");
+
+      final Storage<MappedData> cacheStorage = storage;
+      Assertions.assertThrows(IOException.class, () -> cacheStorage.add(failedReplacement));
+
+      MappedData data = storage.get(1);
+      Assertions.assertNotNull(data);
+      Assertions.assertEquals(1, data.getKey());
+      Assertions.assertEquals(
+          "original",
+          data.getMap().get("cache-test-marker"),
+          "Failed replacement must not be visible from cache");
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+      if (file.exists()) {
+        FileHelper.delete(file, true);
+      }
+    }
+  }
 
   void migrateArchiveAndRestorePartition() throws IOException, InterruptedException {
     Map<String, String> properties = buildProperties(false);
@@ -361,6 +522,403 @@ class PartitionStoreTest extends BasePartitionStoreTest {
     }
     Assertions.assertEquals(10, count, "Expected 10 compressed files");
     storage.delete();
+  }
+
+  @Test
+  void uncleanReopenRemovesIndexEntryForTruncatedDataRecord() throws IOException {
+    File file = new File("test_file" + File.separator + "truncatedDataRecovery");
+    if (file.exists()) {
+      FileHelper.delete(file, true);
+    }
+
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("storeType", "Partition");
+    properties.put("Sync", "false");
+    properties.put("ItemCount", "100");
+    properties.put("ExpiredEventPoll", "120");
+    properties.put("MaxPartitionSize", "" + (1024L * 1024L));
+
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder
+        .setFactory(getFactory())
+        .setName(file.getPath())
+        .setProperties(properties);
+
+    Storage<MappedData> storage = null;
+    try {
+      storage = storageBuilder.build();
+
+      storage.add(createMessageBuilder(1));
+      storage.add(createMessageBuilder(2));
+
+      Assertions.assertEquals(2, storage.size());
+      Assertions.assertNotNull(storage.get(1));
+      Assertions.assertNotNull(storage.get(2));
+
+      storage.close();
+      storage = null;
+
+      File dataFile = new File(file, "partition_0_index_data");
+      long originalLength = dataFile.length();
+      Assertions.assertTrue(originalLength > 64, "Data file should contain test records");
+
+      try (RandomAccessFile randomAccessFile = new RandomAccessFile(dataFile, "rw")) {
+        randomAccessFile.setLength(originalLength - 16);
+      }
+
+      markFileOpen(new File(file, "partition_0_index"));
+      markFileOpen(dataFile);
+
+      storage = storageBuilder.build();
+
+      Assertions.assertEquals(1, storage.size());
+      Assertions.assertTrue(storage.contains(1));
+      Assertions.assertFalse(storage.contains(2));
+
+      MappedData first = storage.get(1);
+      Assertions.assertNotNull(first);
+      Assertions.assertEquals(1, first.getKey());
+
+      Assertions.assertNull(storage.get(2));
+
+      List<Long> keys = new ArrayList<>(storage.getKeys());
+      Assertions.assertEquals(List.of(1L), keys);
+      Assertions.assertEquals(1, storage.getLastKey());
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+      if (file.exists()) {
+        FileHelper.delete(file, true);
+      }
+    }
+  }
+
+  @Test
+  void uncleanReopenRemovesOnlyCorruptedMiddleDataRecord() throws IOException {
+    File file = new File("test_file" + File.separator + "middleRecordCorruptionRecovery");
+    if (file.exists()) {
+      FileHelper.delete(file, true);
+    }
+
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("storeType", "Partition");
+    properties.put("Sync", "false");
+    properties.put("ItemCount", "100");
+    properties.put("ExpiredEventPoll", "120");
+    properties.put("MaxPartitionSize", "" + (1024L * 1024L));
+
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder
+        .setFactory(getFactory())
+        .setName(file.getPath())
+        .setProperties(properties);
+
+    Storage<MappedData> storage = null;
+    try {
+      storage = storageBuilder.build();
+
+      storage.add(createMessageBuilder(1));
+      storage.add(createMessageBuilder(2));
+      storage.add(createMessageBuilder(3));
+
+      Assertions.assertEquals(3, storage.size());
+      Assertions.assertNotNull(storage.get(1));
+      Assertions.assertNotNull(storage.get(2));
+      Assertions.assertNotNull(storage.get(3));
+
+      storage.close();
+      storage = null;
+
+
+      File indexFile = new File(file, "partition_0_index");
+      File dataFile = new File(file, "partition_0_index_data");
+
+      long keyTwoDataPosition = readIndexRecordPosition(indexFile, 2L);
+      Assertions.assertTrue(keyTwoDataPosition > 24, "Key 2 should point after key 1 in the data file");
+
+      corruptDataRecordHeader(dataFile, keyTwoDataPosition);
+
+      markFileOpen(indexFile);
+      markFileOpen(dataFile);
+
+      Assertions.assertEquals(0xEFFFFFFFFFFFFFFFL, readFileState(indexFile), "Index file must be marked open before recovery");
+      Assertions.assertEquals(0xEFFFFFFFFFFFFFFFL, readFileState(dataFile), "Data file must be marked open before recovery");
+
+      storage = storageBuilder.build();
+
+      Assertions.assertEquals(2, storage.size());
+
+      Assertions.assertTrue(storage.contains(1));
+      Assertions.assertFalse(storage.contains(2));
+      Assertions.assertTrue(storage.contains(3));
+
+      MappedData first = storage.get(1);
+      Assertions.assertNotNull(first);
+      Assertions.assertEquals(1, first.getKey());
+
+      Assertions.assertNull(storage.get(2));
+
+      MappedData third = storage.get(3);
+      Assertions.assertNotNull(third);
+      Assertions.assertEquals(3, third.getKey());
+
+      List<Long> keys = new ArrayList<>(storage.getKeys());
+      Assertions.assertEquals(List.of(1L, 3L), keys);
+      Assertions.assertEquals(3, storage.getLastKey());
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+      if (file.exists()) {
+        FileHelper.delete(file, true);
+      }
+    }
+  }
+
+  private long readIndexRecordPosition(File indexFile, long key) throws IOException {
+    long indexHeaderSize = 32L;
+    long indexManagerHeaderSize = 16L;
+
+    try (RandomAccessFile randomAccessFile = new RandomAccessFile(indexFile, "r")) {
+      randomAccessFile.seek(indexHeaderSize);
+      long partitionStart = randomAccessFile.readLong();
+      long partitionEnd = randomAccessFile.readLong();
+
+      Assertions.assertTrue(
+          key >= partitionStart && key <= partitionEnd,
+          "Key should be inside the partition range, key=" + key
+              + ", partitionStart=" + partitionStart
+              + ", partitionEnd=" + partitionEnd);
+
+      long slot = key - partitionStart;
+      long recordOffset = indexHeaderSize + indexManagerHeaderSize + (slot * IndexRecord.HEADER_SIZE);
+
+      randomAccessFile.seek(recordOffset);
+      long position = randomAccessFile.readLong();
+
+      Assertions.assertTrue(
+          position > 0,
+          "Index record should point to a data record, key=" + key
+              + ", slot=" + slot
+              + ", recordOffset=" + recordOffset
+              + ", position=" + position);
+
+      return position;
+    }
+  }
+
+  private void corruptDataRecordHeader(File dataFile, long position) throws IOException {
+    try (RandomAccessFile randomAccessFile = new RandomAccessFile(dataFile, "rw")) {
+      randomAccessFile.seek(position);
+      randomAccessFile.writeInt(-1);
+    }
+  }
+
+  @Test
+  void uncleanReopenIgnoresTrailingGarbageNotReferencedByIndex() throws IOException {
+    File file = new File("test_file" + File.separator + "trailingGarbageRecovery");
+    if (file.exists()) {
+      FileHelper.delete(file, true);
+    }
+
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("storeType", "Partition");
+    properties.put("Sync", "false");
+    properties.put("ItemCount", "100");
+    properties.put("ExpiredEventPoll", "120");
+    properties.put("MaxPartitionSize", "" + (1024L * 1024L));
+
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder
+        .setFactory(getFactory())
+        .setName(file.getPath())
+        .setProperties(properties);
+
+    Storage<MappedData> storage = null;
+    try {
+      storage = storageBuilder.build();
+
+      storage.add(createMessageBuilder(1));
+      storage.add(createMessageBuilder(2));
+
+      Assertions.assertEquals(2, storage.size());
+      Assertions.assertNotNull(storage.get(1));
+      Assertions.assertNotNull(storage.get(2));
+
+      storage.close();
+      storage = null;
+
+      File indexFile = new File(file, "partition_0_index");
+      File dataFile = new File(file, "partition_0_index_data");
+
+      try (RandomAccessFile randomAccessFile = new RandomAccessFile(dataFile, "rw")) {
+        randomAccessFile.seek(randomAccessFile.length());
+        randomAccessFile.write(new byte[] {1, 2, 3, 4, 5, 6, 7, 8});
+      }
+
+      markFileOpen(indexFile);
+      markFileOpen(dataFile);
+
+      Assertions.assertEquals(
+          0xEFFFFFFFFFFFFFFFL,
+          readFileState(indexFile),
+          "Index file must be marked open before recovery");
+
+      Assertions.assertEquals(
+          0xEFFFFFFFFFFFFFFFL,
+          readFileState(dataFile),
+          "Data file must be marked open before recovery");
+
+      storage = storageBuilder.build();
+
+      Assertions.assertEquals(2, storage.size());
+      Assertions.assertTrue(storage.contains(1));
+      Assertions.assertTrue(storage.contains(2));
+
+      MappedData first = storage.get(1);
+      Assertions.assertNotNull(first);
+      Assertions.assertEquals(1, first.getKey());
+
+      MappedData second = storage.get(2);
+      Assertions.assertNotNull(second);
+      Assertions.assertEquals(2, second.getKey());
+
+      List<Long> keys = new ArrayList<>(storage.getKeys());
+      Assertions.assertEquals(List.of(1L, 2L), keys);
+      Assertions.assertEquals(2, storage.getLastKey());
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+      if (file.exists()) {
+        FileHelper.delete(file, true);
+      }
+    }
+  }
+
+  private void markFileOpen(File file) throws IOException {
+    try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw")) {
+      randomAccessFile.seek(0);
+      randomAccessFile.writeLong(0xEFFFFFFFFFFFFFFFL);
+    }
+  }
+
+  private long readFileState(File file) throws IOException {
+    try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r")) {
+      randomAccessFile.seek(0);
+      return randomAccessFile.readLong();
+    }
+  }
+
+  @Test
+  void removedNewestSparseKeyDoesNotRemainLastKeyAfterReopen() throws IOException {
+    File file = new File("test_file" + File.separator + "removedNewestSparseKeyAfterReopen");
+    if (file.exists()) {
+      FileHelper.delete(file, true);
+    }
+
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("storeType", "Partition");
+    properties.put("Sync", "false");
+    properties.put("ItemCount", "100");
+    properties.put("ExpiredEventPoll", "120");
+    properties.put("MaxPartitionSize", "" + (1024L * 1024L));
+
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder
+        .setFactory(getFactory())
+        .setName(file.getPath())
+        .setProperties(properties);
+
+    Storage<MappedData> storage = null;
+    try {
+      storage = storageBuilder.build();
+
+      storage.add(createMessageBuilder(1_000_000));
+      storage.add(createMessageBuilder(1_000_050));
+      Assertions.assertTrue(storage.remove(1_000_050));
+
+      storage.close();
+      storage = null;
+
+      storage = storageBuilder.build();
+
+      Assertions.assertEquals(1_000_000, storage.getLastKey());
+      Assertions.assertTrue(storage.contains(1_000_000));
+      Assertions.assertFalse(storage.contains(1_000_050));
+
+      MappedData older = storage.get(1_000_000);
+      Assertions.assertNotNull(older);
+      Assertions.assertEquals(1_000_000, older.getKey());
+
+      List<Long> keys = new ArrayList<>(storage.getKeys());
+      Assertions.assertEquals(List.of(1_000_000L), keys);
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+      if (file.exists()) {
+        FileHelper.delete(file, true);
+      }
+    }
+  }
+
+  @Test
+  void sparseKeysRetainNaturalOrderAndLastKeyAfterReopen() throws IOException {
+    File file = new File("test_file" + File.separator + "sparseKeysLastKeyAfterReopen");
+    if (file.exists()) {
+      FileHelper.delete(file, true);
+    }
+
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("storeType", "Partition");
+    properties.put("Sync", "false");
+    properties.put("ItemCount", "100");
+    properties.put("ExpiredEventPoll", "120");
+    properties.put("MaxPartitionSize", "" + (1024L * 1024L));
+
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder
+        .setFactory(getFactory())
+        .setName(file.getPath())
+        .setProperties(properties);
+
+    Storage<MappedData> storage = null;
+    try {
+      storage = storageBuilder.build();
+
+      storage.add(createMessageBuilder(1_000_050));
+      storage.add(createMessageBuilder(1_000_000));
+
+      Assertions.assertEquals(1_000_050, storage.getLastKey());
+      storage.close();
+      storage = null;
+
+      storage = storageBuilder.build();
+
+      Assertions.assertEquals(1_000_050, storage.getLastKey());
+      Assertions.assertTrue(storage.contains(1_000_000));
+      Assertions.assertTrue(storage.contains(1_000_050));
+
+      MappedData older = storage.get(1_000_000);
+      Assertions.assertNotNull(older);
+      Assertions.assertEquals(1_000_000, older.getKey());
+
+      MappedData newer = storage.get(1_000_050);
+      Assertions.assertNotNull(newer);
+      Assertions.assertEquals(1_000_050, newer.getKey());
+
+      List<Long> keys = new ArrayList<>(storage.getKeys());
+      Assertions.assertEquals(List.of(1_000_000L, 1_000_050L), keys);
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+      if (file.exists()) {
+        FileHelper.delete(file, true);
+      }
+    }
   }
 
   @ParameterizedTest

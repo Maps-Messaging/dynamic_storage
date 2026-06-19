@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -35,7 +35,8 @@ import java.util.concurrent.locks.LockSupport;
 public class TaskQueue {
 
   private static final long TIMEOUT = 60;
-  private static final ScheduledThreadPoolExecutor SCHEDULER_EXECUTOR = (ScheduledThreadPoolExecutor)Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+  private static final ScheduledThreadPoolExecutor SCHEDULER_EXECUTOR =
+      (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
 
   static {
     Runtime.getRuntime().addShutdownHook(new ShutdownHandler());
@@ -88,10 +89,10 @@ public class TaskQueue {
       } else {
         try {
           future.get(TIMEOUT, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-          if (Thread.interrupted()) {
-            Thread.currentThread().interrupt();
-          }
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new IOException(e);
+        } catch (ExecutionException | TimeoutException e) {
           throw new IOException(e);
         }
       }
@@ -105,34 +106,41 @@ public class TaskQueue {
   public void setTaskScheduler(@NotNull ExecutorService scheduler) {
     taskScheduler = scheduler;
     while (!syncTasks.isEmpty()) {
-      taskScheduler.submit(syncTasks.poll());
+      FileTask<?> task = syncTasks.poll();
+      if (task != null) {
+        Future<?> future = taskScheduler.submit(task);
+        trackPending(task, future);
+      }
     }
   }
 
   public <V> Future<V> scheduleNow(FileTask<V> raw) {
     FileWrapperTask<V> task = new FileWrapperTask<>(raw, pending);
-    return SCHEDULER_EXECUTOR.submit(task);
+    Future<V> future = SCHEDULER_EXECUTOR.submit(task);
+    trackPending(task, future);
+    return future;
   }
 
   public <V> Future<V> schedule(FileTask<V> raw, long startIn, TimeUnit timeUnit) {
     FileWrapperTask<V> task = new FileWrapperTask<>(raw, pending);
-    return SCHEDULER_EXECUTOR.schedule(task, startIn, timeUnit);
+    ScheduledFuture<V> future = SCHEDULER_EXECUTOR.schedule(task, startIn, timeUnit);
+    trackPending(task, future);
+    return future;
   }
 
-  @SuppressWarnings("java:S1452") // This is the return type we get from the scheduler, we have no control over it
+  @SuppressWarnings("java:S1452")
   public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long startIn, TimeUnit timeUnit) {
     return SCHEDULER_EXECUTOR.scheduleAtFixedRate(command, startIn, startIn, timeUnit);
   }
-
 
   public void submit(FileTask<?> raw) throws IOException {
     submitInternalTask(raw);
   }
 
   private void submitInternalTask(FileTask<?> raw) throws IOException {
-    waitingScheduler.incrementAndGet();
     FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
     if (taskScheduler != null) {
+      waitingScheduler.incrementAndGet();
       SubmitTask submitTask = new SubmitTask(task);
       SCHEDULER_EXECUTOR.submit(submitTask);
     } else {
@@ -164,6 +172,15 @@ public class TaskQueue {
 
   public void purge() {
     SCHEDULER_EXECUTOR.purge();
+  }
+
+  private void trackPending(FileTask<?> task, Future<?> future) {
+    if (!future.isDone()) {
+      pending.put(task, future);
+      if (future.isDone()) {
+        pending.remove(task);
+      }
+    }
   }
 
   private static final class FileWrapperTask<T> implements FileTask<T> {
@@ -201,15 +218,13 @@ public class TaskQueue {
 
     @Override
     public Boolean call() {
-      waitingScheduler.decrementAndGet();
-      Future<?> future = taskScheduler.submit(toSubmit);
-      if (!future.isDone()) {
-        pending.put(toSubmit, future);
-        if (future.isDone()) {
-          pending.remove(toSubmit);
-        }
+      try {
+        Future<?> future = taskScheduler.submit(toSubmit);
+        trackPending(toSubmit, future);
+        return true;
+      } finally {
+        waitingScheduler.decrementAndGet();
       }
-      return true;
     }
   }
 

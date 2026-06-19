@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static io.mapsmessaging.storage.logging.StorageLogMessages.*;
 import static java.nio.file.StandardOpenOption.*;
 
 @ToString
-@SuppressWarnings("javaarchitecture:S7091") // yes it uses the compact index task
+@SuppressWarnings("javaarchitecture:S7091")
 public class IndexStorage<T extends Storable> {
 
   private static final int HEADER_SIZE = 32;
@@ -72,38 +72,43 @@ public class IndexStorage<T extends Storable> {
 
   @Getter
   private volatile boolean closed;
+
   @Getter
   private volatile boolean deleted;
+
   private volatile boolean paused;
   private boolean requiresValidation;
 
-  public IndexStorage(PartitionStorageConfig config, String name, long start, TaskQueue taskScheduler) throws IOException {
+  public IndexStorage(PartitionStorageConfig config, String name, long start, TaskQueue taskScheduler)
+      throws IOException {
     this.itemCount = config.getItemCount();
     this.sync = config.isSync();
-
     this.fileName = name + "_index";
-    File file = new File(this.fileName);
-    scheduler = taskScheduler;
+    this.scheduler = taskScheduler;
 
+    File file = new File(this.fileName);
     long length = 0;
     Files.createDirectories(file.getParentFile().toPath());
     if (file.exists()) {
       length = file.length();
     }
+
     mapChannel = openChannel(file);
     if (length != 0) {
       indexManager = reload();
     } else {
       indexManager = initialise(start);
     }
+
     PartitionStorageConfig partitionConfig = new PartitionStorageConfig(config);
     partitionConfig.setFileName(this.fileName);
     PartitionDataManagerFactory<T> partitionDataManagerFactory = getInstance();
     dataStorage = partitionDataManagerFactory.create(partitionConfig);
-    if (dataStorage.isValidationRequired() || requiresValidation) {
-      // We need to validate the data / index
 
+    if (dataStorage.isValidationRequired() || requiresValidation) {
+      validateIndexAgainstData();
     }
+
     closed = false;
     paused = false;
     deleted = false;
@@ -112,7 +117,7 @@ public class IndexStorage<T extends Storable> {
   public void close() throws IOException {
     if (!closed) {
       closed = true;
-      ByteBuffer header = ByteBuffer.allocate(8);
+      ByteBuffer header = ByteBuffer.allocate(Long.BYTES);
       header.putLong(CLOSE_STATE);
       header.flip();
       mapChannel.position(0);
@@ -128,7 +133,7 @@ public class IndexStorage<T extends Storable> {
     closed = true;
     deleted = true;
     indexManager.close();
-    if(!paused){
+    if (!paused) {
       mapChannel.close();
     }
     dataStorage.delete();
@@ -141,14 +146,13 @@ public class IndexStorage<T extends Storable> {
       paused = true;
       indexManager.pause();
       mapChannel.force(true);
-
       mapChannel.close();
       dataStorage.pause();
     }
   }
 
   public void resume() throws IOException {
-    if(closed){
+    if (closed) {
       return;
     }
     if (paused) {
@@ -156,13 +160,15 @@ public class IndexStorage<T extends Storable> {
       File file = new File(this.fileName);
       boolean recreate = !file.exists();
       mapChannel = openChannel(file);
-      if(recreate){
+      if (recreate) {
         indexManager = initialise(this.getStart());
-      }
-      else {
+      } else {
         indexManager = reload();
       }
       dataStorage.resume();
+      if (dataStorage.isValidationRequired() || requiresValidation) {
+        validateIndexAgainstData();
+      }
     }
   }
 
@@ -170,14 +176,14 @@ public class IndexStorage<T extends Storable> {
     dataStorage.archive();
   }
 
-  public void restore() throws IOException{
-    if(dataStorage.isArchived()) {
+  public void restore() throws IOException {
+    if (dataStorage.isArchived()) {
       dataStorage.restore();
     }
   }
 
-  public boolean isArchived(){
-    if(dataStorage.supportsArchiving() && dataStorage.isFull()) { // Can only archive data once the store is full
+  public boolean isArchived() {
+    if (dataStorage.supportsArchiving() && dataStorage.isFull()) {
       return dataStorage.isArchived();
     }
     return false;
@@ -190,9 +196,11 @@ public class IndexStorage<T extends Storable> {
     headerValidation.putLong(Double.doubleToLongBits(VERSION));
     headerValidation.putLong(itemCount);
     headerValidation.flip();
-    if(mapChannel.write(headerValidation) != HEADER_SIZE) {
+
+    if (mapChannel.write(headerValidation) != HEADER_SIZE) {
       throw new IOException("Failed to write header");
     }
+
     IndexManager idx = new IndexManager(start, itemCount, mapChannel);
     scheduler.scheduleNow(idx.queueTask(false));
     mapChannel.force(false);
@@ -203,10 +211,12 @@ public class IndexStorage<T extends Storable> {
   private IndexManager reload() throws IOException {
     mapChannel.position(0);
     ByteBuffer headerValidation = ByteBuffer.allocate(HEADER_SIZE);
-    if(mapChannel.read(headerValidation) != HEADER_SIZE){
-      logger.log(INDEX_STORAGE_RELOAD_ERROR, headerValidation.position(), HEADER_SIZE );
+    if (mapChannel.read(headerValidation) != HEADER_SIZE) {
+      logger.log(INDEX_STORAGE_RELOAD_ERROR, headerValidation.position(), HEADER_SIZE);
       logger.log(INDEX_STORAGE_RELOAD_STATE, this.toString());
+      throw new IOException("Unable to read index storage header");
     }
+
     headerValidation.flip();
     requiresValidation = headerValidation.getLong() != CLOSE_STATE;
     if (headerValidation.getLong() != UNIQUE_ID) {
@@ -215,12 +225,15 @@ public class IndexStorage<T extends Storable> {
     if (Double.longBitsToDouble(headerValidation.getLong()) != VERSION) {
       throw new IOException("Unexpected file version");
     }
+
     long bufferCount = headerValidation.getLong();
     if (bufferCount != itemCount) {
-      itemCount = (int)(bufferCount & 0x7fffffffL);
+      itemCount = (int) (bufferCount & 0x7fffffffL);
     }
+
     IndexManager idx = new IndexManager(mapChannel);
     idx.loadMap(true);
+
     headerValidation.flip();
     headerValidation.putLong(0, OPEN_STATE);
     mapChannel.position(0);
@@ -229,15 +242,32 @@ public class IndexStorage<T extends Storable> {
     return idx;
   }
 
+  private void validateIndexAgainstData() throws IOException {
+    boolean changed = false;
+    List<Long> keys = new ArrayList<>(indexManager.keySet());
+    for (Long key : keys) {
+      IndexRecord indexRecord = indexManager.get(key);
+      if (indexRecord != null && !dataStorage.isValid(indexRecord)) {
+        indexManager.delete(key);
+        changed = true;
+      }
+    }
+    if (changed) {
+      indexManager.rebuild();
+    }
+  }
+
   public void compact() throws IOException {
-    if(paused){
+    if (paused) {
       resume();
     }
+
     long size = ((indexManager.getEnd() - indexManager.getStart() + 2) * IndexRecord.HEADER_SIZE) + 24 + 16;
     long mapSize = mapChannel.size();
-    if (size <mapSize) {
+    if (size < mapSize) {
       File currentIndex = new File(fileName);
       File tmpIndex = new File(fileName + "_tmp");
+
       try (FileChannel tmp = (FileChannel) Files.newByteChannel(tmpIndex.toPath(), CREATE_NEW, WRITE)) {
         mapChannel.position(0);
         long moved = tmp.transferFrom(mapChannel, 0, size);
@@ -247,6 +277,7 @@ public class IndexStorage<T extends Storable> {
         }
         tmp.force(true);
       }
+
       indexManager.close();
       mapChannel.force(true);
       mapChannel.close();
@@ -287,19 +318,19 @@ public class IndexStorage<T extends Storable> {
     scheduler.submit(new CompactIndexTask<>(this));
   }
 
-
   public String getName() {
     return fileName;
   }
 
   public IndexRecord add(@NotNull T object) throws IOException {
-    if(paused){
+    if (paused) {
       resume();
     }
 
     if (indexManager.contains(object.getKey())) {
       throw new IOException("Key already exists");
     }
+
     IndexRecord item = dataStorage.add(object);
     indexManager.add(object.getKey(), item);
     lastAccess = System.currentTimeMillis();
@@ -311,7 +342,7 @@ public class IndexStorage<T extends Storable> {
   }
 
   public boolean remove(long key) throws IOException {
-    if(paused){
+    if (paused) {
       try {
         resume();
       } catch (IOException e) {
@@ -319,6 +350,7 @@ public class IndexStorage<T extends Storable> {
         throw new IOException(e);
       }
     }
+
     lastAccess = System.currentTimeMillis();
     return indexManager.delete(key);
   }
@@ -344,7 +376,7 @@ public class IndexStorage<T extends Storable> {
   }
 
   public long emptySpace() {
-    if(paused){
+    if (paused) {
       return 0;
     }
     return indexManager.emptySpace();
@@ -360,6 +392,7 @@ public class IndexStorage<T extends Storable> {
 
   public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) throws IOException {
     lastAccess = System.currentTimeMillis();
+
     List<Long> itemsToRemove = indexManager.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
     if (!itemsToRemove.isEmpty()) {
@@ -377,10 +410,10 @@ public class IndexStorage<T extends Storable> {
   }
 
   public int removeAll(@NotNull Collection<Long> listToRemove) throws IOException {
-    int count =0;
+    int count = 0;
     if (!listToRemove.isEmpty()) {
       for (long key : listToRemove) {
-        if(remove(key)){
+        if (remove(key)) {
           count++;
         }
       }
@@ -389,13 +422,12 @@ public class IndexStorage<T extends Storable> {
     return count;
   }
 
-
   private FileChannel openChannel(File file) throws IOException {
     StandardOpenOption[] writeOptions;
     if (sync) {
-      writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE, DSYNC};
+      writeOptions = new StandardOpenOption[] {CREATE, READ, WRITE, SPARSE, DSYNC};
     } else {
-      writeOptions = new StandardOpenOption[]{CREATE, READ, WRITE, SPARSE};
+      writeOptions = new StandardOpenOption[] {CREATE, READ, WRITE, SPARSE};
     }
     return (FileChannel) Files.newByteChannel(file.toPath(), writeOptions);
   }

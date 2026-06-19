@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -49,11 +49,13 @@ public abstract class DataStorageProxy<T extends Storable> implements DeferredDa
 
   protected DataStorageProxy(PartitionStorageConfig config) throws IOException {
     this.storableFactory = config.getStorableFactory();
-    fileName = config.getFileName()+ "_data";
+    fileName = config.getFileName() + "_data";
     sync = config.isSync();
     maxPartitionSize = config.getMaxPartitionSize();
-    DeferredConfig aConfig = config.getDeferredConfig();
-    digestName = aConfig.getDigestName();
+
+    DeferredConfig deferredConfig = config.getDeferredConfig();
+    digestName = deferredConfig.getDigestName();
+
     File file = new File(fileName);
     isArchived = false;
     if (!file.exists()) {
@@ -68,12 +70,14 @@ public abstract class DataStorageProxy<T extends Storable> implements DeferredDa
     physicalStore.close();
   }
 
+  @Override
   public void pause() throws IOException {
     if (!isArchived) {
       physicalStore.close();
     }
   }
 
+  @Override
   public void resume() throws IOException {
     if (!isArchived) {
       physicalStore = new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
@@ -104,6 +108,12 @@ public abstract class DataStorageProxy<T extends Storable> implements DeferredDa
   public T get(IndexRecord item) throws IOException {
     loadIfArchived();
     return physicalStore.get(item);
+  }
+
+  @Override
+  public boolean isValid(IndexRecord item) throws IOException {
+    loadIfArchived();
+    return physicalStore.isValid(item);
   }
 
   @Override
@@ -156,9 +166,11 @@ public abstract class DataStorageProxy<T extends Storable> implements DeferredDa
       int test = tmp[0] & 0xff;
       isArchived = (test != 0xEF && test != 0x00);
     }
+
     if (!isArchived) {
       return new DataStorageImpl<>(fileName, storableFactory, sync, maxPartitionSize);
     }
+
     DeferredRecord deferredRecord = buildArchiveRecord();
     deferredRecord.read(fileName);
     return new DataStorageStub<>(deferredRecord);
