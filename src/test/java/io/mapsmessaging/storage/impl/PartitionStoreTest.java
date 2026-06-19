@@ -859,7 +859,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
         storage.delete();
       }
       if (file.exists()) {
-        FileHelper.delete(file, true);
+        FileHelper.deleteAllowingNfsTemporaryFiles(file, true);
       }
     }
   }
@@ -916,7 +916,7 @@ class PartitionStoreTest extends BasePartitionStoreTest {
         storage.delete();
       }
       if (file.exists()) {
-        FileHelper.delete(file, true);
+        FileHelper.deleteAllowingNfsTemporaryFiles(file, true);
       }
     }
   }
