@@ -7,6 +7,7 @@ steps:
       - echo "bucketName=maps-messaging" >> s3.properties
       - export NVD_API_KEY=$(buildkite-agent secret get nvd_api_key)
       - mvn -Dgpg.skip=true clean deploy -Psnapshot
+      - mvn sonar:sonar -Dsonar.token=$(buildkite-agent secret get SONAR_TOKEN)
     plugins:
       - test-collector#v1.0.0:
           files: "target/surefire-reports/*.xml"
