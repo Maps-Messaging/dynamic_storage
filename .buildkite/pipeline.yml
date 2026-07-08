@@ -15,4 +15,4 @@ steps:
     env:
       BUILDKITE_ANALYTICS_TOKEN: "$(buildkite-agent secret get DynamicStorageBuildkiteAnalytics)"
     agents:
-      queue: "raspberrypi_build_agent"
+      queue: "java_build_queue"
