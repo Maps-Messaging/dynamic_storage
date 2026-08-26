@@ -35,52 +35,75 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
   private final int poll;
   private Future<?> expiryTask;
   private boolean paused;
+  private boolean monitoring;
+  private boolean closed;
+  private long generation;
 
   public ExpireStorableTaskManager(ExpiredMonitor storage, TaskQueue taskScheduler, int poll) {
     this.storage = storage;
     this.taskScheduler = taskScheduler;
     this.poll = poll;
     paused = false;
+    monitoring = false;
+    closed = false;
+    generation = 0;
     expiryTask = null;
   }
 
-  public void pause() {
+  public synchronized void pause() {
     if (!paused) {
       paused = true;
       if (expiryTask != null) {
-        expiryTask.cancel(false);
+        if (expiryTask.cancel(false)) {
+          expiryTask = null;
+        }
       }
     }
   }
 
-  public void resume() {
+  public synchronized void resume() {
     if (paused) {
       paused = false;
-      if (expiryTask != null) {
+      if (monitoring) {
         schedulePoll();
       }
     }
   }
 
   @Override
-  public void close() throws IOException {
+  public synchronized void close() throws IOException {
+    closed = true;
+    monitoring = false;
     if (expiryTask != null) {
       expiryTask.cancel(true);
       expiryTask = null;
     }
   }
 
-  public void schedulePoll() {
-    if(expiryTask == null || expiryTask.isDone() || expiryTask.isCancelled()) {
-      expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask(storage), poll, TimeUnit.SECONDS);
+  public synchronized void schedulePoll() {
+    if (!closed && !paused && poll > 0 && (expiryTask == null || expiryTask.isDone() || expiryTask.isCancelled())) {
+      long scheduledGeneration = generation;
+      expiryTask = taskScheduler.schedule(
+          new IndexExpiryMonitorTask(storage, hasExpiringEntries -> pollComplete(scheduledGeneration, hasExpiringEntries)),
+          poll,
+          TimeUnit.SECONDS);
     }
   }
 
-  public void added(T object) {
-    if (object.getExpiry() > 0 && expiryTask == null) {
+  public synchronized void added(T object) {
+    if (object.getExpiry() > 0) {
+      monitoring = true;
+      generation++;
       schedulePoll();
     }
+  }
 
+  private synchronized void pollComplete(long scheduledGeneration, boolean hasExpiringEntries) {
+    expiryTask = null;
+    monitoring = hasExpiringEntries || generation != scheduledGeneration;
+    if (monitoring) {
+      schedulePoll();
+    }
   }
 
 }

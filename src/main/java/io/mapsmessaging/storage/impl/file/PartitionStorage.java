@@ -398,6 +398,16 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     }
   }
 
+  @Override
+  public boolean hasExpiringEntries() {
+    for (IndexStorage<T> partition : partitions) {
+      if (partition.hasExpired()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public void scanForArchiveMigration() throws IOException {
     if (archiveIdleTime > 0) {
       long archiveThreshold = System.currentTimeMillis() - archiveIdleTime;

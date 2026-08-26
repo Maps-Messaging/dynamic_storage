@@ -326,6 +326,11 @@ public class DebugStorage<T extends Storable> implements Storage<T>, ExpiredMoni
   }
 
   @Override
+  public boolean hasExpiringEntries() {
+    return physicalStorage instanceof ExpiredMonitor expiredMonitor && expiredMonitor.hasExpiringEntries();
+  }
+
+  @Override
   public void scanForArchiveMigration() throws IOException {
     try {
       enterFunction("scanForArchiveMigration");

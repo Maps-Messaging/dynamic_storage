@@ -25,4 +25,8 @@ public interface ExpiredMonitor {
 
   void scanForExpired() throws IOException;
 
+  default boolean hasExpiringEntries() {
+    return false;
+  }
+
 }
