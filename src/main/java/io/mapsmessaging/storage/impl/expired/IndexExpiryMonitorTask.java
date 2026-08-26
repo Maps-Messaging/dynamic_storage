@@ -23,13 +23,14 @@ import io.mapsmessaging.storage.ExpiredMonitor;
 import io.mapsmessaging.storage.impl.file.tasks.FileTask;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
 public class IndexExpiryMonitorTask implements FileTask<Boolean> {
 
   private final ExpiredMonitor storage;
-  private final Runnable completionHandler;
+  private final Consumer<Boolean> completionHandler;
 
-  public IndexExpiryMonitorTask(ExpiredMonitor storage, Runnable completionHandler) {
+  public IndexExpiryMonitorTask(ExpiredMonitor storage, Consumer<Boolean> completionHandler) {
     this.storage = storage;
     this.completionHandler = completionHandler;
   }
@@ -40,7 +41,7 @@ public class IndexExpiryMonitorTask implements FileTask<Boolean> {
       storage.scanForExpired();
       return true;
     } finally {
-      completionHandler.run();
+      completionHandler.accept(storage.hasExpiringEntries());
     }
   }
 

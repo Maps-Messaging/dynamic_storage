@@ -37,6 +37,7 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
   private boolean paused;
   private boolean monitoring;
   private boolean closed;
+  private long generation;
 
   public ExpireStorableTaskManager(ExpiredMonitor storage, TaskQueue taskScheduler, int poll) {
     this.storage = storage;
@@ -45,6 +46,7 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
     paused = false;
     monitoring = false;
     closed = false;
+    generation = 0;
     expiryTask = null;
   }
 
@@ -80,19 +82,25 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
 
   public synchronized void schedulePoll() {
     if (!closed && !paused && poll > 0 && (expiryTask == null || expiryTask.isDone() || expiryTask.isCancelled())) {
-      expiryTask = taskScheduler.schedule(new IndexExpiryMonitorTask(storage, this::pollComplete), poll, TimeUnit.SECONDS);
+      long scheduledGeneration = generation;
+      expiryTask = taskScheduler.schedule(
+          new IndexExpiryMonitorTask(storage, hasExpiringEntries -> pollComplete(scheduledGeneration, hasExpiringEntries)),
+          poll,
+          TimeUnit.SECONDS);
     }
   }
 
   public synchronized void added(T object) {
     if (object.getExpiry() > 0) {
       monitoring = true;
+      generation++;
       schedulePoll();
     }
   }
 
-  private synchronized void pollComplete() {
+  private synchronized void pollComplete(long scheduledGeneration, boolean hasExpiringEntries) {
     expiryTask = null;
+    monitoring = hasExpiringEntries || generation != scheduledGeneration;
     if (monitoring) {
       schedulePoll();
     }
