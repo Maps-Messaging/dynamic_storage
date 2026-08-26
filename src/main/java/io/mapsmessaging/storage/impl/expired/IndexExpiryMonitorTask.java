@@ -27,15 +27,21 @@ import java.io.IOException;
 public class IndexExpiryMonitorTask implements FileTask<Boolean> {
 
   private final ExpiredMonitor storage;
+  private final Runnable completionHandler;
 
-  public IndexExpiryMonitorTask(ExpiredMonitor storage) {
+  public IndexExpiryMonitorTask(ExpiredMonitor storage, Runnable completionHandler) {
     this.storage = storage;
+    this.completionHandler = completionHandler;
   }
 
   @Override
   public Boolean call() throws IOException {
-    storage.scanForExpired();
-    return true;
+    try {
+      storage.scanForExpired();
+      return true;
+    } finally {
+      completionHandler.run();
+    }
   }
 
   @Override
