@@ -73,9 +73,23 @@ public class IndexRecord {
   }
 
   public void update(ByteBuffer buffer) {
+    update(buffer, false);
+  }
+
+  void update(ByteBuffer buffer, boolean sync) {
+    if (buffer.isReadOnly()) throw new java.nio.ReadOnlyBufferException();
+    if (buffer.remaining() < HEADER_SIZE) throw new java.nio.BufferOverflowException();
+    int offset = buffer.position();
     long tmp2 = ((locationId & INTEGER_MASK) << 32) | (length & INTEGER_MASK);
-    buffer.putLong(position);
-    buffer.putLong(expiry);
-    buffer.putLong(tmp2);
+    // Invalidate first, populate metadata, then publish the existing position field last.
+    buffer.putLong(offset, 0);
+    if (sync && buffer instanceof java.nio.MappedByteBuffer mapped) mapped.force();
+    buffer.putLong(offset + 8, expiry);
+    buffer.putLong(offset + 16, tmp2);
+    if (sync && buffer instanceof java.nio.MappedByteBuffer mapped) mapped.force();
+    java.lang.invoke.VarHandle.releaseFence();
+    buffer.putLong(offset, position);
+    if (sync && buffer instanceof java.nio.MappedByteBuffer mapped) mapped.force();
+    buffer.position(offset + HEADER_SIZE);
   }
 }
