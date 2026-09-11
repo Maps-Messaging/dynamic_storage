@@ -51,6 +51,7 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
   private final String fileName;
   private final FileChannel readChannel;
   private final FileChannel writeChannel;
+  private final FrameAppender appender;
   private final ByteBuffer lengthBuffer;
 
   private volatile boolean closed;
@@ -87,6 +88,7 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
 
     validationRequired = false;
     writeChannel = (FileChannel) Files.newByteChannel(file.toPath(), writeOptions);
+    appender = new FrameAppender(writeChannel);
     readChannel = (FileChannel) Files.newByteChannel(file.toPath(), readOptions);
 
     if (length != 0) {
@@ -159,31 +161,10 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
 
   @Override
   public IndexRecord add(@NotNull T object) throws IOException {
-    long eof = writeChannel.size();
-    writeChannel.position(eof);
-
-    ByteBuffer[] buffers = objectStorableFactory.pack(object);
-    ByteBuffer meta = ByteBuffer.allocate((buffers.length + 2) * Integer.BYTES);
-    int len = Integer.BYTES;
-    meta.position(Integer.BYTES);
-    meta.putInt(buffers.length);
-    for (ByteBuffer buffer : buffers) {
-      int bufferLength = buffer.limit();
-      len += bufferLength;
-      meta.putInt(bufferLength);
-    }
-    meta.putInt(0, len);
-    meta.flip();
-
-    ByteBuffer[] inclusive = new ByteBuffer[buffers.length + 1];
-    System.arraycopy(buffers, 0, inclusive, 1, buffers.length);
-    inclusive[0] = meta;
-    writeChannel.write(inclusive);
-
-    long fileLength = writeChannel.size();
-    long length = fileLength - eof;
-    full = fileLength > maxPartitionSize;
-    return new IndexRecord(object.getKey(), 0, eof, object.getExpiry(), (int) length);
+    if (closed) throw new IOException("Data store is closed");
+    long[] appended = appender.append(objectStorableFactory.pack(object));
+    full = appended[0] + appended[1] > maxPartitionSize;
+    return new IndexRecord(object.getKey(), 0, appended[0], object.getExpiry(), (int) appended[1]);
   }
 
   @Override
