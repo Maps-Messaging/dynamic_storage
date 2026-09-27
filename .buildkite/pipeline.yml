@@ -6,7 +6,7 @@ steps:
       - echo "regionName=ap-southeast-2" >> s3.properties
       - echo "bucketName=maps-messaging" >> s3.properties
       - mvn clean deploy -Psnapshot
-      - mvn -Psnapshot org.sonarsource.scanner.maven:sonar-maven-plugin:5.7.0.6970:sonar -Dsonar.token=$(buildkite-agent secret get SONAR_TOKEN)
+      - mvn -Psnapshot org.sonarsource.scanner.maven:sonar-maven-plugin:5.7.0.6970:sonar -Dsonar.token=$(buildkite-agent secret get SONAR_TOKEN) -Dsonar.branch.name=development
     plugins:
       - test-collector#v1.0.0:
           files: "target/surefire-reports/*.xml"
