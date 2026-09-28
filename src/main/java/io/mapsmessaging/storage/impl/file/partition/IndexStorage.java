@@ -78,6 +78,7 @@ public class IndexStorage<T extends Storable> {
 
   private volatile boolean paused;
   private boolean requiresValidation;
+  private IOException appendFailure;
 
   public IndexStorage(PartitionStorageConfig config, String name, long start, TaskQueue taskScheduler)
       throws IOException {
@@ -323,6 +324,7 @@ public class IndexStorage<T extends Storable> {
   }
 
   public IndexRecord add(@NotNull T object) throws IOException {
+    if (appendFailure != null) throw new IOException("Index publication previously failed; reopen and validate", appendFailure);
     if (paused) {
       resume();
     }
@@ -332,7 +334,14 @@ public class IndexStorage<T extends Storable> {
     }
 
     IndexRecord item = dataStorage.add(object);
-    indexManager.add(object.getKey(), item);
+    try {
+      if (!indexManager.add(object.getKey(), item, sync)) {
+        throw new IOException("Index rejected appended key " + object.getKey());
+      }
+    } catch (RuntimeException | IOException e) {
+      appendFailure = new IOException("Index publication failed for key " + object.getKey(), e);
+      throw appendFailure;
+    }
     lastAccess = System.currentTimeMillis();
     return item;
   }

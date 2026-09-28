@@ -201,13 +201,17 @@ public class IndexManager implements Closeable {
   }
 
   public boolean add(long key, @NotNull IndexRecord item) {
+    return add(key, item, false);
+  }
+
+  boolean add(long key, @NotNull IndexRecord item, boolean sync) {
     waitForLoad();
     if (key >= start && key <= localEnd && !closed && key <= end) {
+      setMapPosition(key);
+      item.update(index, sync);
       if (item.getExpiry() > 0) {
         expiryIndex.add(key);
       }
-      setMapPosition(key);
-      item.update(index);
       counter.increment();
       if (key - start > maxKey) {
         maxKey = key - start;
