@@ -39,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
@@ -61,6 +62,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private final String fileName;
   private final String rootDirectory;
   private final long archiveIdleTime;
+  private final Clock clock;
 
   private final LongAdder reads;
   private final LongAdder writes;
@@ -80,7 +82,12 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
 
   @SuppressWarnings("javaarchitecture:S7091")
   public PartitionStorage(PartitionStorageConfig config, ExpiredStorableHandler expiredHandler) throws IOException {
+    this(config, expiredHandler, Clock.systemDefaultZone());
+  }
+
+  PartitionStorage(PartitionStorageConfig config, ExpiredStorableHandler expiredHandler, Clock clock) throws IOException {
     this.config = config;
+    this.clock = clock;
     this.expiredHandler = Objects.requireNonNullElseGet(expiredHandler, () -> new BaseExpiredHandler<>(this));
     this.itemCount = config.getItemCount();
     this.fileName = config.getFileName() + File.separator + PARTITION_FILE_NAME;
@@ -109,7 +116,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     this.byteWrites = new LongAdder();
     this.byteReads = new LongAdder();
     this.lastKeyStored = -2;
-    this.lastAccess = System.currentTimeMillis();
+    this.lastAccess = clock.millis();
   }
 
   @Override
@@ -197,9 +204,9 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     if (paused) {
       resume();
     }
-    lastAccess = System.currentTimeMillis();
+    lastAccess = clock.millis();
 
-    long time = System.currentTimeMillis();
+    long time = clock.millis();
     IndexStorage<T> partition = locateOrCreatePartition(object.getKey());
     IndexRecord indexRecord = partition.add(object);
     if (partition.isFull() && object.getKey() < partition.getEnd()) {
@@ -210,7 +217,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     byteReads.add(IndexRecord.HEADER_SIZE);
     byteWrites.add(indexRecord.getLength());
     writes.increment();
-    writeTimes.add(System.currentTimeMillis() - time);
+    writeTimes.add(clock.millis() - time);
 
     if (getLastKey() < object.getKey()) {
       lastKeyStored = object.getKey();
@@ -225,7 +232,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     if (paused) {
       resume();
     }
-    lastAccess = System.currentTimeMillis();
+    lastAccess = clock.millis();
 
     IndexStorage<T> partition = locatePartition(key);
     if (partition != null && partition.remove(key)) {
@@ -246,9 +253,9 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     if (paused) {
       resume();
     }
-    lastAccess = System.currentTimeMillis();
+    lastAccess = clock.millis();
 
-    long time = System.currentTimeMillis();
+    long time = clock.millis();
     try {
       IndexStorage<T> partition = locatePartition(key);
       if (partition != null) {
@@ -261,7 +268,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
       }
       return null;
     } finally {
-      readTimes.add(System.currentTimeMillis() - time);
+      readTimes.add(clock.millis() - time);
     }
   }
 
@@ -308,7 +315,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
 
   @Override
   public void updateLastAccess() {
-    lastAccess = System.currentTimeMillis();
+    lastAccess = clock.millis();
   }
 
   public long length() throws IOException {
@@ -410,7 +417,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
 
   public void scanForArchiveMigration() throws IOException {
     if (archiveIdleTime > 0) {
-      long archiveThreshold = System.currentTimeMillis() - archiveIdleTime;
+      long archiveThreshold = clock.millis() - archiveIdleTime;
       for (int index = 0; index < partitions.size() - 1; index++) {
         IndexStorage<T> partition = partitions.get(index);
         if (!partition.isArchived() && partition.getLastAccess() < archiveThreshold) {

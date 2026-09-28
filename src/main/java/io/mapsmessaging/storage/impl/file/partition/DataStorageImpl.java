@@ -177,59 +177,19 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
 
   @Override
   public boolean isValid(IndexRecord item) throws IOException {
-    if (item == null || item.getPosition() <= 0 || item.getLength() <= 0) {
+    if (!hasValidRecordBounds(item)) {
       return false;
     }
 
-    long fileSize = readChannel.size();
     long filePosition = item.getPosition();
     long recordEnd = filePosition + item.getLength();
-
-    if (filePosition < HEADER_SIZE || recordEnd > fileSize || recordEnd < filePosition) {
+    RecordMetadata metadata = readRecordMetadata(filePosition, recordEnd, item.getLength());
+    if (metadata == null) {
       return false;
     }
 
-    ByteBuffer header = ByteBuffer.allocate(RECORD_HEADER_SIZE);
-    if (!readFully(header, filePosition)) {
-      return false;
-    }
-    header.flip();
-
-    int storedLength = header.getInt();
-    int bufferCount = header.getInt();
-
-    if (storedLength <= 0 || bufferCount <= 0 || bufferCount > MAX_BUFFER_COUNT) {
-      return false;
-    }
-
-    long bufferInfoLength = (long) bufferCount * Integer.BYTES;
-    long bufferInfoPosition = filePosition + RECORD_HEADER_SIZE;
-    long payloadPosition = bufferInfoPosition + bufferInfoLength;
-
-    if (payloadPosition > recordEnd || payloadPosition < bufferInfoPosition) {
-      return false;
-    }
-
-    ByteBuffer bufferInfo = ByteBuffer.allocate((int) bufferInfoLength);
-    if (!readFully(bufferInfo, bufferInfoPosition)) {
-      return false;
-    }
-    bufferInfo.flip();
-
-    long payloadLength = 0;
-    for (int index = 0; index < bufferCount; index++) {
-      int bufferLength = bufferInfo.getInt();
-      if (bufferLength < 0) {
-        return false;
-      }
-      payloadLength += bufferLength;
-      if (payloadLength > item.getLength()) {
-        return false;
-      }
-    }
-
-    long payloadEnd = payloadPosition + payloadLength;
-    if (payloadEnd > recordEnd || payloadEnd < payloadPosition) {
+    long payloadEnd = metadata.payloadPosition() + metadata.payloadLength();
+    if (payloadEnd > recordEnd || payloadEnd < metadata.payloadPosition()) {
       return false;
     }
 
@@ -240,21 +200,78 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
     }
   }
 
+  private boolean hasValidRecordBounds(IndexRecord item) throws IOException {
+    if (item == null || item.getPosition() <= 0 || item.getLength() <= 0) {
+      return false;
+    }
+
+    long filePosition = item.getPosition();
+    long recordEnd = filePosition + item.getLength();
+    return filePosition >= HEADER_SIZE
+        && recordEnd >= filePosition
+        && recordEnd <= readChannel.size();
+  }
+
+  private RecordMetadata readRecordMetadata(long filePosition, long recordEnd, int recordLength)
+      throws IOException {
+    ByteBuffer header = ByteBuffer.allocate(RECORD_HEADER_SIZE);
+    if (!readFully(header, filePosition)) {
+      return null;
+    }
+    header.flip();
+
+    int storedLength = header.getInt();
+    int bufferCount = header.getInt();
+    if (storedLength <= 0 || bufferCount <= 0 || bufferCount > MAX_BUFFER_COUNT) {
+      return null;
+    }
+
+    long bufferInfoLength = (long) bufferCount * Integer.BYTES;
+    long bufferInfoPosition = filePosition + RECORD_HEADER_SIZE;
+    long payloadPosition = bufferInfoPosition + bufferInfoLength;
+    if (payloadPosition > recordEnd || payloadPosition < bufferInfoPosition) {
+      return null;
+    }
+
+    ByteBuffer bufferInfo = ByteBuffer.allocate((int) bufferInfoLength);
+    if (!readFully(bufferInfo, bufferInfoPosition)) {
+      return null;
+    }
+    bufferInfo.flip();
+
+    long payloadLength = calculatePayloadLength(bufferInfo, bufferCount, recordLength);
+    if (payloadLength < 0) {
+      return null;
+    }
+    return new RecordMetadata(payloadPosition, payloadLength);
+  }
+
+  private long calculatePayloadLength(ByteBuffer bufferInfo, int bufferCount, int recordLength) {
+    long payloadLength = 0;
+    for (int index = 0; index < bufferCount; index++) {
+      int bufferLength = bufferInfo.getInt();
+      if (bufferLength < 0) {
+        return -1;
+      }
+      payloadLength += bufferLength;
+      if (payloadLength > recordLength) {
+        return -1;
+      }
+    }
+    return payloadLength;
+  }
+
   private T reloadMessage(long filePosition) throws IOException {
     readChannel.position(filePosition);
     lengthBuffer.clear();
-    if (readChannel.read(lengthBuffer) != RECORD_HEADER_SIZE) {
-      throw new IOException("Unable to read data record header");
-    }
+    readFully(lengthBuffer, "Unable to read data record header");
 
     int len = lengthBuffer.getInt(0);
     T obj = null;
     if (len > 0) {
       int bufferCount = lengthBuffer.getInt(Integer.BYTES);
       ByteBuffer bufferInfo = ByteBuffer.allocate(bufferCount * Integer.BYTES);
-      if (readChannel.read(bufferInfo) != bufferInfo.capacity()) {
-        throw new IOException("Unable to read data record buffer metadata");
-      }
+      readFully(bufferInfo, "Unable to read data record buffer metadata");
       bufferInfo.flip();
 
       ByteBuffer[] data = new ByteBuffer[bufferCount];
@@ -262,7 +279,7 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
         data[index] = ByteBuffer.allocate(bufferInfo.getInt());
       }
 
-      readChannel.read(data);
+      readFully(data);
       for (ByteBuffer buffer : data) {
         if (buffer.hasRemaining()) {
           throw new IOException("Unable to read complete data record payload");
@@ -272,6 +289,26 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
       obj = objectStorableFactory.unpack(data);
     }
     return obj;
+  }
+
+  private void readFully(ByteBuffer buffer, String errorMessage) throws IOException {
+    while (buffer.hasRemaining()) {
+      int read = readChannel.read(buffer);
+      if (read < 0) {
+        throw new IOException(errorMessage);
+      }
+    }
+  }
+
+  private void readFully(ByteBuffer[] buffers) throws IOException {
+    for (ByteBuffer buffer : buffers) {
+      while (buffer.hasRemaining()) {
+        int read = readChannel.read(buffer);
+        if (read < 0) {
+          throw new IOException("Unable to read complete data record payload");
+        }
+      }
+    }
   }
 
   private boolean readFully(ByteBuffer buffer, long position) throws IOException {
@@ -284,6 +321,9 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
       currentPosition += read;
     }
     return true;
+  }
+
+  private record RecordMetadata(long payloadPosition, long payloadLength) {
   }
 
   @Override

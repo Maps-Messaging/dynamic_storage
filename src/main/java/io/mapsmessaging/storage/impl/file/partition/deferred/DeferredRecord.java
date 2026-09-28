@@ -26,6 +26,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Objects;
 
 public abstract class DeferredRecord {
@@ -52,7 +53,7 @@ public abstract class DeferredRecord {
     this.digestName = digestName;
     this.deferredHash = Objects.requireNonNullElse(arcdeferredHash, "");
     this.length = length;
-    this.archivedDate = LocalDateTime.now();
+    this.archivedDate = LocalDateTime.now(ZoneOffset.UTC);
   }
 
   public abstract void read(String filename) throws IOException;
