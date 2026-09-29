@@ -53,10 +53,8 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
   public synchronized void pause() {
     if (!paused) {
       paused = true;
-      if (expiryTask != null) {
-        if (expiryTask.cancel(false)) {
-          expiryTask = null;
-        }
+      if (expiryTask != null && expiryTask.cancel(false)) {
+        expiryTask = null;
       }
     }
   }
