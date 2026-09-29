@@ -91,7 +91,7 @@ class RandomAccessFileObjectReaderTest {
       randomAccessFile.seek(0);
       RandomAccessFileObjectReader reader = new RandomAccessFileObjectReader(randomAccessFile);
 
-      assertNull(reader.readByteArray());
+      assertArrayEquals(new byte[0], reader.readByteArray());
     }
   }
 }

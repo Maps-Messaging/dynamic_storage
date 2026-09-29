@@ -91,7 +91,7 @@ public class RandomAccessFileObjectReader extends ObjectReader {
   public byte[] readByteArray() throws IOException {
     int length = readInt();
     if (length < 0) {
-      return null;
+      return new byte[0];
     }
     return readFromStream(length);
   }
