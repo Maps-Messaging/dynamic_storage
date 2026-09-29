@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -44,14 +44,14 @@ public class StreamObjectReader extends ObjectReader {
 
   protected long read(int size) throws IOException {
     byte[] bytes = readFromStream(size);
-    if (bytes == null) {
+    if (bytes == null || bytes.length < size) {
       throw new IOException("Unable to read numeric value");
     }
     return fromByteArray(bytes);
   }
 
   protected byte[] readFromStream(int length) throws IOException {
-    byte[] result = null;
+    byte[] result;
     if (length > -1) {
       result = new byte[length];
       int read = 0;
@@ -62,7 +62,8 @@ public class StreamObjectReader extends ObjectReader {
         }
         read += t;
       }
+      return result;
     }
-    return result;
+    return new byte[0];
   }
 }
