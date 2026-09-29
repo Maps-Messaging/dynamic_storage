@@ -157,5 +157,21 @@ final class FrameAppender {
     }
   }
 
-  private record Frame(ByteBuffer[] buffers, long expectedLength) {}
+  private static final class Frame {
+    private final ByteBuffer[] buffers;
+    private final long expectedLength;
+
+    private Frame(ByteBuffer[] buffers, long expectedLength) {
+      this.buffers = buffers;
+      this.expectedLength = expectedLength;
+    }
+
+    private ByteBuffer[] buffers() {
+      return buffers;
+    }
+
+    private long expectedLength() {
+      return expectedLength;
+    }
+  }
 }
