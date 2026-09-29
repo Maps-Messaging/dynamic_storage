@@ -70,9 +70,7 @@ public class RandomAccessFileObjectReader extends ObjectReader {
     String result = null;
     int length = readInt();
     if (length > -1) {
-      byte[] buffer = new byte[length];
-      randomAccessFile.read(buffer);
-      result = new String(buffer);
+      result = new String(readFromStream(length));
     }
     return result;
   }
@@ -80,25 +78,21 @@ public class RandomAccessFileObjectReader extends ObjectReader {
   @Override
   protected byte[] readFromStream(int length) throws IOException {
     byte[] tmp = new byte[length];
-    randomAccessFile.write(tmp);
+    randomAccessFile.readFully(tmp);
     return tmp;
   }
 
   @Override
   protected long read(int size) throws IOException {
-    byte[] tmp = new byte[size];
-    randomAccessFile.read(tmp);
-    return fromByteArray(tmp);
+    return fromByteArray(readFromStream(size));
   }
 
   @Override
   public byte[] readByteArray() throws IOException {
-    byte[] result = null;
     int length = readInt();
-    if (length > -1) {
-      result = new byte[length];
-      randomAccessFile.read(result);
+    if (length < 0) {
+      return null;
     }
-    return result;
+    return readFromStream(length);
   }
 }
