@@ -3,6 +3,7 @@ package io.mapsmessaging.storage.impl.file.partition;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Arrays;
 
 /** Completes a version-1 frame before its caller can publish an index entry. */
 final class FrameAppender {
@@ -157,21 +158,29 @@ final class FrameAppender {
     }
   }
 
-  private static final class Frame {
-    private final ByteBuffer[] buffers;
-    private final long expectedLength;
+  private record Frame(ByteBuffer[] buffers, long expectedLength) {
 
-    private Frame(ByteBuffer[] buffers, long expectedLength) {
-      this.buffers = buffers;
-      this.expectedLength = expectedLength;
+    @Override
+    public boolean equals(Object object) {
+      return this == object
+          || object instanceof Frame other
+              && expectedLength == other.expectedLength
+              && Arrays.equals(buffers, other.buffers);
     }
 
-    private ByteBuffer[] buffers() {
-      return buffers;
+    @Override
+    public int hashCode() {
+      int result = Arrays.hashCode(buffers);
+      return 31 * result + Long.hashCode(expectedLength);
     }
 
-    private long expectedLength() {
-      return expectedLength;
+    @Override
+    public String toString() {
+      return "Frame[buffers="
+          + Arrays.toString(buffers)
+          + ", expectedLength="
+          + expectedLength
+          + "]";
     }
   }
 }
