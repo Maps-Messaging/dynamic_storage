@@ -6,6 +6,7 @@ package io.mapsmessaging.storage.impl.streams;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.EOFException;
 import java.io.RandomAccessFile;
@@ -77,7 +78,7 @@ class RandomAccessFileObjectReaderTest {
       randomAccessFile.seek(0);
       RandomAccessFileObjectReader reader = new RandomAccessFileObjectReader(randomAccessFile);
 
-      assertEquals(null, reader.readByteArray());
+      assertNull(reader.readByteArray());
     }
   }
 }
