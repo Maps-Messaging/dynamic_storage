@@ -316,9 +316,9 @@ public class DebugStorage<T extends Storable> implements Storage<T>, ExpiredMoni
   public void scanForExpired() throws IOException {
     try {
       enterFunction("scanForExpired");
-      if (physicalStorage instanceof ExpiredMonitor) {
+      if (physicalStorage instanceof ExpiredMonitor expiredMonitor) {
         logger.log(DEBUG_LOGGING, "Scan for expired on " + physicalStorage.getName());
-        ((ExpiredMonitor) physicalStorage).scanForExpired();
+        expiredMonitor.scanForExpired();
       }
     } finally {
       exitFunction();
@@ -334,9 +334,9 @@ public class DebugStorage<T extends Storable> implements Storage<T>, ExpiredMoni
   public void scanForArchiveMigration() throws IOException {
     try {
       enterFunction("scanForArchiveMigration");
-      if (physicalStorage instanceof TierMigrationMonitor) {
+      if (physicalStorage instanceof TierMigrationMonitor tierMigrationMonitor) {
         logger.log(DEBUG_LOGGING, "Scan for tier migration on " + physicalStorage.getName());
-        ((TierMigrationMonitor) physicalStorage).scanForArchiveMigration();
+        tierMigrationMonitor.scanForArchiveMigration();
       }
     } finally {
       exitFunction();

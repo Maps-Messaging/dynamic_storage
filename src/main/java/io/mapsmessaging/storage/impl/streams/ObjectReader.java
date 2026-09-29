@@ -144,9 +144,6 @@ public abstract class ObjectReader {
 
   // </editor-fold>
   protected long fromByteArray(byte[] tmp) {
-    if (tmp == null) {
-      throw new IllegalArgumentException("Byte array must not be null");
-    }
     long val = 0;
     for (byte b : tmp) {
       val = (val << 8) | (0xff & b);

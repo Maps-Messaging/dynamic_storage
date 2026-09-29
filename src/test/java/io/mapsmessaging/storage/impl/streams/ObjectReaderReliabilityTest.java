@@ -6,25 +6,25 @@ package io.mapsmessaging.storage.impl.streams;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
 class ObjectReaderReliabilityTest {
-
-  @Test
-  void rejectsNullByteArrayConversion() {
-    TestObjectReader reader = new TestObjectReader();
-
-    IllegalArgumentException exception =
-        assertThrows(IllegalArgumentException.class, () -> reader.convert(null));
-
-    assertEquals("Byte array must not be null", exception.getMessage());
-  }
 
   @Test
   void convertsBytesAsBigEndianValue() {
     TestObjectReader reader = new TestObjectReader();
 
     assertEquals(0x0102FFL, reader.convert(new byte[] {0x01, 0x02, (byte) 0xFF}));
+  }
+
+  @Test
+  void numericStreamReadFailsCleanlyOnTruncatedInput() {
+    StreamObjectReader reader =
+        new StreamObjectReader(new ByteArrayInputStream(new byte[] {0x01, 0x02}));
+
+    assertThrows(IOException.class, reader::readInt);
   }
 
   private static final class TestObjectReader extends ObjectReader {

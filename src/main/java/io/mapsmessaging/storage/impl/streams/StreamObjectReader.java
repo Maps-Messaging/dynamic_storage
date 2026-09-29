@@ -43,7 +43,11 @@ public class StreamObjectReader extends ObjectReader {
   @Override
 
   protected long read(int size) throws IOException {
-    return fromByteArray(readFromStream(size));
+    byte[] bytes = readFromStream(size);
+    if (bytes == null) {
+      throw new IOException("Unable to read numeric value");
+    }
+    return fromByteArray(bytes);
   }
 
   protected byte[] readFromStream(int length) throws IOException {
