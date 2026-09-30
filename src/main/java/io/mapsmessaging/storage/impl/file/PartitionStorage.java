@@ -560,21 +560,13 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   }
 
   private void scanForEmpty() throws IOException {
-    List<IndexStorage<T>> emptyReloads = new ArrayList<>();
-    for (IndexStorage<T> partition : partitions) {
-      if (partition.isEmpty()) {
-        emptyReloads.add(partition);
+    List<IndexStorage<T>> emptyReloads = partitions.stream().filter(IndexStorage::isEmpty).toList();
+    for (IndexStorage<T> storage : emptyReloads) {
+      if (partitions.size() <= 1) {
+        break;
       }
-    }
-
-    if (partitions.size() > 1) {
-      for (IndexStorage<T> storage : emptyReloads) {
-        partitions.remove(storage);
-        submit(new DeletePartitionTask<>(storage));
-        if (partitions.size() == 1) {
-          break;
-        }
-      }
+      partitions.remove(storage);
+      submit(new DeletePartitionTask<>(storage));
     }
   }
 
