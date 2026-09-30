@@ -394,9 +394,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
     if (!paused) {
       try (BitSetFactory bitSetFactory = new BitSetFactoryImpl(8192)) {
         Queue<Long> expiredList = new NaturalOrderedLongQueue(0, bitSetFactory);
-        for (IndexStorage<T> partition : partitions) {
-          partition.scanForExpired(expiredList);
-        }
+        partitions.forEach(partition -> partition.scanForExpired(expiredList));
         if (!expiredList.isEmpty()) {
           expiredHandler.expired(expiredList);
           expiredMonitor.schedulePoll();

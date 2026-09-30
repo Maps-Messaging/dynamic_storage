@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -57,24 +57,26 @@ class StorageFactoryFactory {
     caches = loadCaches();
   }
 
-  private List<StorageFactory<? extends Storable>> loadStorageFactory(){
+  private List<StorageFactory<? extends Storable>> loadStorageFactory() {
     ServiceLoader<StorageFactory> serviceLoader = ServiceLoader.load(StorageFactory.class);
     List<StorageFactory<? extends Storable>> list = new ArrayList<>();
-    for(StorageFactory storageFactory:serviceLoader){
+
+    serviceLoader.forEach(storageFactory -> {
       list.add(storageFactory);
-    }
-    list.forEach(storageFactory -> known.add(storageFactory.getName()));
+      known.add(storageFactory.getName());
+    });
+
     return list;
   }
 
-  private List<Cache<? extends Storable>> loadCaches(){
+  private List<Cache<? extends Storable>> loadCaches() {
     ServiceLoader<Cache> serviceCaches = ServiceLoader.load(Cache.class);
     List<Cache<? extends Storable>> list = new ArrayList<>();
-    for(Cache cache:serviceCaches){
-      list.add(cache);
-    }
 
-    list.forEach(layer -> layered.add(layer.getName()));
+    serviceCaches.forEach(cache -> {
+      list.add(cache);
+      layered.add(cache.getName());
+    });
     return list;
   }
 
