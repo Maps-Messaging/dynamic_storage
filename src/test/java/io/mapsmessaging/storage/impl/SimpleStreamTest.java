@@ -161,7 +161,7 @@ public class SimpleStreamTest {
     Assertions.assertEquals(nullString, sor.readString());
     Assertions.assertEquals(emptyString, sor.readString());
     Assertions.assertEquals(string, sor.readString());
-    Assertions.assertArrayEquals(new byte[0], sor.readByteArray());
+    Assertions.assertNull(sor.readByteArray());
     Assertions.assertEquals(0, sor.readByteArray().length);
     byte[] tmp = sor.readByteArray();
     for (int x = 0; x < tmp.length; x++) {

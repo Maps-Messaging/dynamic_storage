@@ -21,6 +21,7 @@ package io.mapsmessaging.storage.impl.streams;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import org.jetbrains.annotations.Nullable;
 
 public class RandomAccessFileObjectReader extends ObjectReader {
 
@@ -88,10 +89,11 @@ public class RandomAccessFileObjectReader extends ObjectReader {
   }
 
   @Override
-  public byte[] readByteArray() throws IOException {
+  @SuppressWarnings("java:S1168")
+  public @Nullable byte[] readByteArray() throws IOException {
     int length = readInt();
     if (length < 0) {
-      return new byte[0];
+      return null;
     }
     return readFromStream(length);
   }

@@ -20,6 +20,7 @@
 package io.mapsmessaging.storage.impl.streams;
 
 import java.io.IOException;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class ObjectReader {
 
@@ -52,7 +53,7 @@ public abstract class ObjectReader {
     return result;
   }
 
-  public byte[] readByteArray() throws IOException {
+  public @Nullable byte[] readByteArray() throws IOException {
     int length = readInt();
     return readFromStream(length);
   }
@@ -151,7 +152,7 @@ public abstract class ObjectReader {
     return val;
   }
 
-  protected abstract byte[] readFromStream(int length) throws IOException;
+  protected abstract @Nullable byte[] readFromStream(int length) throws IOException;
 
   protected abstract long read(int size) throws IOException;
 

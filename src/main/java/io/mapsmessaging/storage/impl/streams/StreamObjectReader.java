@@ -21,6 +21,7 @@ package io.mapsmessaging.storage.impl.streams;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.jetbrains.annotations.Nullable;
 
 public class StreamObjectReader extends ObjectReader {
 
@@ -50,8 +51,9 @@ public class StreamObjectReader extends ObjectReader {
     return fromByteArray(bytes);
   }
 
-  protected byte[] readFromStream(int length) throws IOException {
-    byte[] result;
+  @SuppressWarnings("java:S1168")
+  protected @Nullable byte[] readFromStream(int length) throws IOException {
+    byte[] result = null;
     if (length > -1) {
       result = new byte[length];
       int read = 0;
@@ -62,8 +64,7 @@ public class StreamObjectReader extends ObjectReader {
         }
         read += t;
       }
-      return result;
     }
-    return new byte[0];
+    return result;
   }
 }
