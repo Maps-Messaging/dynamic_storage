@@ -21,11 +21,13 @@ package io.mapsmessaging.storage.impl;
 
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class MemoryStoreTest extends BaseStoreTest {
 
@@ -40,10 +42,38 @@ public class MemoryStoreTest extends BaseStoreTest {
 
   }
 
+  @Test
+  void expiresRecordAfterTheInitialPoll() throws Exception {
+    Storage<MappedData> storage = null;
+    try {
+      storage = build(testName, false, 1);
+      MappedData message = createMessageBuilder(1);
+      message.setExpiry(System.currentTimeMillis() + 1500L);
+      storage.add(message);
+
+      long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(4);
+      while (!storage.isEmpty() && System.currentTimeMillis() < timeout) {
+        TimeUnit.MILLISECONDS.sleep(50);
+      }
+
+      Assertions.assertTrue(storage.isEmpty(),
+          "The record should expire on a poll after the initial scan");
+    } finally {
+      if (storage != null) {
+        storage.delete();
+      }
+    }
+  }
+
   public static Storage<MappedData> build(String testName, boolean sync) throws IOException {
+    return build(testName, sync, 1);
+  }
+
+  private static Storage<MappedData> build(String testName, boolean sync, int expiredEventPoll) throws IOException {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("Sync", "" + sync);
     properties.put("storeType", "Memory");
+    properties.put("ExpiredEventPoll", Integer.toString(expiredEventPoll));
     StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
     storageBuilder
         .setFactory(getFactory())

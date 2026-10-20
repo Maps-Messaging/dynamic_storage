@@ -161,6 +161,11 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
   }
 
   @Override
+  public boolean hasExpiringEntries() {
+    return memoryMap.values().stream().anyMatch(entry -> entry.getExpiry() > 0);
+  }
+
+  @Override
   public long size() throws IOException {
     lastAccess = System.currentTimeMillis();
     return memoryMap.size();

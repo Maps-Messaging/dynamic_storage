@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 class DebugStoreApiTest {
 
@@ -139,30 +143,57 @@ class DebugStoreApiTest {
 
   }
 
+  @AfterEach
+  void detachAppender() {
+    ((Logger) LoggerFactory.getLogger(DebugStorage.class)).detachAppender(testLogAppender);
+    testLogAppender.stop();
+  }
+
   @Test
-  void testThreadAccessLogging() throws IOException {
-    DebugTestStorage<BaseTest.MappedData> base = new DebugTestStorage<>();
+  void testThreadAccessLogging() throws Exception {
+    CountDownLatch entered = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    AtomicReference<Throwable> workerFailure = new AtomicReference<>();
+    DebugTestStorage<BaseTest.MappedData> base = new DebugTestStorage<>() {
+      @Override
+      public void close() throws IOException {
+        entered.countDown();
+        try {
+          if (!release.await(5, TimeUnit.SECONDS)) throw new IOException("Worker release timed out");
+        } catch (InterruptedException exception) {
+          Thread.currentThread().interrupt();
+          throw new IOException(exception);
+        }
+      }
+    };
     DebugStorage<BaseTest.MappedData> storage = new DebugStorage<>(base);
-    base.pauseCall.set(true);
-    Thread t = new Thread(() -> {
+    Thread worker = new Thread(() -> {
       try {
-        storage.close(); // this should block
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+        storage.close();
+      } catch (Throwable exception) {
+        workerFailure.set(exception);
       }
     });
-    t.start();
-
-    testLogAppender.clear();
-    storage.size();
-    base.pauseCall.set(false);
-    Assertions.assertFalse(testLogAppender.getLogEvents().isEmpty());
-    testLogAppender.clear();
+    worker.start();
+    try {
+      Assertions.assertTrue(entered.await(5, TimeUnit.SECONDS));
+      testLogAppender.clear();
+      storage.size();
+      Assertions.assertTrue(testLogAppender.getLogEvents().stream()
+          .anyMatch(event -> event.getFormattedMessage().contains("Detected multi-thread access")));
+      Assertions.assertTrue(testLogAppender.getLogEvents().stream()
+          .anyMatch(event -> event.getFormattedMessage().contains("External::")));
+    } finally {
+      release.countDown();
+      worker.join(5000);
+    }
+    Assertions.assertFalse(worker.isAlive());
+    Assertions.assertNull(workerFailure.get());
   }
 
 
   public class TestLogAppender extends AppenderBase<ILoggingEvent> {
-    private final List<ILoggingEvent> logEvents = new ArrayList<>();
+    private final List<ILoggingEvent> logEvents = new CopyOnWriteArrayList<>();
 
     @Override
     protected void append(ILoggingEvent eventObject) {
@@ -180,7 +211,6 @@ class DebugStoreApiTest {
 
   static class DebugTestStorage <T extends Storable> implements Storage<T>, ExpiredMonitor, TierMigrationMonitor {
 
-    public AtomicBoolean pauseCall = new AtomicBoolean(false);
     @Override
     public void scanForExpired() throws IOException {
       // these are no op functions,
@@ -188,14 +218,7 @@ class DebugStoreApiTest {
 
     @Override
     public void delete() throws IOException {
-      // these are no op functions,
-      while(pauseCall.get()){
-        try {
-          Thread.sleep(10);
-        } catch (InterruptedException e) {
-          throw new IOException();
-        }
-      }
+      // No operation required by the test storage.
 
     }
 

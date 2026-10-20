@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -82,17 +82,17 @@ public class CacheLayer<T extends Storable> implements LayeredStorage<T> {
 
   @Override
   public void add(@NotNull T object, Completion<T> completion) throws IOException {
+    baseStorage.add(object);
     cache.cachePut(object);
     if (enableWriteThrough && completion != null) {
       completion.onCompletion(object);
     }
-    baseStorage.add(object);
   }
 
   @Override
   public void add(@NotNull T object) throws IOException {
-    cache.cachePut(object);
     baseStorage.add(object);
+    cache.cachePut(object);
   }
 
   @Override

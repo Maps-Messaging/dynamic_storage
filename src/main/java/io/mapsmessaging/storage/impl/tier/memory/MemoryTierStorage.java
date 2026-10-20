@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -205,7 +205,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   @SneakyThrows
   public void scan() {
-    long test = System.currentTimeMillis() + migrationTime;
+    long test = System.currentTimeMillis() - migrationTime;
     for (Long key : primary.getKeys()) {
       ObjectMonitor<T> check = primary.get(key);
       if (check != null && check.getLastAccess() < test) {

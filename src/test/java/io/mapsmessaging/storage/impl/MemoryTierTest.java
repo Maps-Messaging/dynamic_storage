@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ package io.mapsmessaging.storage.impl;
 import io.mapsmessaging.storage.ExpiredStorableHandler;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
+import io.mapsmessaging.storage.impl.tier.memory.MemoryTierStatistics;
+import io.mapsmessaging.storage.impl.tier.memory.MemoryTierStorage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -49,6 +51,40 @@ public class MemoryTierTest extends BaseStoreTest {
   @Override
   public Storage<MappedData> createStore(String testName, boolean sync) throws IOException {
     return build(testName, sync);
+  }
+  @Test
+  void scanDoesNotMigrateFreshRecordsBeforeMigrationTime() throws Exception {
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("Sync", "false");
+    properties.put("storeType", "MemoryTier");
+    properties.put("Tier1Size", "100");
+
+    StorageBuilder<MappedData> storageBuilder = new StorageBuilder<>();
+    storageBuilder
+        .setFactory(getFactory())
+        .setName(testName)
+        .setProperties(properties);
+
+    Storage<MappedData> storage = storageBuilder.build();
+
+    try {
+      Assertions.assertTrue(storage instanceof MemoryTierStorage);
+
+      MemoryTierStorage<MappedData> memoryTierStorage = (MemoryTierStorage<MappedData>) storage;
+      Assertions.assertTrue(memoryTierStorage.getMigrationTime() > 0);
+
+      memoryTierStorage.add(createMessageBuilder(1));
+      memoryTierStorage.scan();
+
+      MemoryTierStatistics statistics = (MemoryTierStatistics) memoryTierStorage.getStatistics();
+      Assertions.assertEquals(0, statistics.getMigratedCount(), "Fresh record should not migrate");
+
+      MappedData data = memoryTierStorage.get(1);
+      Assertions.assertNotNull(data);
+      Assertions.assertEquals(1, data.key);
+    } finally {
+      storage.delete();
+    }
   }
 
 

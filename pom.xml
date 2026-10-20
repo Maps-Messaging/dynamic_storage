@@ -25,7 +25,7 @@
 
   <groupId>io.mapsmessaging</groupId>
   <artifactId>dynamic_storage</artifactId>
-  <version>2.5.2</version>
+  <version>2.5.3</version>
   <packaging>jar</packaging>
 
   <name>Dynamic Storage</name>
@@ -71,23 +71,22 @@
   </scm>
 
   <properties>
-    <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
+    <dependency.check.autoUpdate>true</dependency.check.autoUpdate>
+    <dependency.check.dataDirectory>${user.home}/.m2/repository/org/owasp/dependency-check-data/</dependency.check.dataDirectory>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <gpg.keyname>matthew.buckton@mapsmessaging.io</gpg.keyname>
+    <gpg.keyname>admin@mapsmessaging.io</gpg.keyname>
 
     <runSuite>**/*Suite.class</runSuite>
     <!-- Below property indicates the pattern of the test suite -->
     <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
-    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco</sonar.coverage.jacoco.xmlReportPaths>
+    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <sonar.java.test.binaries>target/test-classes</sonar.java.test.binaries>
 
     <!-- Sonar-JaCoCo properties -->
     <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
-    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
 
-    <sonar.language>java</sonar.language>
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
 
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
@@ -103,6 +102,20 @@
 
   <profiles>
     <profile>
+      <id>buildkite-dependency-check-cache</id>
+      <activation>
+        <property>
+          <name>env.BUILDKITE</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <properties>
+        <dependency.check.autoUpdate>false</dependency.check.autoUpdate>
+        <dependency.check.dataDirectory>/var/cache/dependency-check/13</dependency.check.dataDirectory>
+      </properties>
+    </profile>
+
+    <profile>
       <!-- Default profile for regular releases -->
       <id>release</id>
       <properties>
@@ -112,20 +125,20 @@
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>simple_logging</artifactId>
-          <version>2.1.2</version>
-        </dependency>
-        <!-- Naturally order long collection -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.2.2</version>
+          <version>2.2.0</version>
         </dependency>
 
         <!-- Non Blocking Task Queue module -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.2.2</version>
+          <version>2.2.3</version>
+        </dependency>
+        <!-- Naturally order long collection -->
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>naturally_ordered_long_collections</artifactId>
+          <version>1.2.3</version>
         </dependency>
 
       </dependencies>
@@ -135,7 +148,7 @@
           <plugin>
             <groupId>org.sonatype.central</groupId>
             <artifactId>central-publishing-maven-plugin</artifactId>
-            <version>0.10.0</version>
+            <version>0.12.0</version>
             <extensions>true</extensions>
             <configuration>
               <publishingServerId>central</publishingServerId>
@@ -147,7 +160,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-deploy-plugin</artifactId>
-            <version>3.1.4</version>
+            <version>3.2.0</version>
             <configuration>
               <skip>true</skip>
             </configuration>
@@ -160,8 +173,7 @@
     <profile>
       <id>snapshot</id>
       <properties>
-        <gpg.skip>true</gpg.skip>
-      </properties>
+</properties>
       <repositories>
         <repository>
           <id>maps_snapshots</id>
@@ -176,20 +188,20 @@
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>simple_logging</artifactId>
-          <version>2.1.3-SNAPSHOT</version>
+          <version>2.3.0-SNAPSHOT</version>
         </dependency>
         <!-- Naturally order long collection -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.2.3-SNAPSHOT</version>
+          <version>2.0.0-SNAPSHOT</version>
         </dependency>
 
         <!-- Non Blocking Task Queue module -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.2.3-SNAPSHOT</version>
+          <version>2.3.0-SNAPSHOT</version>
         </dependency>
 
       </dependencies>
@@ -207,6 +219,11 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>5.8.0.7211</version>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-gpg-plugin</artifactId>
         <version>3.2.8</version>
@@ -219,8 +236,12 @@
             </goals>
             <configuration>
               <keyname>${gpg.keyname}</keyname>
-              <passphraseServerId>${gpg.keyname}</passphraseServerId>
-            </configuration>
+              <passphraseEnvName>MAVEN_GPG_PASSPHRASE</passphraseEnvName>
+              <gpgArguments>
+                <arg>--pinentry-mode</arg>
+                <arg>loopback</arg>
+              </gpgArguments>
+</configuration>
           </execution>
         </executions>
       </plugin>
@@ -265,7 +286,7 @@
           </execution>
         </executions>
         <groupId>org.jacoco</groupId>
-        <version>0.8.14</version>
+        <version>0.8.15</version>
       </plugin>
 
       <!-- Setup the JUnit tests runner -->
@@ -279,7 +300,7 @@
           </includes>
         </configuration>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.5.5</version>
+        <version>3.5.6</version>
       </plugin>
 
       <!-- build the source jar as well -->
@@ -301,7 +322,7 @@
       <plugin>
         <groupId>org.cyclonedx</groupId>
         <artifactId>cyclonedx-maven-plugin</artifactId>
-        <version>2.9.1</version>
+        <version>2.9.3</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -336,9 +357,10 @@
       <plugin>
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
-        <version>12.2.2</version>
+        <version>13.0.0</version>
         <configuration>
-          <nvdApiKey>${nvd.api.key}</nvdApiKey>
+          <autoUpdate>${dependency.check.autoUpdate}</autoUpdate>
+          <dataDirectory>${dependency.check.dataDirectory}</dataDirectory>
           <failBuildOnCVSS>10</failBuildOnCVSS>
           <failOnError>false</failOnError>
           <skipArtifactType>test-jar</skipArtifactType>
@@ -367,7 +389,7 @@
     <dependency>
       <artifactId>lombok</artifactId>
       <groupId>org.projectlombok</groupId>
-      <version>1.18.46</version>
+      <version>1.18.48</version>
       <scope>provided</scope>
     </dependency>
 
@@ -388,28 +410,28 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
-      <version>2.44.9</version>
+      <version>2.55.14</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-annotations</artifactId>
-      <version>2.2.50</version>
+      <version>2.2.55</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.21</version>
+      <version>2.22</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.5.34</version>
+      <version>1.6.5</version>
       <scope>test</scope>
     </dependency>
 
@@ -417,7 +439,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.5.32</version>
+      <version>1.6.4</version>
       <scope>test</scope>
     </dependency>
 
@@ -425,7 +447,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-access</artifactId>
-      <version>1.5.32</version>
+      <version>1.6.5</version>
       <scope>test</scope>
     </dependency>
 
@@ -434,13 +456,13 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
-      <version>6.1.0</version>
+      <version>6.1.3</version>
     </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
-      <version>6.1.0</version>
+      <version>6.1.3</version>
       <scope>test</scope>
     </dependency>
 

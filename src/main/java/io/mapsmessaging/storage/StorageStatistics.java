@@ -21,9 +21,15 @@ package io.mapsmessaging.storage;
 
 import lombok.Getter;
 
-import java.util.Date;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 public class StorageStatistics implements Statistics {
+
+  private static final DateTimeFormatter TIMESTAMP_FORMAT =
+      DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy", Locale.ENGLISH);
 
   @Getter
   private final long reads;
@@ -89,8 +95,10 @@ public class StorageStatistics implements Statistics {
 
   @Override
   public String toString() {
-    Date dt = new Date();
-    StringBuilder sb = new StringBuilder(dt.toString()).append(",\t");
+    StringBuilder sb =
+        new StringBuilder(
+            ZonedDateTime.now(ZoneId.systemDefault()).format(TIMESTAMP_FORMAT))
+        .append(",\t");
     sb.append("Reads:");
     sb.append(getReads());
     sb.append(",\t");

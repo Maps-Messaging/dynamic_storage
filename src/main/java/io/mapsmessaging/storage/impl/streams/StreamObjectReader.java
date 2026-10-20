@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package io.mapsmessaging.storage.impl.streams;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.jetbrains.annotations.Nullable;
 
 public class StreamObjectReader extends ObjectReader {
 
@@ -43,10 +44,15 @@ public class StreamObjectReader extends ObjectReader {
   @Override
 
   protected long read(int size) throws IOException {
-    return fromByteArray(readFromStream(size));
+    byte[] bytes = readFromStream(size);
+    if (bytes == null || bytes.length < size) {
+      throw new IOException("Unable to read numeric value");
+    }
+    return fromByteArray(bytes);
   }
 
-  protected byte[] readFromStream(int length) throws IOException {
+  @SuppressWarnings("java:S1168")
+  protected @Nullable byte[] readFromStream(int length) throws IOException {
     byte[] result = null;
     if (length > -1) {
       result = new byte[length];

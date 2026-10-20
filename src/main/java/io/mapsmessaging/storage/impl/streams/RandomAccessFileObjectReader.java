@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package io.mapsmessaging.storage.impl.streams;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import org.jetbrains.annotations.Nullable;
 
 public class RandomAccessFileObjectReader extends ObjectReader {
 
@@ -70,9 +71,7 @@ public class RandomAccessFileObjectReader extends ObjectReader {
     String result = null;
     int length = readInt();
     if (length > -1) {
-      byte[] buffer = new byte[length];
-      randomAccessFile.read(buffer);
-      result = new String(buffer);
+      result = new String(readFromStream(length));
     }
     return result;
   }
@@ -80,25 +79,22 @@ public class RandomAccessFileObjectReader extends ObjectReader {
   @Override
   protected byte[] readFromStream(int length) throws IOException {
     byte[] tmp = new byte[length];
-    randomAccessFile.write(tmp);
+    randomAccessFile.readFully(tmp);
     return tmp;
   }
 
   @Override
   protected long read(int size) throws IOException {
-    byte[] tmp = new byte[size];
-    randomAccessFile.read(tmp);
-    return fromByteArray(tmp);
+    return fromByteArray(readFromStream(size));
   }
 
   @Override
-  public byte[] readByteArray() throws IOException {
-    byte[] result = null;
+  @SuppressWarnings("java:S1168")
+  public @Nullable byte[] readByteArray() throws IOException {
     int length = readInt();
-    if (length > -1) {
-      result = new byte[length];
-      randomAccessFile.read(result);
+    if (length < 0) {
+      return null;
     }
-    return result;
+    return readFromStream(length);
   }
 }
