@@ -91,8 +91,13 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
           queued = true;
         }
         try {
-          taskScheduler.submit(new IndexExpiryMonitorTask(storage,
-              hasExpiringEntries -> pollComplete(scheduledGeneration, hasExpiringEntries)));
+          IndexExpiryMonitorTask scan = new IndexExpiryMonitorTask(storage,
+              hasExpiringEntries -> pollComplete(scheduledGeneration, hasExpiringEntries));
+          if (taskScheduler.hasExecutor()) {
+            taskScheduler.submit(scan);
+          } else {
+            scan.call();
+          }
         } catch (IOException | RuntimeException e) {
           synchronized (ExpireStorableTaskManager.this) {
             queued = false;
