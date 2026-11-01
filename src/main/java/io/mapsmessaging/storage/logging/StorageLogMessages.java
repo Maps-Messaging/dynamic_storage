@@ -56,6 +56,8 @@ public enum StorageLogMessages implements LogMessage {
   NO_CACHE_FOUND(LEVEL.ERROR,STORAGE_CATEGORY.FACTORY,"No matching cache factory found for {}"),
   //endregion
 
+  TIER_MIGRATION_FAILED(LEVEL.ERROR, STORAGE_CATEGORY.TIER, "Failed to migrate store {} record {}"),
+
   //region BaseExpiredHandler
   REMOVING_EXPIRED_ENTRY(LEVEL.TRACE, STORAGE_CATEGORY.FACTORY, "Removing expired entry, {}, from {}"),
   //endregion
