@@ -47,7 +47,8 @@ class IndexManagerConcurrentPositionInvestigationTest {
 
       // Force both workers to reach the interval between positioning the
       // shared buffer and reading a relative IndexRecord from that buffer.
-      try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+      ExecutorService executor = Executors.newFixedThreadPool(2);
+      try {
         manager.coordinateReads();
         Future<Long> first = executor.submit(() -> manager.get(0L).getPosition());
         Future<Long> second = executor.submit(() -> manager.get(1L).getPosition());
@@ -58,6 +59,8 @@ class IndexManagerConcurrentPositionInvestigationTest {
         } finally {
           manager.endCoordination();
         }
+      } finally {
+        executor.shutdownNow();
       }
     }
   }
