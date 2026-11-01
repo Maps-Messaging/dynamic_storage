@@ -41,6 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Clock;
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -75,6 +76,7 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   private final LongAdder byteReads;
 
   private boolean shutdown;
+  private ScheduledFuture<?> archiveMonitorFuture;
   private boolean paused;
   private long partitionCounter;
   private long lastKeyStored;
@@ -127,6 +129,9 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   @Override
   public void shutdown() throws IOException {
     shutdown = true;
+    if (archiveMonitorFuture != null) {
+      archiveMonitorFuture.cancel(false);
+    }
     expiredMonitor.close();
 
     while (taskScheduler.hasTasks()) {
@@ -445,7 +450,9 @@ public class PartitionStorage<T extends Storable> implements Storage<T>, Expired
   @Override
   public void setExecutor(TaskScheduler scheduler) {
     taskScheduler.setTaskScheduler(scheduler);
-    taskScheduler.scheduleAtFixedRate(new ArchiveMonitorTask<>(this), 10, TimeUnit.SECONDS);
+    if (archiveIdleTime > 0) {
+      archiveMonitorFuture = taskScheduler.scheduleAtFixedRate(new ArchiveMonitorTask<>(this), 10, TimeUnit.SECONDS);
+    }
   }
 
   @Override
