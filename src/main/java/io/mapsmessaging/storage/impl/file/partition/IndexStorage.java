@@ -39,6 +39,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 
@@ -246,9 +247,13 @@ public class IndexStorage<T extends Storable> {
   private void validateIndexAgainstData() throws IOException {
     boolean changed = false;
     List<Long> keys = indexManager.keySet();
-    int from = Math.max(0, keys.size() - 3);
-    for (int i = from; i < keys.size(); i++) {
-      Long key = keys.get(i);
+    int skip = Math.max(0, keys.size() - 3);
+    Iterator<Long> iterator = keys.iterator();
+    while (skip-- > 0) {
+      iterator.next();
+    }
+    while (iterator.hasNext()) {
+      Long key = iterator.next();
       IndexRecord indexRecord = indexManager.get(key);
       if (indexRecord != null && !dataStorage.isValid(indexRecord)) {
         indexManager.delete(key);
