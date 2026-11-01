@@ -34,7 +34,7 @@ class ExpireStorableTaskManagerTest {
   @Test
   void continuesPollingWhenTheFirstScanFindsNothingExpired() throws Exception {
     CountDownLatch scans = new CountDownLatch(2);
-    TaskQueue taskQueue = new TaskQueue();
+    TaskQueue taskQueue = new InlineTaskQueue();
     ExpiredMonitor monitor = new ExpiredMonitor() {
       @Override
       public void scanForExpired() {
@@ -59,7 +59,7 @@ class ExpireStorableTaskManagerTest {
   @Test
   void disabledPollingDoesNotScheduleExpiryScans() throws Exception {
     CountDownLatch scans = new CountDownLatch(1);
-    TaskQueue taskQueue = new TaskQueue();
+    TaskQueue taskQueue = new InlineTaskQueue();
 
     try (ExpireStorableTaskManager<TestStorable> manager =
              new ExpireStorableTaskManager<>(scans::countDown, taskQueue, -1)) {
@@ -73,7 +73,7 @@ class ExpireStorableTaskManagerTest {
   void stopsPollingWhenNoExpiringEntriesRemain() throws Exception {
     CountDownLatch scans = new CountDownLatch(2);
     AtomicInteger scanCount = new AtomicInteger();
-    TaskQueue taskQueue = new TaskQueue();
+    TaskQueue taskQueue = new InlineTaskQueue();
 
     ExpiredMonitor monitor = new ExpiredMonitor() {
       @Override
@@ -96,6 +96,17 @@ class ExpireStorableTaskManagerTest {
       TimeUnit.MILLISECONDS.sleep(1200);
       Assertions.assertEquals(2, scanCount.get(),
           "Expiry polling should stop when the store has no expiring entries");
+    }
+  }
+
+  private static final class InlineTaskQueue extends TaskQueue {
+    @Override
+    public void submit(io.mapsmessaging.storage.impl.file.tasks.FileTask<?> task) throws java.io.IOException {
+      try {
+        task.call();
+      } catch (Exception e) {
+        throw new java.io.IOException(e);
+      }
     }
   }
 
