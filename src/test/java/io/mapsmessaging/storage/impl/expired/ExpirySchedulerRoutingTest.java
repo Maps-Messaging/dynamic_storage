@@ -44,6 +44,11 @@ class ExpirySchedulerRoutingTest {
   }
 
   private static final class CapturingTaskQueue extends TaskQueue {
+    @Override
+    public boolean hasExecutor() {
+      return true;
+    }
+
     private final CountDownLatch submitted = new CountDownLatch(1);
     private final AtomicReference<FileTask<?>> captured = new AtomicReference<>();
 
