@@ -172,7 +172,19 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
     if (item == null || item.getPosition() <= 0) {
       return null;
     }
-    return reloadMessage(item.getPosition());
+    if (!isValid(item)) {
+      throw new IOException("Invalid data frame for key " + item.getKey());
+    }
+    T object;
+    try {
+      object = reloadMessage(item.getPosition());
+    } catch (RuntimeException e) {
+      throw new IOException("Unable to decode data frame for key " + item.getKey(), e);
+    }
+    if (object == null || object.getKey() != item.getKey()) {
+      throw new IOException("Data frame key mismatch for key " + item.getKey());
+    }
+    return object;
   }
 
   @Override
@@ -189,15 +201,7 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
     }
 
     long payloadEnd = metadata.payloadPosition() + metadata.payloadLength();
-    if (payloadEnd > recordEnd || payloadEnd < metadata.payloadPosition()) {
-      return false;
-    }
-
-    try {
-      return reloadMessage(filePosition) != null;
-    } catch (IOException | RuntimeException e) {
-      return false;
-    }
+    return payloadEnd == recordEnd && payloadEnd >= metadata.payloadPosition();
   }
 
   private boolean hasValidRecordBounds(IndexRecord item) throws IOException {
@@ -240,7 +244,7 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
     bufferInfo.flip();
 
     long payloadLength = calculatePayloadLength(bufferInfo, bufferCount, recordLength);
-    if (payloadLength < 0) {
+    if (payloadLength < 0 || (long) storedLength != payloadLength + Integer.BYTES) {
       return null;
     }
     return new RecordMetadata(payloadPosition, payloadLength);
