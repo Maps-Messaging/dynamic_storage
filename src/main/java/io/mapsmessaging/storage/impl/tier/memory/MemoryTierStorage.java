@@ -19,7 +19,10 @@
 
 package io.mapsmessaging.storage.impl.tier.memory;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.Statistics;
+import io.mapsmessaging.storage.logging.StorageLogMessages;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.impl.file.TaskQueue;
@@ -39,6 +42,7 @@ import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.BiConsumer;
 
 
 @SuppressWarnings("javaarchitecture:S7091") // yes it will trigger the migration task
@@ -49,6 +53,8 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   private final long memorySize;
   private final Queue<Long> memoryList;
   private final LongAdder migratedEvents;
+  private static final Logger LOGGER = LoggerFactory.getLogger(MemoryTierStorage.class);
+  private volatile BiConsumer<Long, IOException> migrationFailureHandler;
 
   private ScheduledFuture<?> scanner;
 
@@ -71,6 +77,10 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
     memoryList = new NaturalOrderedLongQueue();
     lastKey = -2;
     migratedEvents = new LongAdder();
+  }
+
+  public void setMigrationFailureHandler(BiConsumer<Long, IOException> handler) {
+    migrationFailureHandler = handler;
   }
 
   @Override
@@ -158,7 +168,12 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
         if (key != null && key != -1) {
           ObjectMonitor<T> oldest = primary.get(key);
           if (oldest != null) {
-            secondary.add(oldest.getStorable());
+            try {
+              secondary.add(oldest.getStorable());
+            } catch (IOException e) {
+              memoryList.offer(key);
+              throw e;
+            }
             primary.remove(key);
           }
         }
@@ -210,7 +225,16 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
     for (Long key : primary.getKeys()) {
       ObjectMonitor<T> check = primary.get(key);
       if (check != null && check.getLastAccess() < test) {
-        secondary.add(check.getStorable());
+        try {
+          secondary.add(check.getStorable());
+        } catch (IOException e) {
+          LOGGER.log(StorageLogMessages.TIER_MIGRATION_FAILED, e, getName(), key);
+          BiConsumer<Long, IOException> handler = migrationFailureHandler;
+          if (handler != null) {
+            handler.accept(key, e);
+          }
+          return;
+        }
         primary.remove(key);
         memoryList.remove(key);
         migratedEvents.increment();
