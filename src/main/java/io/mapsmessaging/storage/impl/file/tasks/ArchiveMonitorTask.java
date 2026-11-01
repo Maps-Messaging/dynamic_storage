@@ -25,6 +25,7 @@ import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.file.PartitionStorage;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.mapsmessaging.storage.logging.StorageLogMessages.ARCHIVE_MONITOR_FAILED;
 
@@ -34,6 +35,7 @@ public class ArchiveMonitorTask<T extends Storable> implements FileTask<Boolean>
   private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveMonitorTask.class);
 
   private final PartitionStorage<T> storage;
+  private final AtomicBoolean pending = new AtomicBoolean();
 
   public ArchiveMonitorTask(PartitionStorage<T> storage) {
     this.storage = storage;
@@ -41,14 +43,25 @@ public class ArchiveMonitorTask<T extends Storable> implements FileTask<Boolean>
 
   @Override
   public Boolean call() throws IOException {
-    storage.scanForArchiveMigration();
-    return true;
+    try {
+      storage.scanForArchiveMigration();
+      return true;
+    } catch (IOException e) {
+      LOGGER.log(ARCHIVE_MONITOR_FAILED, e, storage.getName());
+      throw e;
+    } finally {
+      pending.set(false);
+    }
   }
 
   public void run(){
+    if (!pending.compareAndSet(false, true)) {
+      return;
+    }
     try {
-      call();
+      storage.getTaskScheduler().submit(this);
     } catch (IOException e) {
+      pending.set(false);
       LOGGER.log(ARCHIVE_MONITOR_FAILED, e, storage.getName());
     }
   }
