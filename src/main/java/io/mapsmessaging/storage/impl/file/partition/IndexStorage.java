@@ -367,11 +367,9 @@ public class IndexStorage<T extends Storable> {
   public @Nullable IndexGet<T> get(long key) throws IOException {
     T obj = null;
     IndexRecord item = null;
-    if (key >= 0) {
-      item = indexManager.get(key);
-      if (item != null) {
-        obj = dataStorage.get(item);
-      }
+    item = indexManager.get(key);
+    if (item != null) {
+      obj = dataStorage.get(item);
     }
     if (item != null) {
       lastAccess = System.currentTimeMillis();
@@ -402,6 +400,7 @@ public class IndexStorage<T extends Storable> {
   public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) throws IOException {
     lastAccess = System.currentTimeMillis();
 
+    List<Long> remainingToKeep = new ArrayList<>(listToKeep);
     List<Long> itemsToRemove = indexManager.keySet();
     itemsToRemove.removeIf(listToKeep::contains);
     if (!itemsToRemove.isEmpty()) {
@@ -411,8 +410,8 @@ public class IndexStorage<T extends Storable> {
     }
 
     List<Long> actual = indexManager.keySet();
-    listToKeep.removeIf(actual::contains);
-    return listToKeep;
+    remainingToKeep.removeIf(actual::contains);
+    return remainingToKeep;
   }
 
   public int removeAll(@NotNull Collection<Long> listToRemove) throws IOException {

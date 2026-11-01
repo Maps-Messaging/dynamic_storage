@@ -59,6 +59,30 @@ class DynamicStorageCorrectnessInvestigationTest extends BaseTest {
   }
 
   @Test
+  void immutableKeepListReturnsUnmatchedIdsAcrossBothTiers(@TempDir Path directory) throws IOException {
+    Map<String, String> properties = partitionProperties("MemoryTier");
+    properties.put("Tier1Size", "2");
+    properties.put("MigrationPeriod", "-1000");
+    properties.put("ScanInterval", "60000");
+
+    Storage<MappedData> storage = buildStorage(directory.resolve("tiered-keep"), properties);
+    try {
+      MemoryTierStorage<MappedData> tier = (MemoryTierStorage<MappedData>) storage;
+      tier.add(createMessageBuilder(10L));
+      tier.scan();
+      tier.add(createMessageBuilder(20L));
+
+      List<Long> keepList = List.of(10L, 20L, 30L);
+      Assertions.assertEquals(List.of(30L), tier.keepOnly(keepList));
+      Assertions.assertEquals(List.of(10L, 20L, 30L), keepList);
+      Assertions.assertNotNull(tier.get(10L));
+      Assertions.assertNotNull(tier.get(20L));
+    } finally {
+      storage.delete();
+    }
+  }
+
+  @Test
   void negativeIndexedIdSurvivesReadAndReopen(@TempDir Path directory) throws IOException {
     Map<String, String> properties = partitionProperties("Partition");
     StorageBuilder<MappedData> builder = storageBuilder(directory.resolve("negative"), properties);
@@ -92,7 +116,7 @@ class DynamicStorageCorrectnessInvestigationTest extends BaseTest {
   }
 
   @Test
-  void rejectingImmutableKeepListMustNotPartiallyDeleteMemoryRecords() throws IOException {
+  void immutableKeepListRetainsRequestedMemoryRecords() throws IOException {
     MemoryStorageConfig config = new MemoryStorageConfig();
     config.setCapacity(-1);
     config.setExpiredEventPoll(-1);
@@ -101,11 +125,10 @@ class DynamicStorageCorrectnessInvestigationTest extends BaseTest {
       storage.add(createMessageBuilder(0L));
       storage.add(createMessageBuilder(1L));
 
-      Assertions.assertThrows(UnsupportedOperationException.class,
-          () -> storage.keepOnly(List.of(1L, 2L)));
-
-      Assertions.assertNotNull(storage.get(0L),
-          "If immutable input is rejected, the operation must not already have deleted other records");
+      List<Long> keepList = List.of(1L, 2L);
+      Assertions.assertEquals(List.of(2L), storage.keepOnly(keepList));
+      Assertions.assertEquals(List.of(1L, 2L), keepList);
+      Assertions.assertNull(storage.get(0L));
       Assertions.assertNotNull(storage.get(1L));
     } finally {
       storage.delete();
@@ -113,17 +136,16 @@ class DynamicStorageCorrectnessInvestigationTest extends BaseTest {
   }
 
   @Test
-  void rejectingImmutableKeepListMustNotPartiallyDeleteIndexedRecords(@TempDir Path directory) throws IOException {
+  void immutableKeepListRetainsRequestedIndexedRecords(@TempDir Path directory) throws IOException {
     Storage<MappedData> storage = buildStorage(directory.resolve("immutable"), partitionProperties("Partition"));
     try {
       storage.add(createMessageBuilder(0L));
       storage.add(createMessageBuilder(1L));
 
-      Assertions.assertThrows(UnsupportedOperationException.class,
-          () -> storage.keepOnly(List.of(1L, 2L)));
-
-      Assertions.assertNotNull(storage.get(0L),
-          "If immutable input is rejected, the operation must not already have deleted other records");
+      List<Long> keepList = List.of(1L, 2L);
+      Assertions.assertEquals(List.of(2L), storage.keepOnly(keepList));
+      Assertions.assertEquals(List.of(1L, 2L), keepList);
+      Assertions.assertNull(storage.get(0L));
       Assertions.assertNotNull(storage.get(1L));
     } finally {
       storage.delete();

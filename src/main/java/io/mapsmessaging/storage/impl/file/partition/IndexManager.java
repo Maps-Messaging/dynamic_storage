@@ -207,8 +207,7 @@ public class IndexManager implements Closeable {
   boolean add(long key, @NotNull IndexRecord item, boolean sync) {
     waitForLoad();
     if (key >= start && key <= localEnd && !closed && key <= end) {
-      setMapPosition(key);
-      item.update(index, sync);
+      item.update(recordView(key), sync);
       if (item.getExpiry() > 0) {
         expiryIndex.add(key);
       }
@@ -224,8 +223,7 @@ public class IndexManager implements Closeable {
   public @Nullable IndexRecord get(long key) {
     waitForLoad();
     if (key >= start && key <= localEnd && !closed && key <= end) {
-      setMapPosition(key);
-      return new IndexRecord(key, index);
+      return new IndexRecord(key, recordView(key));
     }
     return null;
   }
@@ -233,8 +231,7 @@ public class IndexManager implements Closeable {
   public boolean contains(long key) {
     waitForLoad();
     if (key >= start && key <= localEnd && !closed && key <= end) {
-      setMapPosition(key);
-      IndexRecord item = new IndexRecord(key, index);
+      IndexRecord item = new IndexRecord(key, recordView(key));
       return item.getPosition() != 0;
     }
     return false;
@@ -247,41 +244,42 @@ public class IndexManager implements Closeable {
 
   boolean delete(long key, boolean override) {
     if (key >= start && key <= localEnd && !closed && key <= end) {
-      setMapPosition(key, override);
-      IndexRecord item = new IndexRecord(key, index);
+      IndexRecord item = new IndexRecord(key, recordView(key, override));
       if (item.getPosition() > 0) {
         expiryIndex.remove(key);
         counter.decrement();
         emptySpace.add(item.getLength());
-        setMapPosition(key, true);
         IndexRecord indexRecord = new IndexRecord(key, 0, 0, 0, item.getLength());
-        indexRecord.update(index);
+        indexRecord.update(recordView(key, true));
         return true;
       }
     }
     return false;
   }
 
-  void setMapPosition(long key) {
-    setMapPosition(key, false);
+  ByteBuffer recordView(long key) {
+    return recordView(key, false);
   }
 
-  void setMapPosition(long key, boolean override) {
+  ByteBuffer recordView(long key, boolean override) {
     if (!override) {
       waitForLoad();
     }
     int adjusted = (int) (key - start);
     int pos = adjusted * IndexRecord.HEADER_SIZE;
-    index.position(pos);
+    ByteBuffer view = index.duplicate();
+    view.position(pos);
+    return view;
   }
 
   List<Long> walkIndex() {
     List<Long> expired = new ArrayList<>();
-    index.position(0);
+    ByteBuffer view = index.duplicate();
+    view.position(0);
     int size = (int) (end - start) + 1;
     long now = System.currentTimeMillis();
     for (int offset = 0; offset < size; offset++) {
-      IndexRecord indexRecord = new IndexRecord(start + offset, index);
+      IndexRecord indexRecord = new IndexRecord(start + offset, view);
       validateIndexRecord(offset, indexRecord, now, expired);
     }
     return expired;

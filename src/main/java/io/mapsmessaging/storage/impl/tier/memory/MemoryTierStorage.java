@@ -130,8 +130,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   @Override
   public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) throws IOException {
     Collection<Long> next = primary.keepOnly(listToKeep);
-    secondary.keepOnly(next);
-    return next;
+    return secondary.keepOnly(next);
   }
 
   @Override
@@ -170,7 +169,9 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   @Override
   public boolean remove(long key) throws IOException {
     memoryList.remove(key);
-    return primary.remove(key) || secondary.remove(key);
+    boolean removedFromPrimary = primary.remove(key);
+    boolean removedFromSecondary = secondary.remove(key);
+    return removedFromPrimary || removedFromSecondary;
 
   }
 

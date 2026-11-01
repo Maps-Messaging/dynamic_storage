@@ -188,6 +188,7 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
 
   @Override
   public @NotNull Collection<Long> keepOnly(@NotNull Collection<Long> listToKeep) {
+    List<Long> remainingToKeep = new ArrayList<>(listToKeep);
     List<Long> itemsToRemove = new ArrayList<>(memoryMap.keySet());
     itemsToRemove.removeIf(listToKeep::contains);
     if (!itemsToRemove.isEmpty()) {
@@ -197,8 +198,8 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
     }
 
     Set<Long> actual = memoryMap.keySet();
-    listToKeep.removeIf(actual::contains);
-    return listToKeep;
+    remainingToKeep.removeIf(actual::contains);
+    return remainingToKeep;
   }
 
   @Override

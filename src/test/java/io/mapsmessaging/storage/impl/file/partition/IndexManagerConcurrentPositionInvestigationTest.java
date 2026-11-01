@@ -16,6 +16,7 @@
 package io.mapsmessaging.storage.impl.file.partition;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.concurrent.BrokenBarrierException;
@@ -65,6 +66,34 @@ class IndexManagerConcurrentPositionInvestigationTest {
     }
   }
 
+  @Test
+  void simultaneousWriteAndReadMustUseIndependentIndexPositions(@TempDir Path directory) throws Exception {
+    try (FileChannel channel = FileChannel.open(directory.resolve("parallel-write-read"), CREATE, READ, WRITE);
+         CoordinatedIndexManager manager = new CoordinatedIndexManager(0L, 2, channel)) {
+      manager.loadMap(false);
+      Assertions.assertTrue(manager.add(1L, new IndexRecord(1L, 1, 202L, 0L, 24)));
+
+      ExecutorService executor = Executors.newFixedThreadPool(2);
+      try {
+        manager.coordinateReads();
+        Future<Boolean> writer = executor.submit(() -> manager.add(0L, new IndexRecord(0L, 1, 101L, 0L, 24)));
+        Future<Long> reader = executor.submit(() -> manager.get(1L).getPosition());
+        try {
+          Assertions.assertAll("Concurrent index writes and reads must retain independent positions",
+              () -> Assertions.assertTrue(writer.get(5, TimeUnit.SECONDS)),
+              () -> Assertions.assertEquals(202L, reader.get(5, TimeUnit.SECONDS)));
+        } finally {
+          manager.endCoordination();
+        }
+      } finally {
+        executor.shutdownNow();
+      }
+
+      Assertions.assertEquals(101L, manager.get(0L).getPosition());
+      Assertions.assertEquals(202L, manager.get(1L).getPosition());
+    }
+  }
+
   private static final class CoordinatedIndexManager extends IndexManager {
 
     private final CyclicBarrier bothPositioned = new CyclicBarrier(2);
@@ -83,8 +112,8 @@ class IndexManagerConcurrentPositionInvestigationTest {
     }
 
     @Override
-    void setMapPosition(long key) {
-      super.setMapPosition(key);
+    ByteBuffer recordView(long key) {
+      ByteBuffer view = super.recordView(key);
       if (coordinate) {
         try {
           bothPositioned.await(5, TimeUnit.SECONDS);
@@ -95,6 +124,7 @@ class IndexManagerConcurrentPositionInvestigationTest {
           throw new IllegalStateException("Unable to coordinate parallel index reads", e);
         }
       }
+      return view;
     }
   }
 }
