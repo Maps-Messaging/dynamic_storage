@@ -35,6 +35,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
@@ -67,6 +68,7 @@ public class IndexManager implements Closeable {
   private volatile boolean paused;
 
   private final AtomicBoolean loaded;
+  private final AtomicReference<Throwable> loadFailure = new AtomicReference<>();
 
   public IndexManager(FileChannel channel) throws IOException {
     loaded = new AtomicBoolean(false);
@@ -348,6 +350,10 @@ public class IndexManager implements Closeable {
     while (!loaded.get()) {
       LockSupport.parkNanos(10000);
     }
+    Throwable failure = loadFailure.get();
+    if (failure != null) {
+      throw new IllegalStateException("Index loading failed", failure);
+    }
   }
 
   public void loadMap(boolean walkIndex) {
@@ -359,6 +365,9 @@ public class IndexManager implements Closeable {
           delete(key, true);
         }
       }
+    } catch (RuntimeException | Error e) {
+      loadFailure.set(e);
+      throw e;
     } finally {
       loaded.set(true);
     }
