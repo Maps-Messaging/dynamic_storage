@@ -245,8 +245,10 @@ public class IndexStorage<T extends Storable> {
 
   private void validateIndexAgainstData() throws IOException {
     boolean changed = false;
-    List<Long> keys = new ArrayList<>(indexManager.keySet());
-    for (Long key : keys) {
+    List<Long> keys = indexManager.keySet();
+    int from = Math.max(0, keys.size() - 3);
+    for (int i = from; i < keys.size(); i++) {
+      Long key = keys.get(i);
       IndexRecord indexRecord = indexManager.get(key);
       if (indexRecord != null && !dataStorage.isValid(indexRecord)) {
         indexManager.delete(key);
