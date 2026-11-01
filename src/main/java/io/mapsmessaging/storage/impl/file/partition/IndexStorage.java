@@ -410,12 +410,9 @@ public class IndexStorage<T extends Storable> {
       }
     }
 
-    if (itemsToRemove.size() != listToKeep.size()) {
-      List<Long> actual = indexManager.keySet();
-      listToKeep.removeIf(actual::contains);
-      return listToKeep;
-    }
-    return new ArrayList<>();
+    List<Long> actual = indexManager.keySet();
+    listToKeep.removeIf(actual::contains);
+    return listToKeep;
   }
 
   public int removeAll(@NotNull Collection<Long> listToRemove) throws IOException {

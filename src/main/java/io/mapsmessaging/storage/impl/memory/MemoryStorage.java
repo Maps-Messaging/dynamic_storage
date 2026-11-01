@@ -196,12 +196,9 @@ public class MemoryStorage<T extends Storable> implements Storage<T>, ExpiredMon
       }
     }
 
-    if (itemsToRemove.size() != listToKeep.size()) {
-      Set<Long> actual = memoryMap.keySet();
-      listToKeep.removeIf(actual::contains);
-      return listToKeep;
-    }
-    return new ArrayList<>();
+    Set<Long> actual = memoryMap.keySet();
+    listToKeep.removeIf(actual::contains);
+    return listToKeep;
   }
 
   @Override
