@@ -36,6 +36,7 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
   private Future<?> expiryTask;
   private boolean paused;
   private boolean monitoring;
+  private boolean queued;
   private boolean closed;
   private long generation;
 
@@ -45,6 +46,7 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
     this.poll = poll;
     paused = false;
     monitoring = false;
+    queued = false;
     closed = false;
     generation = 0;
     expiryTask = null;
@@ -79,12 +81,26 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
   }
 
   public synchronized void schedulePoll() {
-    if (!closed && !paused && poll > 0 && (expiryTask == null || expiryTask.isDone() || expiryTask.isCancelled())) {
+    if (!closed && !paused && !queued && poll > 0 && (expiryTask == null || expiryTask.isDone() || expiryTask.isCancelled())) {
       long scheduledGeneration = generation;
-      expiryTask = taskScheduler.schedule(
-          new IndexExpiryMonitorTask(storage, hasExpiringEntries -> pollComplete(scheduledGeneration, hasExpiringEntries)),
-          poll,
-          TimeUnit.SECONDS);
+      expiryTask = taskScheduler.schedule(() -> {
+        synchronized (ExpireStorableTaskManager.this) {
+          if (closed || paused || queued) {
+            return false;
+          }
+          queued = true;
+        }
+        try {
+          taskScheduler.submit(new IndexExpiryMonitorTask(storage,
+              hasExpiringEntries -> pollComplete(scheduledGeneration, hasExpiringEntries)));
+        } catch (IOException | RuntimeException e) {
+          synchronized (ExpireStorableTaskManager.this) {
+            queued = false;
+          }
+          throw e;
+        }
+        return true;
+      }, poll, TimeUnit.SECONDS);
     }
   }
 
@@ -98,6 +114,10 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
 
   private synchronized void pollComplete(long scheduledGeneration, boolean hasExpiringEntries) {
     expiryTask = null;
+    queued = false;
+    if (closed) {
+      return;
+    }
     monitoring = hasExpiringEntries || generation != scheduledGeneration;
     if (monitoring) {
       schedulePoll();
