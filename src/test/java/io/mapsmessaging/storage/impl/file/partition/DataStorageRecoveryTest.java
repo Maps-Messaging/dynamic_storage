@@ -87,7 +87,9 @@ class DataStorageRecoveryTest {
       public Entry unpack(ByteBuffer[] buffers) throws IOException { throw new IOException("Invalid payload"); }
     };
     try (DataStorageImpl<Entry> storage = new DataStorageImpl<>(file.toString(), failing, false, 4096)) {
-      assertFalse(storage.isValid(storage.add(new Entry(1, 0))));
+      IndexRecord record = storage.add(new Entry(1, 0));
+      assertTrue(storage.isValid(record));
+      assertThrows(IOException.class, () -> storage.get(record));
     }
   }
 
