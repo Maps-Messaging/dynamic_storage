@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 
@@ -53,6 +54,9 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   private final long memorySize;
   private final Queue<Long> memoryList;
   private final LongAdder migratedEvents;
+  private final AtomicBoolean closing = new AtomicBoolean(false);
+  private final Object migrationLock = new Object();
+  private int activeScans;
   private static final Logger LOGGER = LoggerFactory.getLogger(MemoryTierStorage.class);
   private volatile BiConsumer<Long, IOException> migrationFailureHandler;
 
@@ -84,10 +88,35 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-  public void close() throws IOException {
+  public void shutdown() throws IOException {
+    stopMigration();
+  }
+
+  private void stopMigration() throws IOException {
+    closing.set(true);
     if (scanner != null) {
       scanner.cancel(false);
     }
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    synchronized (migrationLock) {
+      while (activeScans > 0) {
+        long remaining = deadline - System.nanoTime();
+        if (remaining <= 0) {
+          throw new IOException("Timed out waiting for memory-tier migration");
+        }
+        try {
+          TimeUnit.NANOSECONDS.timedWait(migrationLock, remaining);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new IOException("Interrupted while waiting for memory-tier migration", e);
+        }
+      }
+    }
+  }
+
+  @Override
+  public void close() throws IOException {
+    stopMigration();
     for (Long key : primary.getKeys()) {
       ObjectMonitor<T> monitor = primary.get(key);
       if (monitor != null) {
@@ -100,6 +129,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   @Override
   public void delete() throws IOException {
+    stopMigration();
     primary.delete();
     secondary.delete();
   }
@@ -221,8 +251,18 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
 
   @SneakyThrows
   public void scan() {
-    long test = System.currentTimeMillis() - migrationTime;
-    for (Long key : primary.getKeys()) {
+    synchronized (migrationLock) {
+      if (closing.get()) {
+        return;
+      }
+      activeScans++;
+    }
+    try {
+      long test = System.currentTimeMillis() - migrationTime;
+      for (Long key : primary.getKeys()) {
+        if (closing.get()) {
+          return;
+        }
       ObjectMonitor<T> check = primary.get(key);
       if (check != null && check.getLastAccess() < test) {
         try {
@@ -238,6 +278,12 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
         primary.remove(key);
         memoryList.remove(key);
         migratedEvents.increment();
+      }
+      }
+    } finally {
+      synchronized (migrationLock) {
+        activeScans--;
+        migrationLock.notifyAll();
       }
     }
   }
