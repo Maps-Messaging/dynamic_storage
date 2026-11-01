@@ -46,7 +46,7 @@ public class TaskQueue {
   private final AtomicLong waitingScheduler;
   private final Map<FileTask<?>, Future<?>> pending;
 
-  private ExecutorService taskScheduler;
+  private volatile ExecutorService taskScheduler;
 
   public static void shutdown() {
     SCHEDULER_EXECUTOR.shutdown();
@@ -101,6 +101,10 @@ public class TaskQueue {
 
   public boolean isEmpty() {
     return pending.isEmpty();
+  }
+
+  public boolean hasExecutor() {
+    return taskScheduler != null;
   }
 
   public void setTaskScheduler(@NotNull ExecutorService scheduler) {
