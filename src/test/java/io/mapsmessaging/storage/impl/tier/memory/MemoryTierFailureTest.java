@@ -34,6 +34,7 @@ class MemoryTierFailureTest {
               records.put(value.getKey(), value);
               yield null;
             }
+            case "getName" -> "test-memory-tier";
             case "get" -> records.get((Long) args[0]);
             case "remove" -> records.remove((Long) args[0]) != null;
             case "getKeys" -> List.copyOf(records.keySet());
