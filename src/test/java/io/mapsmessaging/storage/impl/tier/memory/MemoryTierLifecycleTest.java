@@ -99,6 +99,42 @@ class MemoryTierLifecycleTest {
     assertWaitsForScan(true);
   }
 
+  @Test void shutdownTimesOutWithoutClosingTiersDuringBlockedMigration() throws Exception {
+    Store<ObjectMonitor<Entry>> memory = new Store<>();
+    Store<Entry> disk = new Store<>();
+    MemoryTierConfig config = new MemoryTierConfig();
+    config.setMigrationTime(-1000);
+    MemoryTierStorage<Entry> tier = new MemoryTierStorage<>(memory.proxy(), disk.proxy(), config);
+    tier.add(new Entry(1));
+    disk.blocked.set(true);
+    AtomicReference<Throwable> migrationFailure = new AtomicReference<>();
+    Thread scan = new Thread(() -> {
+      try {
+        tier.scan();
+      } catch (Throwable e) {
+        migrationFailure.set(e);
+      }
+    });
+    scan.start();
+    try {
+      assertTrue(disk.entered.await(2, TimeUnit.SECONDS), "Migration did not start");
+      long started = System.nanoTime();
+      IOException timeout = assertThrows(IOException.class, tier::shutdown);
+      long elapsed = System.nanoTime() - started;
+      assertTrue(timeout.getMessage().contains("Timed out waiting for memory-tier migration"));
+      assertTrue(elapsed >= TimeUnit.SECONDS.toNanos(4), "Shutdown returned before its timeout");
+      assertFalse(memory.terminated.get(), "Memory tier closed after timeout");
+      assertFalse(disk.terminated.get(), "Persistent tier closed after timeout");
+    } finally {
+      disk.release.countDown();
+      scan.join(3000);
+    }
+    assertFalse(scan.isAlive(), "Migration did not finish after write was released");
+    assertNull(migrationFailure.get());
+    assertTrue(disk.records.containsKey(1L), "Completed write should remain persistent");
+    assertFalse(memory.records.containsKey(1L), "Completed migration should remove memory copy");
+  }
+
   @Test void shutdownPreventsFutureMigrationScans() throws Exception {
     Store<ObjectMonitor<Entry>> memory = new Store<>();
     Store<Entry> disk = new Store<>();
