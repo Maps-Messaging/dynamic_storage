@@ -20,7 +20,6 @@
 package io.mapsmessaging.storage.impl.file.partition;
 
 import io.mapsmessaging.storage.impl.file.tasks.MemoryMapLoadTask;
-import io.mapsmessaging.utilities.collections.MappedBufferHelper;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import lombok.Getter;
 import lombok.ToString;
@@ -28,9 +27,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Closeable;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.util.*;
@@ -61,7 +61,9 @@ public class IndexManager implements Closeable {
 
   private final LongAdder counter;
   private final LongAdder emptySpace;
-  private MappedByteBuffer index;
+  private ByteBuffer index;
+  private MemorySegment mapping;
+  private Arena arena;
 
   private volatile long maxKey;
   private volatile boolean closed;
@@ -90,7 +92,7 @@ public class IndexManager implements Closeable {
     expiryIndex = new NaturalOrderedLongList();
     maxKey = 0;
     paused = false;
-    index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
+    mapIndex(channel, totalSize);
   }
 
   public IndexManager(long start, int itemSize, FileChannel channel) throws IOException {
@@ -120,7 +122,29 @@ public class IndexManager implements Closeable {
     closed = false;
     paused = false;
     maxKey = 0;
-    index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
+    mapIndex(channel, totalSize);
+  }
+
+  private void mapIndex(FileChannel channel, int totalSize) throws IOException {
+    Arena newArena = Arena.ofShared();
+    try {
+      MemorySegment newMapping = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize, newArena);
+      mapping = newMapping;
+      index = newMapping.asByteBuffer();
+      arena = newArena;
+    } catch (IOException | RuntimeException | Error e) {
+      newArena.close();
+      throw e;
+    }
+  }
+
+  private void unmapIndex() {
+    index = null;
+    mapping = null;
+    if (arena != null) {
+      arena.close();
+      arena = null;
+    }
   }
 
   @Override
@@ -129,9 +153,8 @@ public class IndexManager implements Closeable {
       waitForLoad();
       closed = true;
       if (index != null) {
-        index.force();
-        MappedBufferHelper.closeDirectBuffer(index);
-        index = null;
+        mapping.force();
+        unmapIndex();
       }
     }
   }
@@ -140,9 +163,8 @@ public class IndexManager implements Closeable {
     if (!paused) {
       paused = true;
       waitForLoad();
-      index.force();
-      MappedBufferHelper.closeDirectBuffer(index);
-      index = null;
+      mapping.force();
+      unmapIndex();
     }
   }
 
@@ -151,8 +173,8 @@ public class IndexManager implements Closeable {
       paused = false;
       waitForLoad();
       int totalSize = (int) ((end - start) + 1) * IndexRecord.HEADER_SIZE;
-      index = channel.map(MapMode.READ_WRITE, position + HEADER_SIZE, totalSize);
-      index.load();
+      mapIndex(channel, totalSize);
+      mapping.load();
     }
   }
 
