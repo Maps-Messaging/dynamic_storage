@@ -356,6 +356,7 @@ public class IndexManager implements Closeable {
     }
   }
 
+  @SuppressWarnings("java:S1181") // Preserve fatal loading failures for waiting callers, then rethrow.
   public void loadMap(boolean walkIndex) {
     try {
       index.load();
