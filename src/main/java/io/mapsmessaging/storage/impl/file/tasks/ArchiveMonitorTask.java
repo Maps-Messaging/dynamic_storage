@@ -54,15 +54,14 @@ public class ArchiveMonitorTask<T extends Storable> implements FileTask<Boolean>
     }
   }
 
-  public void run(){
+  public void run() {
     if (!pending.compareAndSet(false, true)) {
       return;
     }
     try {
-      storage.getTaskScheduler().submit(this);
+      call();
     } catch (IOException e) {
-      pending.set(false);
-      LOGGER.log(ARCHIVE_MONITOR_FAILED, e, storage.getName());
+      // Failure is already logged by call().
     }
   }
 
