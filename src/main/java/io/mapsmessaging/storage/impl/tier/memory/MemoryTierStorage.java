@@ -42,6 +42,7 @@ import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 
@@ -58,7 +59,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   private final Object migrationLock = new Object();
   private int activeScans;
   private static final Logger LOGGER = LoggerFactory.getLogger(MemoryTierStorage.class);
-  private volatile BiConsumer<Long, IOException> migrationFailureHandler;
+  private final AtomicReference<BiConsumer<Long, IOException>> migrationFailureHandler = new AtomicReference<>();
 
   private ScheduledFuture<?> scanner;
 
@@ -84,7 +85,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   }
 
   public void setMigrationFailureHandler(BiConsumer<Long, IOException> handler) {
-    migrationFailureHandler = handler;
+    migrationFailureHandler.set(handler);
   }
 
   @Override
@@ -189,29 +190,32 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   public void add(@NotNull T object) throws IOException {
     lastKey = object.getKey();
     primary.add(new ObjectMonitor<>(object));
-
-    // Push from primary to secondary once the limit has been reached
-    if(memorySize > 0){
+    if (memorySize > 0) {
       memoryList.offer(object.getKey());
-      while(memoryList.size() > memorySize) {
-        Long key = memoryList.poll();
-        if (key != null && key != -1) {
-          ObjectMonitor<T> oldest = primary.get(key);
-          if (oldest != null) {
-            try {
-              secondary.add(oldest.getStorable());
-            } catch (IOException e) {
-              memoryList.offer(key);
-              throw e;
-            }
-            primary.remove(key);
+      migrateOverCapacity();
+    }
+  }
+
+  private void migrateOverCapacity() throws IOException {
+    while (memoryList.size() > memorySize) {
+      Long key = memoryList.poll();
+      if (key != null && key != -1) {
+        ObjectMonitor<T> oldest = primary.get(key);
+        if (oldest != null) {
+          try {
+            secondary.add(oldest.getStorable());
+          } catch (IOException e) {
+            memoryList.offer(key);
+            throw e;
           }
+          primary.remove(key);
         }
       }
     }
   }
 
   @Override
+    @Override
   public boolean remove(long key) throws IOException {
     memoryList.remove(key);
     boolean removedFromPrimary = primary.remove(key);
@@ -269,7 +273,7 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
           secondary.add(check.getStorable());
         } catch (IOException e) {
           LOGGER.log(StorageLogMessages.TIER_MIGRATION_FAILED, e, getName(), key);
-          BiConsumer<Long, IOException> handler = migrationFailureHandler;
+          BiConsumer<Long, IOException> handler = migrationFailureHandler.get();
           if (handler != null) {
             handler.accept(key, e);
           }
