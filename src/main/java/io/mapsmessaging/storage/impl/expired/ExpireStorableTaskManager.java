@@ -97,7 +97,6 @@ public class ExpireStorableTaskManager<T extends Storable> implements Closeable 
 
   private synchronized void pollComplete(long scheduledGeneration, boolean hasExpiringEntries) {
     expiryTask = null;
-    queued = false;
     if (closed) {
       return;
     }
