@@ -244,7 +244,7 @@ public class DataStorageImpl<T extends Storable> implements DataStorage<T> {
     bufferInfo.flip();
 
     long payloadLength = calculatePayloadLength(bufferInfo, bufferCount, recordLength);
-    if (payloadLength < 0 || (long) storedLength != payloadLength + Integer.BYTES) {
+    if (payloadLength < 0 || storedLength != payloadLength + Integer.BYTES) {
       return null;
     }
     return new RecordMetadata(payloadPosition, payloadLength);
