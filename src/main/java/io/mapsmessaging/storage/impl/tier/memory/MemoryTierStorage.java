@@ -215,7 +215,6 @@ public class MemoryTierStorage<T extends Storable> implements Storage<T> {
   }
 
   @Override
-    @Override
   public boolean remove(long key) throws IOException {
     memoryList.remove(key);
     boolean removedFromPrimary = primary.remove(key);
