@@ -256,6 +256,13 @@
           <encoding>UTF-8</encoding>
           <source>25</source>
           <target>25</target>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>1.18.48</version>
+            </path>
+          </annotationProcessorPaths>
         </configuration>
         <groupId>org.apache.maven.plugins</groupId>
         <version>3.15.0</version>
