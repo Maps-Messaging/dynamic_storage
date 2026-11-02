@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 @ToString
@@ -46,7 +47,7 @@ public class TaskQueue {
   private final AtomicLong waitingScheduler;
   private final Map<FileTask<?>, Future<?>> pending;
 
-  private volatile ExecutorService taskScheduler;
+  private final AtomicReference<ExecutorService> taskScheduler = new AtomicReference<>();
 
   public static void shutdown() {
     SCHEDULER_EXECUTOR.shutdown();
@@ -104,15 +105,15 @@ public class TaskQueue {
   }
 
   public boolean hasExecutor() {
-    return taskScheduler != null;
+    return taskScheduler.get() != null;
   }
 
   public void setTaskScheduler(@NotNull ExecutorService scheduler) {
-    taskScheduler = scheduler;
+    taskScheduler.set(scheduler);
     while (!syncTasks.isEmpty()) {
       FileTask<?> task = syncTasks.poll();
       if (task != null) {
-        Future<?> future = taskScheduler.submit(task);
+        Future<?> future = scheduler.submit(task);
         trackPending(task, future);
       }
     }
@@ -143,7 +144,7 @@ public class TaskQueue {
 
   private void submitInternalTask(FileTask<?> raw) throws IOException {
     FileWrapperTask<?> task = new FileWrapperTask<>(raw, pending);
-    if (taskScheduler != null) {
+    if (taskScheduler.get() != null) {
       waitingScheduler.incrementAndGet();
       SubmitTask submitTask = new SubmitTask(task);
       SCHEDULER_EXECUTOR.submit(submitTask);
@@ -223,7 +224,7 @@ public class TaskQueue {
     @Override
     public Boolean call() {
       try {
-        Future<?> future = taskScheduler.submit(toSubmit);
+        Future<?> future = taskScheduler.get().submit(toSubmit);
         trackPending(toSubmit, future);
         return true;
       } finally {
